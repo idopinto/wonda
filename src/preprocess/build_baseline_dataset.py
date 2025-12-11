@@ -16,11 +16,12 @@ from pycparser import c_parser
 from tqdm import tqdm
 
 from src.preprocess.sft_tasks import task_generate_all_invariants, task_generate_one_invariant
-from src.utils.paths import DATASET_DIR, PROPERTIES_DIR, UAUTOMIZER_PATHS
-from src.utils.plain_verifier import run_uautomizer
-from src.utils.program import Program
-from src.utils.rewriter import Rewriter
-from src.utils.utils import write_file
+from configs import global_configurations as GC
+from src.verifiers.uautomizer import UAutomizerVerifier
+from src.utils.program import Program   
+from src.utils.program_normalizer import ProgramNormalizer
+# from src.utils.program_normalizer import ProgramNormalizer
+# from src.utils.utils import write_file
 
 # logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -28,16 +29,13 @@ logger = logging.getLogger(__name__)
 parser = c_parser.CParser()
 
 @dataclass
-class BaselineConfig:
+class BaselineVerificationConfig:
     """Configuration class for the baseline evaluation or training dataset creation."""
     # Core settings
-    dataset_type: str = "evaluation" # 'training' or 'evaluation'
-    uautomizer_version: str = "25" # '23', '24', '25', '26'. specific version can be found in the README.md
-    arch: str = "32bit" # '32bit' or '64bit'
+    dataset_type: str = "eval" # 'train' or 'eval'
     
     # Paths
     original_programs_dir: Path = field(default=None)
-    property_file_path: Path = PROPERTIES_DIR / "unreach-call.prp"
 
     # Timing & thresholds
     timeout_threshold: float = 600.0 # verifier timeout value
@@ -46,15 +44,15 @@ class BaselineConfig:
     
     # Filters
     limit: int = -1 # limit the number of files to process (useful for testing)
-    prefix: str = "" # prefix to filter files by
+    prefix: str = "" # prefix to filter files by (useful for testing also)
     
     # Behavioral flags
     verify_original_programs: bool = False # verify original programs instead of normalized
-    ignore_invariants: bool = False # skip invariant extraction from log/witness files
+    ignore_invariants: bool = False # skip invariant extraction from log/witness files (for evaluation they don't matter)
 
     def __post_init__(self):
         if self.original_programs_dir is None:
-            self.original_programs_dir = DATASET_DIR / self.dataset_type / "orig_programs"
+            self.original_programs_dir = GC.DATASET_DIR / self.dataset_type / "orig_programs"
 
 def fetch_original_programs(original_programs_dir: Path, prefix: str = "", limit: int = -1) -> List[Path]:
     """
@@ -169,7 +167,7 @@ def check_correct_syntax(program_str: str) -> bool:
     except Exception:
         return False
        
-def normalize_program(file_path: Path) -> Tuple[str, Dict[str, bool]]:
+def normalize_program(program_path: Path) -> Tuple[str, Dict[str, bool]]:
     """
     Normalize a C file with rewriter and checks for the following issues:
         1. there is no target assertion in the program
@@ -177,12 +175,12 @@ def normalize_program(file_path: Path) -> Tuple[str, Dict[str, bool]]:
         3. the program has invalid C syntax (checked by pycparser)
         if any of the issues are found, returning empty string and the issues found
     Args:
-        file_path: Path to the C file.
+        program_path: Path to the C file.
     Returns:
         Tuple[str, Dict[str, bool]]: The normalized program string, and a dictionary with the issues found.
     """
-    r = Rewriter(file_path)
-    program = Program(r.lines_to_verify, r.replacement)
+    normalizer = ProgramNormalizer(program_path)
+    program = Program(normalizer.lines_to_verify, normalizer.replacement)
     problems = {
         "no_target_assertion": False,
         "multiple_target_assertions": False,
@@ -207,13 +205,14 @@ def normalize_program(file_path: Path) -> Tuple[str, Dict[str, bool]]:
         return "", problems
     return program_str, problems
 
-def process_program(program_path: Path, config: BaselineConfig) -> Dict[str, Any]:
+def process_program(config: BaselineVerificationConfig, program_path: Path, verifier: UAutomizerVerifier) -> Dict[str, Any]:
     """
     Process a single C program with UAutomizer.
     
     Returns:
         Dictionary with timing and invariant information
     """
+
     orig_program_str = program_path.read_text()
     normalized_program_str, problems = normalize_program(program_path)
     
@@ -244,19 +243,16 @@ def process_program(program_path: Path, config: BaselineConfig) -> Dict[str, Any
             # Write programs to temp dir
             orig_program_path = temp_reports_path / f"orig_{program_path.stem}.c"
             normalized_program_path = temp_reports_path / f"normalized_{program_path.stem}.c"
-            write_file(orig_program_path, orig_program_str)
-            write_file(normalized_program_path, normalized_program_str)
+            orig_program_path.write_text(orig_program_str)
+            normalized_program_path.write_text(normalized_program_str)   
             try:
-                for i in tqdm(range(config.k), desc=f"Running UAutomizer{config.uautomizer_version}", leave=False):
+                for i in tqdm(range(config.k), desc=f"Running UAutomizer{verifier.config.version}", leave=False):
                     program_to_verify = orig_program_path if config.verify_original_programs else normalized_program_path
                     logger.info(f"Verifying the program: {program_to_verify.name}")
-                    report = run_uautomizer(
+                    report = verifier.verify(
                         program_path=program_to_verify,
-                        property_file_path=config.property_file_path,
                         reports_dir=temp_reports_path,
-                        timeout_seconds=config.timeout_threshold,
-                        uautomizer_path=UAUTOMIZER_PATHS[config.uautomizer_version],
-                        arch=config.arch
+                        timeout_seconds=config.timeout_threshold
                     )
                     decision_time[report.time_taken] = report.decision
                     logger.info(f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds")
@@ -273,10 +269,10 @@ def process_program(program_path: Path, config: BaselineConfig) -> Dict[str, Any
                 if not config.ignore_invariants:
                     # Extracting the invariant only from the last verifier run.
                     prefix = 'orig' if config.verify_original_programs else 'normalized' 
-                    if config.uautomizer_version == "23":
+                    if verifier.config.version == "23":
                         log_file = temp_reports_path / f"{prefix}_{program_path.stem}.log"
                         invariants = extract_invariants_from_log(log_file)
-                    elif config.uautomizer_version in ["24", "25", "26"]:
+                    elif verifier.config.version in ["24", "25", "26"]:
                         witness_yml = temp_reports_path / f"{prefix}_{program_path.stem}_witness.yml"
                         invariants = extract_invariants_from_witness(witness_yml)
                     result["invariants"] = invariants
@@ -288,11 +284,12 @@ def process_program(program_path: Path, config: BaselineConfig) -> Dict[str, Any
 
     return result
 
-def run_uautomizer_as_baseline(config: BaselineConfig, results_path: Path) -> List[Dict[str, Any]]:
+def run_uautomizer_as_baseline( config: BaselineVerificationConfig, verifier: UAutomizerVerifier, results_path: Path) -> List[Dict[str, Any]]:
     """
     Run UAutomizer as a baseline for the given configuration.
     Args:
-        config: BaselineConfig configuration.
+        verifier: UAutomizerVerifier instance.
+        config: BaselineVerificationConfig configuration.
         results_path: Path to the results file.
     Returns:
         List[Dict[str, Any]]: List of results.
@@ -302,8 +299,9 @@ def run_uautomizer_as_baseline(config: BaselineConfig, results_path: Path) -> Li
     start_time = time.time()
     for i, program_path in enumerate(tqdm(programs, desc="Processing C programs")):
         result = process_program(
+            config=config,
             program_path=program_path,
-            config=config
+            verifier=verifier
         )
         if result:
             median_time = result["timings"]["median"]
@@ -356,41 +354,57 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Baseline data collection from training or evaluation dataset."
     )
-    parser.add_argument("--dataset-type", type=str, required=False, default="evaluation", choices=["training", "evaluation"], help="Dataset type (training or evaluation)")
+    parser.add_argument("--dataset-type", '-t', type=str, required=False, default="eval", choices=["train", "eval"], help="Dataset type (train or eval)")
     parser.add_argument("--uautomizer-version", type=str, required=False, default="25", choices=["23", "24", "25", "26"], help="UAutomizer version (23, 24, 25, or 26). specific versions detailed in the README.md file.")
+    parser.add_argument("--arch", type=str, required=False, default="32bit", choices=["32bit", "64bit"], help="Architecture (32bit or 64bit)")
+    parser.add_argument("--property", type=Path, required=False, default="unreach-call.prp", help="Path to the property file")
     parser.add_argument("--k", type=int, required=False, default=3, help="Number of times to run UAutomizer for each file (default: 1)")
     parser.add_argument("--limit", type=int, required=False, default=-1, help="Limit the number of files to process (useful for testing). Processes first k files.")
     parser.add_argument("--prefix", type=str, required=False, default="", help="Filter files by prefix (used for testing specific files).")
     parser.add_argument("--verify-original-programs", action="store_true", help="Verify the original programs with UAutomizer and not the normalized programs (default: verify the normalized programs)")
     parser.add_argument("--ignore-invariants", action="store_true", help="Do not extract invariants from the log file or the witness file (default: try to extract from the .log (2023 version) or witness file (2024+))")
     parser.add_argument("--push-to-hub", action="store_true", help="Push the dataset to the Hugging Face hub")
+    parser.add_argument("--timeout", type=float, required=False, default=600.0, help="Timeout threshold for UAutomizer (default: 600.0 seconds)")
+    parser.add_argument("--difficulty-threshold", type=int, required=False, default=30, help="Difficulty threshold for easy/hard split (default: 30 seconds)")
+    parser.add_argument("--test", action="store_true", help="Run the script in test mode (default: run the script in full mode)")
+
     return parser.parse_args()
     
 def main():
     args = parse_args()
-    baseline_config = BaselineConfig(
+    baseline_config = BaselineVerificationConfig(
         dataset_type=args.dataset_type,
-        uautomizer_version=args.uautomizer_version,
+        original_programs_dir=GC.DATASET_DIR / args.dataset_type / "orig_programs",
+        timeout_threshold=args.timeout,
+        difficulty_threshold=args.difficulty_threshold,
         k=args.k,
         limit=args.limit,
         prefix=args.prefix,
         verify_original_programs=args.verify_original_programs,
-        ignore_invariants=args.ignore_invariants,
+        ignore_invariants=args.ignore_invariants
     )
     logger.info(baseline_config)
-    output_dir = DATASET_DIR / args.dataset_type / f"invbench-{args.dataset_type}-uautomizer{args.uautomizer_version}-k{args.k}-test"
-    logger.info(f"Output directory: {output_dir}")
+    output_dir = GC.DATASET_DIR / args.dataset_type / f"invbench-{args.dataset_type}-uautomizer{args.uautomizer_version}-k{args.k}-{args.test and "test" or "full"}"
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / f"{output_dir.name}.json"
-    run_uautomizer_as_baseline(config=baseline_config, results_path=results_path)
-    if args.dataset_type == "evaluation":
+    logger.info(f"Output directory: {output_dir}")
+    logger.info(f"Results path: {results_path}")
+
+    property_path = GC.PROPERTIES_DIR / args.property
+    verifier_config = GC.DefaultVerificationConfig(version=args.uautomizer_version, arch=args.arch, timeout_seconds=args.timeout, property_file_path=property_path)
+    verifier = UAutomizerVerifier(config=verifier_config)
+    run_uautomizer_as_baseline(config=baseline_config, verifier=verifier, results_path=results_path)
+    
+    if args.dataset_type == "eval":
         create_evaluation_dataset(results_path=results_path, output_dir=output_dir, push_to_hub=args.push_to_hub)
-    elif args.dataset_type == "training":
-        output_dir_all_invariants = output_dir / f"invbench-{args.dataset_type}-uautomizer{args.uautomizer_version}-k{args.k}-gen-all"
-        output_dir_one_invariant = output_dir / f"invbench-{args.dataset_type}-uautomizer{args.uautomizer_version}-k{args.k}-gen-one"
+    elif args.dataset_type == "train":
+        output_dir_all_invariants = output_dir / f"invbench-{args.dataset_type}-uautomizer{args.uautomizer_version}-k{args.k}-gen-all-{args.test and "test" or "full"}"
+        output_dir_one_invariant = output_dir / f"invbench-{args.dataset_type}-uautomizer{args.uautomizer_version}-k{args.k}-gen-one-{args.test and "test" or "full"}"
         task_generate_all_invariants(results_path=results_path, output_dir=output_dir_all_invariants, push_to_hub=args.push_to_hub)
         task_generate_one_invariant(results_path=results_path, output_dir=output_dir_one_invariant, push_to_hub=args.push_to_hub)
 
 if __name__ == "__main__":
     main()
 
+# uv run -m src.preprocess.build_baseline_dataset -t eval --test --limit 1 --k 3 --ignore-invariants --push-to-hub
+# uv run -m src.preprocess.build_baseline_dataset -t train --test --limit 1 --k 1 --push-to-hub
