@@ -12,4 +12,6 @@ dependencies = [
     "weave>=0.52.22",
     "huggingface-hub>=0.34.0,<1.0",
     "unsloth",
+    "python-dotenv>=1.2.1",
+    "plotly>=6.5.0",
 ]

@@ -12,17 +12,6 @@ from configs import global_configurations as GC
 
 
 
-def parse_uautomizer_output(output: str) -> str:
-    import re
-    result_pattern = r'Result:\s*\n(ERROR|TRUE|FALSE|UNKNOWN)(?::\s*(.+))?'
-    match = re.search(result_pattern, output, re.MULTILINE)
-
-    if match:
-        decision = match.group(1)
-        reason = match.group(2).strip() if match.group(2) else ""
-        return decision, reason
-    return "ERROR", "Unable to parse UAutomizer output."
-
 @dataclass
 class VerifierCallReport:
     """
@@ -134,7 +123,7 @@ class UAutomizerVerifier:
             write_file(log_file_path, completed_process.stdout)
             write_file(err_file_path, completed_process.stderr)
             
-            report.decision, report.decision_reason = parse_uautomizer_output(completed_process.stdout)
+            report.decision, report.decision_reason = self._parse_uautomizer_output(completed_process.stdout)
 
         except subprocess.TimeoutExpired as e:
             report.decision = "TIMEOUT"
@@ -152,6 +141,17 @@ class UAutomizerVerifier:
         finally:
             shutil.rmtree(temp_work_dir)
         return report
+
+    def _parse_uautomizer_output(self, output: str) -> str:
+        import re
+        result_pattern = r'Result:\s*\n(ERROR|TRUE|FALSE|UNKNOWN)(?::\s*(.+))?'
+        match = re.search(result_pattern, output, re.MULTILINE)
+
+        if match:
+            decision = match.group(1)
+            reason = match.group(2).strip() if match.group(2) else ""
+            return decision, reason
+        return "ERROR", "Unable to parse UAutomizer output."
 
 
 def parse_args():
