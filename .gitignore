@@ -16,3 +16,5 @@ tools
 .git
 experiments
 examples
+wandb
+unsloth_compiled_cache

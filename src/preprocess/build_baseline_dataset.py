@@ -345,7 +345,7 @@ def create_evaluation_dataset(results_path: Path, output_dir: Path, push_to_hub:
     
     if push_to_hub:
         dataset_dict.push_to_hub(f"idopinto/{output_dir.name}")
-        logger.info(f"Pushed to: https://huggingface.co/datasets/{output_dir.name}")
+        logger.info(f"Pushed to: https://huggingface.co/datasets/idopinto/{output_dir.name}")
     
     return dataset_dict
 

@@ -5,7 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "datasets>=4.4.1",
+    "datasets==4.3.0",
     "pycparser>=2.23",
     "tqdm>=4.67.1",
+    "wandb>=0.23.1",
+    "weave>=0.52.22",
+    "huggingface-hub>=0.34.0,<1.0",
+    "unsloth",
 ]
