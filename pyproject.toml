@@ -14,4 +14,5 @@ dependencies = [
     "unsloth",
     "python-dotenv>=1.2.1",
     "plotly>=6.5.0",
+    "vllm>=0.12.0",
 ]

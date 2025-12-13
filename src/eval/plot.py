@@ -125,27 +125,27 @@ def calculate_metrics_from_results(results: List[dict]) -> dict:
     
     # Calculate invariant correctness rate
     invariant_correctness_rate = sum(
-        1 for r in results if r.get("invariant_correctness_score", False)
+        1 for r in results if r.get("correctness_score", False)
     ) / n
     
     # Calculate speedup rates
     speedup_rate_without_gen = sum(
-        1 for r in results if r.get("has_speedup_without_gen", False)
+        1 for r in results if r.get("has_speedup_no_gen", False)
     ) / n
     speedup_rate_with_gen = sum(
-        1 for r in results if r.get("has_speedup_with_gen", False)
+        1 for r in results if r.get("has_speedup_gen", False)
     ) / n
     
     # Helper to check if result qualifies for speedup
     def qualifies(r: dict) -> bool:
-        return (r.get("invariant_correctness_score", False) 
-                and r.get("final_decision") != "UNKNOWN")
+        return (r.get("correctness_score", False) 
+                and r.get("final_decision") in ["TRUE", "FALSE"])
     
     # Calculate Speedup>1 (average of only qualifying with speedup > 1)
-    speedups_gt1_without = [r["speedup_without_gen"] for r in results 
-                           if qualifies(r) and r.get("speedup_without_gen", 0) > 1]
-    speedups_gt1_with = [r["speedup_with_gen"] for r in results 
-                        if qualifies(r) and r.get("speedup_with_gen", 0) > 1]
+    speedups_gt1_without = [r["speedup_no_gen"] for r in results 
+                           if qualifies(r) and r.get("speedup_no_gen", 0) > 1]
+    speedups_gt1_with = [r["speedup_gen"] for r in results 
+                        if qualifies(r) and r.get("speedup_gen", 0) > 1]
     
     speedup_gt1_without_gen = sum(speedups_gt1_without) / len(speedups_gt1_without) if speedups_gt1_without else 1.0
     speedup_gt1_with_gen = sum(speedups_gt1_with) / len(speedups_gt1_with) if speedups_gt1_with else 1.0
@@ -156,8 +156,8 @@ def calculate_metrics_from_results(results: List[dict]) -> dict:
             return r[key]
         return 1.0
     
-    speedup_all_without_gen = sum(get_speedup_or_one(r, "speedup_without_gen") for r in results) / n
-    speedup_all_with_gen = sum(get_speedup_or_one(r, "speedup_with_gen") for r in results) / n
+    speedup_all_without_gen = sum(get_speedup_or_one(r, "speedup_no_gen") for r in results) / n
+    speedup_all_with_gen = sum(get_speedup_or_one(r, "speedup_gen") for r in results) / n
     
     return {
         "metrics_without_gen": {
@@ -212,7 +212,7 @@ def plot_verification_vs_baseline(
         raise ValueError("No results to plot")
     
     # Prepare columns with safe defaults
-    for col in ["verification_time", "total_time", "baseline_timing", "speedup_without_gen", "speedup_with_gen"]:
+    for col in ["verification_time", "total_time", "baseline_timing", "speedup_no_gen", "speedup_gen"]:
         if col not in df.columns:
             df[col] = 0.0
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).round(2)
@@ -222,16 +222,16 @@ def plot_verification_vs_baseline(
         df["final_decision"] = "UNKNOWN"
     if "predicate_content" not in df.columns:
         df["predicate_content"] = ""
-    if "invariant_correctness_score" not in df.columns:
-        df["invariant_correctness_score"] = False
+    if "correctness_score" not in df.columns:
+        df["correctness_score"] = False
     if "decision_rule" not in df.columns:
         df["decision_rule"] = ""
-    if "syntactic_validation_score" not in df.columns:
-        df["syntactic_validation_score"] = False
-    if "has_speedup_without_gen" not in df.columns:
-        df["has_speedup_without_gen"] = False
-    if "has_speedup_with_gen" not in df.columns:
-        df["has_speedup_with_gen"] = False
+    if "validation_score" not in df.columns:
+        df["validation_score"] = False
+    if "has_speedup_no_gen" not in df.columns:
+        df["has_speedup_no_gen"] = False
+    if "has_speedup_gen" not in df.columns:
+        df["has_speedup_gen"] = False
     
     # Extract usefulness decision from invariant_usefulness_report
     def extract_usefulness_decision(row):
@@ -242,17 +242,17 @@ def plot_verification_vs_baseline(
     
     df["usefulness_decision"] = df.apply(extract_usefulness_decision, axis=1)
     
-    # Ensure code_for_usefulness is available for click-to-view
-    if "code_for_usefulness" not in df.columns:
-        df["code_for_usefulness"] = ""
+    # Ensure program_for_usefulness is available for click-to-view
+    if "program_for_usefulness" not in df.columns:
+        df["program_for_usefulness"] = ""
     
     # Calculate speedup if not present
-    df["speedup_without_gen"] = np.where(
+    df["speedup_no_gen"] = np.where(
         df["verification_time"] > 0,
         (df["baseline_timing"] / df["verification_time"]).round(2),
         0
     )
-    df["speedup_with_gen"] = np.where(
+    df["speedup_gen"] = np.where(
         df["total_time"] > 0,
         (df["baseline_timing"] / df["total_time"]).round(2),
         0
@@ -275,10 +275,10 @@ def plot_verification_vs_baseline(
 
     # Prepare hover data columns
     df["task_index"] = range(len(df))
-    df["hover_validation"] = df["syntactic_validation_score"].map({True: "VALID", False: "INVALID"})
-    df["hover_correct"] = df["invariant_correctness_score"].map({True: "TRUE", False: "FALSE"})
-    df["hover_useful_no_gen"] = df["has_speedup_without_gen"].map({True: "YES", False: "NO"})
-    df["hover_useful_with_gen"] = df["has_speedup_with_gen"].map({True: "YES", False: "NO"})
+    df["hover_validation"] = df["validation_score"].map({True: "VALID", False: "INVALID"})
+    df["hover_correct"] = df["correctness_score"].map({True: "TRUE", False: "FALSE"})
+    df["hover_useful_no_gen"] = df["has_speedup_no_gen"].map({True: "YES", False: "NO"})
+    df["hover_useful_with_gen"] = df["has_speedup_gen"].map({True: "YES", False: "NO"})
     df["hover_usefulness_decision"] = df["usefulness_decision"]  # Actual verification result
     df["hover_rule"] = df["decision_rule"]
 
@@ -313,7 +313,7 @@ def plot_verification_vs_baseline(
                 mode='markers',
                 marker=dict(size=10, color=color_map[decision], symbol=symbol_map[decision]),
                 name=decision,
-                customdata=df_subset[["predicate_content", "final_decision", "task_index", "speedup_without_gen", "hover_validation", "hover_correct", "hover_usefulness_decision", "hover_useful_no_gen", "hover_rule"]].values,
+                customdata=df_subset[["predicate_content", "final_decision", "task_index", "speedup_no_gen", "hover_validation", "hover_correct", "hover_usefulness_decision", "hover_useful_no_gen", "hover_rule"]].values,
                 hovertemplate=hover_without,
                 visible=True,
                 legendgroup=decision,
@@ -348,7 +348,7 @@ def plot_verification_vs_baseline(
                 mode='markers',
                 marker=dict(size=10, color=color_map[decision], symbol=symbol_map[decision]),
                 name=decision,
-                customdata=df_subset[["predicate_content", "final_decision", "task_index", "speedup_with_gen", "hover_validation", "hover_correct", "hover_usefulness_decision", "hover_useful_with_gen", "hover_rule"]].values,
+                customdata=df_subset[["predicate_content", "final_decision", "task_index", "speedup_gen", "hover_validation", "hover_correct", "hover_usefulness_decision", "hover_useful_with_gen", "hover_rule"]].values,
                 hovertemplate=hover_with,
                 visible=False,
                 legendgroup=decision,
@@ -459,12 +459,12 @@ def plot_verification_vs_baseline(
     # Re-indent code for better readability (original may have IndentWidth: 0 from clang-format)
     code_data = []
     for idx, row in df.iterrows():
-        raw_code = str(row.get("code_for_usefulness", ""))
+        raw_code = str(row.get("program_for_usefulness", ""))
         formatted_code = reindent_c_code(raw_code) if raw_code else ""
         code_data.append({
             "task_index": int(row["task_index"]),
             "predicate": str(row.get("predicate_content", "")),
-            "code_for_usefulness": formatted_code,
+            "program_for_usefulness": formatted_code,
             "final_decision": str(row.get("final_decision", "")),
             "usefulness_decision": str(row.get("usefulness_decision", "")),
         })
@@ -698,7 +698,7 @@ def plot_verification_vs_baseline(
         usefulnessDecisionEl.textContent = data.usefulness_decision || 'N/A';
         usefulnessDecisionEl.className = 'value ' + (data.usefulness_decision === 'TRUE' ? 'true' : 'false');
         
-        var code = data.code_for_usefulness || 'No code available';
+        var code = data.program_for_usefulness || 'No code available';
         var codeEl = document.getElementById('modalCode');
         codeEl.textContent = code;
         

@@ -18,9 +18,14 @@ class ProgramNormalizer:
     Transforms C code with verification annotations into clean, formatted code suitable
     for analysis by replacing __VERIFIER_* functions with standard equivalents.
     """
-    def __init__(self, filename: Path, rewrite=True, handle_reach_error=False):
-        """Initialize rewriter with C code from file."""
-        self.code = filename.read_text().strip()
+    def __init__(self, filename: Path = None, rewrite=True, handle_reach_error=False, code: str = None):
+        """Initialize rewriter with C code from file or directly from code string."""
+        if code is not None:
+            self.code = code.strip()
+        elif filename is not None:
+            self.code = filename.read_text().strip()
+        else:
+            raise ValueError("Either 'filename' or 'code' must be provided")
         self.new_code = self.code
         if rewrite:
             self.new_code = re.sub(r'^\s*#include\s+[<"].*?[>"]\s*$', '', self.new_code, flags=re.MULTILINE)

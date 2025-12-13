@@ -61,7 +61,7 @@ def preprocess_example(example: dict) -> dict:
     """
     code = str(example["original_program"])
     
-    normalizer = ProgramNormalizer(Path(code))
+    normalizer = ProgramNormalizer(code=code)
     program = Program(normalizer.lines_to_verify, normalizer.replacement)
     
     return {

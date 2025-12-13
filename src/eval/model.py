@@ -44,7 +44,7 @@ def load_model(config: EvalConfig) -> tuple[PreTrainedTokenizerBase, PreTrainedM
         token=True
     )
 
-    if config.is_lora:
+    if config.eval_finetuned_model:
         model = PeftModel.from_pretrained(model, config.peft_model_id, token=True)
         model = model.merge_and_unload()
     
@@ -191,30 +191,4 @@ class InvariantGeneratorModel(weave.Model):
                 lines[target.line_number] += f"\nassert({target.content}); // Target property"
         
         return "\n".join(lines)
-
-
-def create_invariant_generator(
-    config: EvalConfig,
-    tokenizer: PreTrainedTokenizerBase,
-    model: PreTrainedModel
-) -> InvariantGeneratorModel:
-    """
-    Factory function to create an InvariantGeneratorModel from config.
-    
-    Args:
-        config: Evaluation configuration.
-        tokenizer: Loaded tokenizer.
-        model: Loaded model.
-        
-    Returns:
-        Configured InvariantGeneratorModel instance.
-    """
-    return InvariantGeneratorModel(
-        tokenizer=tokenizer,
-        model=model,
-        system_prompt=config.system_prompt,
-        user_prompt_template=config.user_prompt_template,
-        sampling_params=config.sampling_params.to_dict(),
-        reasoning_effort=config.reasoning_effort
-    )
 

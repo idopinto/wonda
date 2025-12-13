@@ -42,6 +42,8 @@ class DecisionProcedureReport:
             } if self.candidate else None,
             'is_valid': self.is_valid,
             'correctness_report': self.correctness_report.to_dict() if self.correctness_report else None,
+            'program_for_correctness': self.program_for_correctness,
+            'program_for_usefulness': self.program_for_usefulness,
             'usefulness_report': self.usefulness_report.to_dict() if self.usefulness_report else None,
             'verification_time': self.verification_time,
             'model_latency': self.model_latency,
@@ -59,10 +61,14 @@ class DecisionProcedureReport:
         return cls(**data)
 
 class DecisionProcedure:
-    def __init__(self, verifier: UAutomizerVerifier, program: Program, code_dir: Path):
+    def __init__(self, verifier: UAutomizerVerifier, program: Program, code_dir: Path, timeout: float):
         self.verifier = verifier
         self.program = program
         self.code_dir = code_dir
+        self.timeout = timeout
+        self.reports_dir = code_dir  # Use code_dir for reports
+        # Target is the first assertion in the program (the property we're trying to prove)
+        self.target = program.assertions[0] if program.assertions else None
 
     def run_verifier(self, program_str: str, kind: str) -> VerifierCallReport:
         program_path = self.code_dir / f"code_for_{kind}.c"
@@ -70,7 +76,8 @@ class DecisionProcedure:
             out_file.write(program_str)
         verifier_report: VerifierCallReport = self.verifier.verify(
             program_path=program_path,
-            reports_dir=self.reports_dir
+            reports_dir=self.reports_dir,
+            timeout_seconds=self.timeout
         )
         return verifier_report
 
@@ -86,6 +93,8 @@ class DecisionProcedure:
                                                                           assertion_points={},
                                                                           forGPT=False,
                                                                           dump=False)
+        report.program_for_correctness = program_for_correctness
+        report.program_for_usefulness = program_for_usefullness
         # Parallel evaluation: run both verifier queries concurrently
         # da = V(P, Ø, q): Check if q is an invariant
         # db = V(P, {q}, p*): Check if target property holds assuming q is true
@@ -180,15 +189,14 @@ class DecisionProcedure:
     @weave.op()
     def run(self, candidate: Predicate, model_latency: float) -> DecisionProcedureReport:
         is_valid = syntactic_validation(candidate.content)
-        final_report = DecisionProcedureReport(program=self.program,
-                                               target=self.target, 
-                                            #    target_property_file_path=self.target_property_file_path,
+        final_report = DecisionProcedureReport(target=self.target, 
                                                candidate=candidate,
                                                is_valid=is_valid,
                                                model_latency=model_latency)
         if is_valid:
-           final_report = self.decide(candidate, final_report)
-           final_report.final_decision = "INVALID"
+            final_report = self.decide(candidate, final_report)
+        else:
+            final_report.final_decision = "INVALID"
         
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"

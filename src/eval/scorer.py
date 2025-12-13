@@ -13,14 +13,10 @@ import re
 
 from src.eval.config import LOCATION_LABELS, EvalConfig
 from src.eval.decision_procedure import DecisionProcedure
-from src.utils.paths import PROPERTIES_DIR, UAUTOMIZER_PATHS
 from src.utils.predicate import Predicate
 from src.utils.program import Program
-from src.utils.rewriter import Rewriter
-
-
-target_property_file_path = PROPERTIES_DIR / "unreach-call.prp"
-
+from src.utils.program_normalizer import ProgramNormalizer
+from src.verifiers.uautomizer import UAutomizerVerifier
 
 class ResultCollector:
     """
@@ -60,7 +56,12 @@ class InvariantScorer(weave.Scorer):
     """
     config: EvalConfig
     collector: Optional[ResultCollector] = None
-    
+    verifier: Optional[UAutomizerVerifier] = None
+
+    def model_post_init(self, __context):
+        """Initialize verifier after Pydantic model creation."""
+        object.__setattr__(self, 'verifier', UAutomizerVerifier(config=self.config.verifier_config))
+
     def _parse_predicate(self, answer: str) -> tuple[str, str]:
         """
         Parse model answer to extract predicate content and line label.
@@ -129,51 +130,8 @@ class InvariantScorer(weave.Scorer):
                 return line_num
         return 0
     
-    def _create_program_from_code(self, code: str) -> Program:
-        """
-        Create a Program object from raw C code string.
-        
-        Args:
-            code: The C program source code as a string.
-            
-        Returns:
-            A Program object ready for verification.
-        """
-        rewriter = Rewriter.from_string(code, rewrite=True)
-        return Program(rewriter.lines_to_verify, rewriter.replacement)
-    
-    # def _resolve_timing(self, value) -> float:
-    #     """
-    #     Resolve timing value to float, handling Weave references.
-        
-    #     Args:
-    #         value: The timing value (could be float, int, string, or Weave ref).
-            
-    #     Returns:
-    #         The timing value as a float.
-    #     """
-    #     # If it's already a numeric type, convert directly
-    #     if isinstance(value, (int, float)):
-    #         return float(value)
-        
-    #     # If it's a Weave ObjectRef object, try to resolve it
-    #     if hasattr(value, 'get'):
-    #         resolved = value.get()
-    #         return float(resolved)
-        
-    #     # If it's a Weave reference string, resolve it using weave.ref()
-    #     if isinstance(value, str) and value.startswith("weave://"):
-    #         resolved = weave.ref(value).get()
-    #         return float(resolved)
-        
-    #     # Try to convert string to float
-    #     if isinstance(value, str):
-    #         return float(value)
-        
-    #     raise ValueError(f"Cannot convert timing to float: {type(value)} = {value}")
-    
     @weave.op()
-    def score(self, output: Dict, original_program: str, median_timing) -> Dict:
+    def score(self, output: Dict, original_program: str, median_timing: float) -> Dict:
         """
         Score a model-generated invariant.
         
@@ -186,7 +144,8 @@ class InvariantScorer(weave.Scorer):
             Dict containing all evaluation metrics and artifacts.
         """
         # Create Program object from raw code
-        program = self._create_program_from_code(original_program)
+        normalizer = ProgramNormalizer(code=original_program)
+        program = Program(normalizer.lines_to_verify, normalizer.replacement)
         
         # Resolve baseline timing to float
         baseline_timing = median_timing
@@ -200,86 +159,51 @@ class InvariantScorer(weave.Scorer):
             content=predicate_content,
             line_number=line_number
         )
-        uautomizer_path = UAUTOMIZER_PATHS[self.config.uautomizer_version]
-        model_latency = output.get("model_latency", 0.0)
         
         # Determine timeout based on configuration
-        timeout = baseline_timing if self.config.baseline_is_timeout else self.config.timeout
-        
+        timeout = baseline_timing if self.config.baseline_is_timeout else self.verifier.config.timeout_seconds
+        # print(f"Timeout: {timeout}")
         # Create temp directory for code files
         with tempfile.TemporaryDirectory() as temp_dir:
             code_dir = Path(temp_dir)
             decision_procedure = DecisionProcedure(
+                verifier=self.verifier,
                 program=program,
-                target_property_file_path=target_property_file_path,
-                arch=self.config.arch,
                 code_dir=code_dir,
-                uautomizer_path=uautomizer_path,
-                timeout_seconds=timeout
+                timeout=timeout
             )
             decision_procedure_report = decision_procedure.run(
-                predicate,
-                model_gen_time=model_latency
+                candidate=predicate,
+                model_latency=output["model_latency"]
             )
-            
-            # Read generated code files for Weave logging
-            code_for_correctness = ""
-            code_for_usefulness = ""
-            correctness_path = code_dir / "code_for_correctness.c"
-            usefulness_path = code_dir / "code_for_usefulness.c"
-            
-            if correctness_path.exists():
-                code_for_correctness = correctness_path.read_text()
-            if usefulness_path.exists():
-                code_for_usefulness = usefulness_path.read_text()
-        
-        # Safe access to reports (could be None if short-circuited)
-        correctness_report = decision_procedure_report.invariant_correctness_report
-        usefulness_report = decision_procedure_report.invariant_usefulness_report
-        
-        invariant_correctness_score = (
-            correctness_report.decision == "TRUE" if correctness_report else False
-        )
-        
+
+        correctness_score = decision_procedure_report.correctness_report.decision == "TRUE" if decision_procedure_report.correctness_report.decision else False
+        speedup_no_gen = 0.0
+        speedup_gen = 0.0
         # Calculate speedup (only meaningful if we have a conclusive result)
-        speedup_without_gen = 0.0
-        speedup_with_gen = 0.0
-        
-        if (invariant_correctness_score and 
-            decision_procedure_report.final_decision != "UNKNOWN"):
-            if decision_procedure_report.verification_time_taken > 0:
-                speedup_without_gen = (
-                    baseline_timing / decision_procedure_report.verification_time_taken
-                )
-            if decision_procedure_report.total_time_taken > 0:
-                speedup_with_gen = (
-                    baseline_timing / decision_procedure_report.total_time_taken
-                )
+        if correctness_score and decision_procedure_report.final_decision in ["TRUE", "FALSE"]:
+            speedup_no_gen = baseline_timing / decision_procedure_report.verification_time if decision_procedure_report.verification_time > 0 else 0.0
+            speedup_gen = baseline_timing / decision_procedure_report.total_time if decision_procedure_report.total_time > 0 else 0.0
+
         
         result = {
             # Core scores (will be summarized)
-            "syntactic_validation_score": decision_procedure_report.syntactic_validation_result,
-            "invariant_correctness_score": invariant_correctness_score,
-            "has_speedup_without_gen": speedup_without_gen > 1,
-            "has_speedup_with_gen": speedup_with_gen > 1,
-            "speedup_without_gen": speedup_without_gen,
-            "speedup_with_gen": speedup_with_gen,
+            "validation_score": decision_procedure_report.is_valid,
+            "correctness_score": correctness_score,
+            "has_speedup_no_gen": bool(speedup_no_gen > 1),
+            "has_speedup_gen": bool(speedup_gen > 1),
+            "speedup_no_gen": speedup_no_gen,
+            "speedup_gen": speedup_gen,
             "final_decision": decision_procedure_report.final_decision,
             "decision_rule": decision_procedure_report.decision_rule,
-            # Metadata (logged but not summarized)
-            "code_for_correctness": code_for_correctness,
-            "invariant_correctness_report": (
-                correctness_report.to_dict() if correctness_report else None
-            ),
-            "code_for_usefulness": code_for_usefulness,
-            "invariant_usefulness_report": (
-                usefulness_report.to_dict() if usefulness_report else None
-            ),
-            "verification_time": decision_procedure_report.verification_time_taken,
-            "total_time": decision_procedure_report.total_time_taken,
+            "verification_time": decision_procedure_report.verification_time,
+            "total_time": decision_procedure_report.total_time,
             # Include parsed fields for plotting
             "predicate_content": predicate_content,
             "baseline_timing": baseline_timing,
+            # Code for click-to-view in plot
+            "program_for_usefulness": getattr(decision_procedure_report, 'program_for_usefulness', ''),
+            "usefulness_report": decision_procedure_report.usefulness_report.to_dict() if decision_procedure_report.usefulness_report else None,
         }
         
         # Collect result for plotting if collector is provided
@@ -308,82 +232,51 @@ class InvariantScorer(weave.Scorer):
         n = len(valid_rows)
         
         # Calculate counts and rates for boolean scores
-        syntactic_validation_count = sum(
-            1 for r in valid_rows if r.get("syntactic_validation_score", False)
-        )
-        invariant_correctness_count = sum(
-            1 for r in valid_rows if r.get("invariant_correctness_score", False)
-        )
-        speedup_count_without_gen = sum(
-            1 for r in valid_rows if r.get("has_speedup_without_gen", False)
-        )
-        speedup_count_with_gen = sum(
-            1 for r in valid_rows if r.get("has_speedup_with_gen", False)
-        )
+        validation_count = sum(1 for r in valid_rows if r.get("validation_score", False))
+        correctness_count = sum(1 for r in valid_rows if r.get("correctness_score", False))
+        speedup_count_no_gen = sum(1 for r in valid_rows if r.get("has_speedup_no_gen", False))
+        speedup_count_gen = sum(1 for r in valid_rows if r.get("has_speedup_gen", False))
         
-        syntactic_validation_rate = syntactic_validation_count / n
-        invariant_correctness_rate = invariant_correctness_count / n
-        speedup_rate_without_gen = speedup_count_without_gen / n
-        speedup_rate_with_gen = speedup_count_with_gen / n
+        validation_rate = validation_count / n
+        correctness_rate = correctness_count / n
+        speedup_rate_no_gen = speedup_count_no_gen / n
+        speedup_rate_gen = speedup_count_gen / n
         
-        # Calculate Speedup>1: average speedup only from examples with speedup > 1,
-        # correct invariant, and not UNKNOWN (matches _calculate_speedup_metrics)
-        speedups_gt1_without_gen = [
-            r["speedup_without_gen"] for r in valid_rows 
-            if (r.get("invariant_correctness_score", False) 
-                and r.get("final_decision") != "UNKNOWN"
-                and r.get("speedup_without_gen", 0) > 1)
-        ]
-        speedups_gt1_with_gen = [
-            r["speedup_with_gen"] for r in valid_rows 
-            if (r.get("invariant_correctness_score", False) 
-                and r.get("final_decision") != "UNKNOWN"
-                and r.get("speedup_with_gen", 0) > 1)
-        ]
+        # Calculate Speedup>1: average speedup only from examples with speedup > 1, correct invariants with conclusive final decision
+        speedups_gt1_no_gen = [r["speedup_no_gen"] for r in valid_rows if r["has_speedup_no_gen"]]
+        speedups_gt1_gen = [r["speedup_gen"] for r in valid_rows if r["has_speedup_gen"]]
         
-        speedup_gt1_without_gen = (
-            sum(speedups_gt1_without_gen) / len(speedups_gt1_without_gen) 
-            if speedups_gt1_without_gen else 1.0
-        )
-        speedup_gt1_with_gen = (
-            sum(speedups_gt1_with_gen) / len(speedups_gt1_with_gen) 
-            if speedups_gt1_with_gen else 1.0
-        )
+        speedup_gt1_no_gen = sum(speedups_gt1_no_gen) / len(speedups_gt1_no_gen) if speedups_gt1_no_gen else 1.0
+        speedup_gt1_gen = sum(speedups_gt1_gen) / len(speedups_gt1_gen) if speedups_gt1_gen else 1.0
         
         # Calculate Speedup_all: average speedup from all, but with speedup set to 1
         # for non-qualifying examples (matches _calculate_speedup_metrics)
-        def get_speedup_or_one(r: Dict, speedup_key: str) -> float:
+        def get_speedup_or_one(r: Dict, with_gen: bool) -> float:
             """Return speedup if qualifying, else 1.0."""
-            is_correct = r.get("invariant_correctness_score", False)
-            is_not_unknown = r.get("final_decision") != "UNKNOWN"
-            speedup = r.get(speedup_key, 0)
-            if is_correct and is_not_unknown and speedup > 1:
-                return speedup
-            return 1.0
-        
-        speedup_all_without_gen = sum(
-            get_speedup_or_one(r, "speedup_without_gen") for r in valid_rows
-        ) / n
-        speedup_all_with_gen = sum(
-            get_speedup_or_one(r, "speedup_with_gen") for r in valid_rows
-        ) / n
+            if with_gen:
+                return r["speedup_gen"] if r["has_speedup_gen"] and r["speedup_gen"] > 1 else 1.0
+            else:
+                return r["speedup_no_gen"] if r["has_speedup_no_gen"] and r["speedup_no_gen"] > 1 else 1.0
+
+        speedup_all_no_gen = sum(get_speedup_or_one(r, False) for r in valid_rows) / n
+        speedup_all_gen = sum(get_speedup_or_one(r, True) for r in valid_rows) / n
         
         return {
             # Counts
-            "syntactic_validation_count": syntactic_validation_count,
-            "invariant_correctness_count": invariant_correctness_count,
-            "speedup_count_without_gen": speedup_count_without_gen,
-            "speedup_count_with_gen": speedup_count_with_gen,
+            "validation_count": validation_count,
+            "correctness_count": correctness_count,
+            "speedup_count_no_gen": speedup_count_no_gen,
+            "speedup_count_gen": speedup_count_gen,
             # Rates
-            "syntactic_validation_rate": syntactic_validation_rate,
-            "invariant_correctness_rate": invariant_correctness_rate,
-            "speedup_rate_without_gen": speedup_rate_without_gen,
-            "speedup_rate_with_gen": speedup_rate_with_gen,
+            "validation_rate": validation_rate,
+            "correctness_rate": correctness_rate,
+            "speedup_rate_no_gen": speedup_rate_no_gen,
+            "speedup_rate_gen": speedup_rate_gen,
             # Speedup metrics
-            "speedup_gt1_without_gen": speedup_gt1_without_gen,
-            "speedup_gt1_with_gen": speedup_gt1_with_gen,
-            "speedup_all_without_gen": speedup_all_without_gen,
-            "speedup_all_with_gen": speedup_all_with_gen,
+            "speedup_gt1_no_gen": speedup_gt1_no_gen,
+            "speedup_gt1_gen": speedup_gt1_gen,
+            "speedup_all_no_gen": speedup_all_no_gen,
+            "speedup_all_gen": speedup_all_gen,
             # Total
             "total_examples": n,
         }
