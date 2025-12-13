@@ -1,106 +1,91 @@
-from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from src.utils.plain_verifier import run_uautomizer, VerifierCallReport
-from src.utils.program import Program
-from src.utils.predicate import Predicate
-from src.eval.validate import syntactic_validation
-import weave
-from dataclasses import dataclass
-from typing import Optional
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+import weave
+
+from src.eval.validate import syntactic_validation
+from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
+from src.utils.predicate import Predicate
+from src.utils.program import Program
 
 @dataclass
 class DecisionProcedureReport:
     final_decision: str = "UNKNOWN"
     decision_rule: str = ""
-    program: Optional[Program] = None
-    target_assert: Optional[Predicate] = None
-    target_property_file_path: Optional[Path] = None
-    candidate_invariant: Optional[Predicate] = None
-    syntactic_validation_result: bool = False
-    invariant_correctness_report: Optional[VerifierCallReport] = None
-    invariant_usefulness_report: Optional[VerifierCallReport] = None
-    total_time_taken: float = 0.0  # Includes model  generation time
-    verification_time_taken: float = 0.0  # Only verification time (without model generation)
-    model_generation_time: float = 0.0  # Model inference/token generation time
-    report_file_path: str = ""
+    # program: Optional[Program] = None
+    target: Optional[Predicate] = None
+    # target_property_file_path: Optional[Path] = None
+    candidate: Optional[Predicate] = None
+    is_valid: bool = False
+    correctness_report: Optional[VerifierCallReport] = None
+    usefulness_report: Optional[VerifierCallReport] = None
+    verification_time: float = 0.0  # Only verification time (without model latency)
+    model_latency: float = 0.0  # Model inference/token generation time
+    total_time: float = 0.0  # verification_time + model_latency
+    report_path: str = ""
 
     def to_dict(self) -> dict:
         """Convert the report to a dictionary for JSON serialization."""
         return {
             'final_decision': self.final_decision,
             'decision_rule': self.decision_rule,
-            'target_assert': {
-                'content': self.target_assert.content,
-                'line_number': self.target_assert.line_number
-            } if self.target_assert else None,
-            'target_property_file_path': str(self.target_property_file_path) if self.target_property_file_path else None,
-            'candidate_invariant': {
-                'content': self.candidate_invariant.content,
-                'line_number': self.candidate_invariant.line_number
-            } if self.candidate_invariant else None,
-            'syntactic_validation_result': self.syntactic_validation_result,
-            'invariant_correctness_report': self.invariant_correctness_report.to_dict() if self.invariant_correctness_report else None,
-            'invariant_usefulness_report': self.invariant_usefulness_report.to_dict() if self.invariant_usefulness_report else None,
-            'total_time_taken': self.total_time_taken,
-            'verification_time_taken': self.verification_time_taken,
-            'model_generation_time': self.model_generation_time,
-            'report_file_path': self.report_file_path
+            'target': {
+                'content': self.target.content,
+                'line_number': self.target.line_number
+            } if self.target else None,
+            'candidate': {
+                'content': self.candidate.content,
+                'line_number': self.candidate.line_number
+            } if self.candidate else None,
+            'is_valid': self.is_valid,
+            'correctness_report': self.correctness_report.to_dict() if self.correctness_report else None,
+            'usefulness_report': self.usefulness_report.to_dict() if self.usefulness_report else None,
+            'verification_time': self.verification_time,
+            'model_latency': self.model_latency,
+            'total_time': self.total_time,
+            'report_path': self.report_path
         }
-    def save_json(self, file_path: str):
-        with open(file_path, 'w') as f:
+    def save_json(self, report_path: str):
+        with open(report_path, 'w') as f:
             json.dump(self.to_dict(), f, indent=4)
     
     @classmethod
-    def from_json(cls, file_path: str):
-        with open(file_path, 'r') as f:
+    def from_json(cls, report_path: str):
+        with open(report_path, 'r') as f:
             data = json.load(f)
         return cls(**data)
 
 class DecisionProcedure:
-    def __init__(self, program: Program, target_property_file_path: Path, arch: str, code_dir: Path, uautomizer_path: Path, timeout_seconds: float = 600.0):
+    def __init__(self, verifier: UAutomizerVerifier, program: Program, code_dir: Path):
+        self.verifier = verifier
         self.program = program
-        self.target_property_file_path = target_property_file_path # "unreach-call.prp"
-        if self.program.assertions and len(self.program.assertions) > 0:
-            self.target_assert = program.assertions[0]  # TODO: Assuming first assert is the target
-        else:
-            self.target_assert = None   
         self.code_dir = code_dir
-        self.arch = arch
-        self.reports_dir = Path(code_dir).parent / "reports"
-        self.reports_dir.mkdir(parents=True, exist_ok=True)
-        self.timeout_seconds = max(0.1, float(timeout_seconds))
-        self.uautomizer_path = uautomizer_path
 
-    def run_verifier(self, program_str: str, kind: str):
+    def run_verifier(self, program_str: str, kind: str) -> VerifierCallReport:
         program_path = self.code_dir / f"code_for_{kind}.c"
         with open(program_path, 'w') as out_file:
             out_file.write(program_str)
-        verifier_report: VerifierCallReport = run_uautomizer(
-            program_path=program_path, 
-            property_file_path=self.target_property_file_path,
-            reports_dir=self.reports_dir,
-            arch=self.arch,
-            timeout_seconds=self.timeout_seconds,
-            uautomizer_path=self.uautomizer_path
+        verifier_report: VerifierCallReport = self.verifier.verify(
+            program_path=program_path,
+            reports_dir=self.reports_dir
         )
-        # print(f"Verifier report: {verifier_report}")
         return verifier_report
-    
-    def decide(self, candidate_invariant: Predicate, report: DecisionProcedureReport) -> DecisionProcedureReport:
 
-        program_for_correctness = self.program.get_program_with_assertion(predicate=candidate_invariant, 
-                                                     assumptions=[],
-                                                     assertion_points={},
-                                                     forGPT=False,
-                                                     dump=False)
-
-        program_for_usefullness = self.program.get_program_with_assertion(predicate=self.target_assert,
-                                                                          assumptions=[candidate_invariant],
+    def decide(self, candidate: Predicate, report: DecisionProcedureReport) -> DecisionProcedureReport:
+        program_for_correctness = self.program.get_program_with_assertion(predicate=candidate, 
+                                                                          assumptions=[],
                                                                           assertion_points={},
                                                                           forGPT=False,
                                                                           dump=False)
-        
+
+        program_for_usefullness = self.program.get_program_with_assertion(predicate=self.target,
+                                                                          assumptions=[candidate],
+                                                                          assertion_points={},
+                                                                          forGPT=False,
+                                                                          dump=False)
         # Parallel evaluation: run both verifier queries concurrently
         # da = V(P, Ø, q): Check if q is an invariant
         # db = V(P, {q}, p*): Check if target property holds assuming q is true
@@ -180,34 +165,32 @@ class DecisionProcedure:
         # Use 0 if correctness was cancelled (short-circuited)
         correctness_time = invariant_correctness_report.time_taken if invariant_correctness_report else 0.0
         usefulness_time = invariant_usefulness_report.time_taken if invariant_usefulness_report else 0.0
-        verification_time_taken = max(correctness_time, usefulness_time)
+        verification_time = max(correctness_time, usefulness_time)
         
         # Update the report with decision results (keep all other fields from the initial report)
         report.final_decision = final_decision
         report.decision_rule = decision_rule
-        report.invariant_correctness_report = invariant_correctness_report
-        report.invariant_usefulness_report = invariant_usefulness_report
-        report.verification_time_taken = verification_time_taken
-        report.total_time_taken = verification_time_taken + report.model_generation_time
+        report.correctness_report = invariant_correctness_report
+        report.usefulness_report = invariant_usefulness_report
+        report.verification_time = verification_time
+        report.total_time = verification_time + report.model_latency # assumes model_latency is set as input
         
         return report
+
     @weave.op()
-    def run(self, candidate_invariant: Predicate, model_gen_time: float) -> DecisionProcedureReport:
-        is_valid = syntactic_validation(candidate_invariant.content)
+    def run(self, candidate: Predicate, model_latency: float) -> DecisionProcedureReport:
+        is_valid = syntactic_validation(candidate.content)
         final_report = DecisionProcedureReport(program=self.program,
-                                               target_assert=self.target_assert, 
-                                               target_property_file_path=self.target_property_file_path,
-                                               candidate_invariant=candidate_invariant,
-                                               syntactic_validation_result=is_valid,
-                                               model_generation_time=model_gen_time)
-        # is_logicaly_equivalent = check_semantic_equivalence(candidate_invariant.content, self.target_assert.content)
-        # print(f"The candidate invariant is valid: {is_valid}")
-        # print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
-        if is_valid: # and not is_logicaly_equivalent:
-           final_report = self.decide(candidate_invariant, final_report)
+                                               target=self.target, 
+                                            #    target_property_file_path=self.target_property_file_path,
+                                               candidate=candidate,
+                                               is_valid=is_valid,
+                                               model_latency=model_latency)
+        if is_valid:
+           final_report = self.decide(candidate, final_report)
+           final_report.final_decision = "INVALID"
         
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"
         final_report.save_json(report_file_path)
-        # print(f"Decision report saved to:\n\t {str(report_file_path)}")
         return final_report
