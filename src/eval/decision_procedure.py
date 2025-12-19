@@ -26,6 +26,8 @@ class DecisionProcedureReport:
     model_latency: float = 0.0  # Model inference/token generation time
     total_time: float = 0.0  # verification_time + model_latency
     report_path: str = ""
+    program_for_correctness: Optional[str] = None
+    program_for_usefulness: Optional[str] = None
 
     def to_dict(self) -> dict:
         """Convert the report to a dictionary for JSON serialization."""

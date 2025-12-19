@@ -11,7 +11,7 @@ import weave
 
 import re
 
-from src.eval.config import LOCATION_LABELS, EvalConfig
+from src.eval.model import LOCATION_LABELS
 from src.eval.decision_procedure import DecisionProcedure
 from src.utils.predicate import Predicate
 from src.utils.program import Program
@@ -54,13 +54,13 @@ class InvariantScorer(weave.Scorer):
         config: Evaluation configuration.
         collector: Optional ResultCollector to accumulate results for plotting.
     """
-    config: EvalConfig
-    collector: Optional[ResultCollector] = None
     verifier: Optional[UAutomizerVerifier] = None
+    collector: Optional[ResultCollector] = None
+    baseline_is_timeout: bool
 
-    def model_post_init(self, __context):
-        """Initialize verifier after Pydantic model creation."""
-        object.__setattr__(self, 'verifier', UAutomizerVerifier(config=self.config.verifier_config))
+    # def model_post_init(self, __context):
+    #     """Initialize verifier after Pydantic model creation."""
+    #     object.__setattr__(self, 'baseline_is_timeout', self.baseline_is_timeout)
 
     def _parse_predicate(self, answer: str) -> tuple[str, str]:
         """
@@ -161,9 +161,8 @@ class InvariantScorer(weave.Scorer):
         )
         
         # Determine timeout based on configuration
-        timeout = baseline_timing if self.config.baseline_is_timeout else self.verifier.config.timeout_seconds
-        # print(f"Timeout: {timeout}")
-        # Create temp directory for code files
+        timeout = baseline_timing if self.baseline_is_timeout else self.verifier.timeout_seconds
+
         with tempfile.TemporaryDirectory() as temp_dir:
             code_dir = Path(temp_dir)
             decision_procedure = DecisionProcedure(
@@ -174,10 +173,13 @@ class InvariantScorer(weave.Scorer):
             )
             decision_procedure_report = decision_procedure.run(
                 candidate=predicate,
-                model_latency=output["model_latency"]
+                model_latency=output.get("model_latency", 0.0)
             )
 
-        correctness_score = decision_procedure_report.correctness_report.decision == "TRUE" if decision_procedure_report.correctness_report.decision else False
+        correctness_score = (
+            decision_procedure_report.correctness_report is not None 
+            and decision_procedure_report.correctness_report.decision == "TRUE"
+        )
         speedup_no_gen = 0.0
         speedup_gen = 0.0
         # Calculate speedup (only meaningful if we have a conclusive result)
@@ -204,6 +206,8 @@ class InvariantScorer(weave.Scorer):
             # Code for click-to-view in plot
             "program_for_usefulness": getattr(decision_procedure_report, 'program_for_usefulness', ''),
             "usefulness_report": decision_procedure_report.usefulness_report.to_dict() if decision_procedure_report.usefulness_report else None,
+            "program_for_correctness": getattr(decision_procedure_report, 'program_for_correctness', ''),
+            "correctness_report": decision_procedure_report.correctness_report.to_dict() if decision_procedure_report.correctness_report else None,
         }
         
         # Collect result for plotting if collector is provided
@@ -243,8 +247,8 @@ class InvariantScorer(weave.Scorer):
         speedup_rate_gen = speedup_count_gen / n
         
         # Calculate Speedup>1: average speedup only from examples with speedup > 1, correct invariants with conclusive final decision
-        speedups_gt1_no_gen = [r["speedup_no_gen"] for r in valid_rows if r["has_speedup_no_gen"]]
-        speedups_gt1_gen = [r["speedup_gen"] for r in valid_rows if r["has_speedup_gen"]]
+        speedups_gt1_no_gen = [r["speedup_no_gen"] for r in valid_rows if r.get("has_speedup_no_gen", False)]
+        speedups_gt1_gen = [r["speedup_gen"] for r in valid_rows if r.get("has_speedup_gen", False)]
         
         speedup_gt1_no_gen = sum(speedups_gt1_no_gen) / len(speedups_gt1_no_gen) if speedups_gt1_no_gen else 1.0
         speedup_gt1_gen = sum(speedups_gt1_gen) / len(speedups_gt1_gen) if speedups_gt1_gen else 1.0
@@ -254,9 +258,9 @@ class InvariantScorer(weave.Scorer):
         def get_speedup_or_one(r: Dict, with_gen: bool) -> float:
             """Return speedup if qualifying, else 1.0."""
             if with_gen:
-                return r["speedup_gen"] if r["has_speedup_gen"] and r["speedup_gen"] > 1 else 1.0
+                return r.get("speedup_gen", 0) if r.get("has_speedup_gen", False) and r.get("speedup_gen", 0) > 1 else 1.0
             else:
-                return r["speedup_no_gen"] if r["has_speedup_no_gen"] and r["speedup_no_gen"] > 1 else 1.0
+                return r.get("speedup_no_gen", 0) if r.get("has_speedup_no_gen", False) and r.get("speedup_no_gen", 0) > 1 else 1.0
 
         speedup_all_no_gen = sum(get_speedup_or_one(r, False) for r in valid_rows) / n
         speedup_all_gen = sum(get_speedup_or_one(r, True) for r in valid_rows) / n

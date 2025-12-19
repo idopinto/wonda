@@ -20,9 +20,6 @@ class Program:
     def __init__(self, lines: List[str], replacement: Dict[str, str]):
         self.lines: List[str] = []
         
-        # lines_plus_patch = PATCH_LINES + lines
-        # for i, line in enumerate(lines_plus_patch):
-        #     print(f"{i}: {line}")
         self.assertions: List[Predicate] = []  # The assertion to add after the corresponding line number
         self.lemmas: List[Predicate] = []  # The lemmas to add after the corresponding line number
         self.assertion_points: Dict[
@@ -202,27 +199,6 @@ class Program:
         else:
             print(f"Deciding assertion point done: picked line {closest_line}.")
         return closest_line, self.assertion_points[closest_line]
-
-    # def dump(self):
-    #     print("\nDumping program...")
-    #     print("\nProgram without assertion:")
-    #     for i, line in enumerate(self.lines):
-    #         print(f"\t{i}: {line} // In loop: {self.in_loop[i]}, unclosed bracket: {self.unclosed_brackets[i]}")
-    #     print("\nAssertion:")
-    #     for assertion in self.assertions:
-    #         print(f"\tassert {assertion.content} after line {assertion.line_number}")
-    #     print("\nLemmas:")
-    #     for predicate in self.lemmas:
-    #         print(f"\tassume {predicate.content} after line {predicate.line_number}")
-    #     print("\nReplacements for GPT:")
-    #     for before, after in self.replacement_for_GPT.items():
-    #         print(f"\t{before} => {after}")
-
-    #     print("\nPotential assertion points:")
-    #     for line_number, attributes in self.assertion_points.items():
-    #         print(f"After line {line_number}: {', '.join(map(lambda x: x.name, attributes))}")
-
-    #     print("\nDumping program - done\n")
         
     def __repr__(self):
         lines = []
@@ -281,3 +257,103 @@ class Program:
         
         lines.append("\n" + "-" * 80)
         return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    from src.utils.program_normalizer import ProgramNormalizer
+
+    code = """
+extern void abort(void);
+#include <assert.h>
+void reach_error() { assert(0); }
+
+#define WHITE 0
+#define BLUE 1
+
+typedef struct TSLL {
+    struct TSLL *next;
+    struct TSLL *prev;
+    int data;
+} SLL;
+
+int main() {
+    // create the head
+    SLL *head = malloc(sizeof(SLL));
+    head->next = NULL;
+    head->prev = NULL;
+    head->data = WHITE;
+
+    SLL *x = head;
+
+    // create an arbitrary white list
+    while (__VERIFIER_nondet_int()) {
+        // create a node
+        x->next = malloc(sizeof(SLL));
+        x->next->prev = x;
+        x = x->next;
+        x->data = WHITE;
+        x->next = NULL;
+    }
+
+    // insert a blue guy
+    if (__VERIFIER_nondet_int()) { // the blue guy will be the head
+        x = malloc(sizeof(SLL));
+        x->data = BLUE;
+        x->next = head;
+        x->prev = NULL;
+        head = x;
+    } else {
+        // choose a predecessor of the blue guy
+        x = head;
+        while (x->next != NULL) {
+            if (__VERIFIER_nondet_int()) {
+                break;
+            }
+            x = x->next;
+        }
+
+        // insert the blue guy
+        SLL *y = x->next;
+        x->next = malloc(sizeof(SLL));
+        x->data = BLUE;
+        x->next = y;
+        if (y != NULL) {
+            x->prev = y->prev;
+            y->prev = x;
+        }
+    }
+
+    // check the invariant
+    x = head;
+
+    // look for the first blue guy
+    while (x->data != BLUE) {
+        x = x->next; // fails if there is no blue guy
+    }
+
+    // look for another blue guy
+    x = x->next;
+    while (x) {
+        if (x->data == BLUE) {
+            __VERIFIER_assert(0);
+        }
+        x = x->next;
+    }
+
+    // destroy the list
+    x = head;
+    while (x != NULL) {
+        head = x;
+        x = x->next;
+        free(head);
+    }
+
+    return 0;
+}"""
+    normalizer = ProgramNormalizer(code=code, rewrite=True)
+    print(normalizer.new_code, )
+    program = Program(normalizer.lines_to_verify, normalizer.replacement)
+    print(program)
+    # labeled, name_to_line = _label_assertion_points(program.assertion_points, only_loop_beginnings=True)
+    # print(labeled)
+    # print(name_to_line)

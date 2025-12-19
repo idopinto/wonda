@@ -1,7 +1,7 @@
 from typing import Dict
 import re
 from pathlib import Path
-from configs import global_configurations as GC
+from configs import global_config as GC
 import tempfile
 import os
 import subprocess
@@ -267,30 +267,6 @@ class ProgramNormalizer:
             if tmp_file.exists():
                 tmp_file.unlink()
 
-    # def remove_comments(self, with_gcc: bool = True) -> str:
-    #     """ Remove C comments using gcc preprocessor and filter output."""
-    #     if with_gcc:
-    #         self.clang_format()
-    #         tmp_file = Path("tmp.c")
-    #         tmp_file.write_text(self.new_code)
-    #         # Remove comments using gcc preprocessor
-    #         command = "gcc -fpreprocessed -dD -E tmp.c"
-    #         output, err = run_subprocess_and_get_output(command)
-    #         tmp_file.unlink()
-    #         self.new_code = output
-
-    #     lines = self.new_code.split("\n")
-    #     new_lines = []
-    #     for line in lines:
-    #         if line.strip()[:2] == "//":
-    #             continue
-    #         elif line.strip()[:1] == "#":
-    #             continue
-    #         else:
-    #             new_lines.append(line)
-    #     self.new_code = "\n".join(new_lines)
-    #     return self.new_code
-
     def replace_reach_error_with_assertion(self):
         """Replace reach_error() calls with assert(!condition) statements."""
         c_code = self.new_code
@@ -320,3 +296,96 @@ class ProgramNormalizer:
             c_code = c_code[:assertion_start - 3] + condition + c_code[block_end + 1:]
 
         self.new_code = c_code
+
+
+if __name__ == "__main__":
+    code = """
+extern void abort(void);
+#include <assert.h>
+void reach_error() { assert(0); }
+
+#define WHITE 0
+#define BLUE 1
+
+typedef struct TSLL {
+    struct TSLL *next;
+    struct TSLL *prev;
+    int data;
+} SLL;
+
+int main() {
+    // create the head
+    SLL *head = malloc(sizeof(SLL));
+    head->next = NULL;
+    head->prev = NULL;
+    head->data = WHITE;
+
+    SLL *x = head;
+
+    // create an arbitrary white list
+    while (__VERIFIER_nondet_int()) {
+        // create a node
+        x->next = malloc(sizeof(SLL));
+        x->next->prev = x;
+        x = x->next;
+        x->data = WHITE;
+        x->next = NULL;
+    }
+
+    // insert a blue guy
+    if (__VERIFIER_nondet_int()) { // the blue guy will be the head
+        x = malloc(sizeof(SLL));
+        x->data = BLUE;
+        x->next = head;
+        x->prev = NULL;
+        head = x;
+    } else {
+        // choose a predecessor of the blue guy
+        x = head;
+        while (x->next != NULL) {
+            if (__VERIFIER_nondet_int()) {
+                break;
+            }
+            x = x->next;
+        }
+
+        // insert the blue guy
+        SLL *y = x->next;
+        x->next = malloc(sizeof(SLL));
+        x->data = BLUE;
+        x->next = y;
+        if (y != NULL) {
+            x->prev = y->prev;
+            y->prev = x;
+        }
+    }
+
+    // check the invariant
+    x = head;
+
+    // look for the first blue guy
+    while (x->data != BLUE) {
+        x = x->next; // fails if there is no blue guy
+    }
+
+    // look for another blue guy
+    x = x->next;
+    while (x) {
+        if (x->data == BLUE) {
+            __VERIFIER_assert(0);
+        }
+        x = x->next;
+    }
+
+    // destroy the list
+    x = head;
+    while (x != NULL) {
+        head = x;
+        x = x->next;
+        free(head);
+    }
+
+    return 0;
+}"""
+    normalizer = ProgramNormalizer(code=code)
+    print(normalizer.new_code)

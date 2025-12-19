@@ -2,28 +2,32 @@
 Main evaluation script for loop invariant generation.
 
 This module orchestrates the evaluation pipeline:
-1. Load configuration and model
-2. Load and preprocess dataset
-3. Run evaluation with Weave
-4. Generate and upload visualization
+1. Load configuration via Hydra (../../configs/eval/config.yaml)
+2. Initialize Weave for experiment tracking
+3. Load and preprocess the evaluation dataset 
+4. Load the model (base or fine-tuned with LoRA)
+5. Setup prompts and create the InvariantGeneratorModel
+6. Run evaluation using Weave's Evaluation framework with UAutomizer verification
+7. Collect results and generate visualization plots - only if there are results to plot
+8. Optionally upload plots to Weights & Biases - only if the user wants to upload them
 """
-import argparse
 import asyncio
 import logging
-import os
 import time
 
 import weave
 from dotenv import load_dotenv
 from weave import Evaluation
+import hydra
+from omegaconf import DictConfig, OmegaConf
 
-from src.eval.config import get_default_config
+import configs.global_config as GC
 from src.preprocess.preprocess_eval_data import get_evaluation_dataset, preprocess_example
-from src.eval.model import InvariantGeneratorModel, load_model
+from src.eval.model import InvariantGeneratorModel
 from src.eval.plot import plot_verification_vs_baseline
 from src.eval.scorer import InvariantScorer, ResultCollector
 from src.eval.wandb_utils import upload_plot_to_wandb
-import configs.global_configurations as GC
+from src.verifiers.uautomizer import UAutomizerVerifier
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -32,144 +36,108 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configure PyTorch memory allocation
+import os
 os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
 
 # Load environment variables
 load_dotenv()
 
-def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Evaluate models on InvBench dataset"
-    )
-    parser.add_argument(
-        "--split",
-        type=str,
-        default="hard",
-        choices=["easy", "hard"],
-        help="Data split"
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=-1,
-        help="Limit number of tasks (default: -1 for all)"
-    )
-    parser.add_argument(
-        "--prefix",
-        type=str,
-        default="",
-        help="Prefix for dataset files (default: empty)"
-    )
-    parser.add_argument(
-        "--skip_wandb",
-        action="store_true",
-        help="Skip uploading plot to W&B"
-    )
-    parser.add_argument(
-        "--eval-finetuned-model",
-        action="store_true",
-        help="Evaluate SFT model. If not provided, evaluate base model."
-    )
-    return parser.parse_args()
+def setup_prompts(prompts_config: dict) -> tuple[weave.StringPrompt, weave.StringPrompt]:
+    """
+    Setup prompts based on configuration.
+    
+    Args:
+        prompts_config: Dictionary containing prompts settings.
+    """
+    return weave.StringPrompt(prompts_config["default_system_prompt"]), weave.StringPrompt(prompts_config["default_user_prompt_template"])
 
-def main():
+
+def get_run_name(cfg: DictConfig) -> str:
+    """Get run name for evaluation."""
+    if cfg.model.eval_finetuned_model:
+        return f"eval-{cfg.model.finetuned_model_id.split('/')[-1]}-{cfg.model.reasoning_effort}-{cfg.dataset.split}"
+    else:
+        return f"eval-{cfg.model.base_model_name.split('/')[-1]}-{cfg.model.reasoning_effort}-{cfg.dataset.split}"
+
+def get_model_display_name(cfg: DictConfig) -> str:
+    """Get display name for the model including reasoning effort."""
+    if cfg.model.eval_finetuned_model:
+        return f"{cfg.model.finetuned_model_id.split('/')[-1]}-{cfg.model.reasoning_effort}"
+    else:
+        return f"{cfg.model.base_model_name.split('/')[-1]}-{cfg.model.reasoning_effort}"
+
+@hydra.main(version_base=None, config_path="../../configs/eval", config_name="config")
+def main(cfg: DictConfig):
     """Main evaluation entry point."""
-    args = parse_args()
-    logger.info(f"args: {args}")
-    config = get_default_config()
-    
-    # Get derived names from config
-    config.eval_finetuned_model = args.eval_finetuned_model
-    run_name = config.get_run_name(args.split)
-
-    logger.info(f"dataset_name: {config.dataset_name}")
-    logger.info(f"project_name: {config.project_name}")
+    print("="* 100)
+    print(OmegaConf.to_yaml(cfg))
+    print("="* 100)
+    run_name = get_run_name(cfg)
+    model_display_name = get_model_display_name(cfg)
     logger.info(f"run_name: {run_name}")
-
-    logger.info(f"config: {config}")
-
-    # Initialize Weave
-    weave.init(f"{config.weave_team}/{config.project_name}")
-    
-    # Load dataset
-    logger.info(f"Loading dataset: {config.dataset_name}")
+    logger.info(f"model_display_name: {model_display_name}")
+    weave.init(f"{cfg.weave.entity}/{cfg.weave.project_name}")
     dataset = get_evaluation_dataset(
-        dataset_name=config.dataset_name,
-        limit=args.limit,
-        prefix=args.prefix,
-        split=args.split
+        dataset_name=cfg.dataset.name,
+        limit=cfg.dataset.limit,
+        prefix=cfg.dataset.prefix,
+        split=cfg.dataset.split
     )
-    logger.info(f"Loaded {len(dataset)} examples")
-    
-    # Load model
-    tokenizer, model = load_model(config)
-    logger.info(f"Loaded model: {config.base_model_name}")
-    # # Create invariant generator
+    logger.info(f"Loaded {len(dataset)} examples")    
+    system_prompt, user_prompt_template = setup_prompts(cfg.prompts)
     invariant_generator = InvariantGeneratorModel(
-        tokenizer=tokenizer,
-        model=model,
-        system_prompt=config.system_prompt,
-        user_prompt_template=config.user_prompt_template,
-        sampling_params=config.sampling_params.to_dict(),
-        reasoning_effort=config.reasoning_effort
+        client=cfg.model.client,
+        model_cfg=cfg.model,
+        system_prompt=system_prompt,
+        user_prompt_template=user_prompt_template,
+        sampling_params=cfg.model.sampling_params,
+        reasoning_effort=cfg.model.reasoning_effort,
+        only_loop_beginnings=cfg.prompts.only_loop_beginnings
     )
-    # print(invariant_generator)    
-    # Create result collector for plotting
-    result_collector = ResultCollector()
-    
-    # # Create scorer with configuration and collector
-    scorer = InvariantScorer(config=config, collector=result_collector)
-    
-    # Create evaluation
-    evaluation = Evaluation(
-        dataset=dataset,
-        scorers=[scorer],
-        preprocess_model_input=preprocess_example
-    )
+    result_collector = ResultCollector()    
+    verifier = UAutomizerVerifier(uautomizer_path=GC.UAUTOMIZER_PATHS[cfg.scorer.verifier.version],
+                                  property_file_path=GC.PROPERTIES_DIR / cfg.scorer.verifier.property,
+                                  arch=cfg.scorer.verifier.arch,
+                                  timeout_seconds=cfg.scorer.verifier.timeout_seconds,
+                                  version=cfg.scorer.verifier.version)
+    scorer = InvariantScorer(verifier=verifier, collector=result_collector, baseline_is_timeout=cfg.scorer.baseline_is_timeout)
+    evaluation = Evaluation(dataset=dataset,scorers=[scorer],preprocess_model_input=preprocess_example)
     
     # Run evaluation
     logger.info("Starting evaluation...")
-    asyncio.run(
-        evaluation.evaluate(
-            invariant_generator,
-            __weave={"display_name": run_name}
-        )
-    )
+    asyncio.run(evaluation.evaluate(invariant_generator,__weave={"display_name": run_name}))
     
     # Get collected results for plotting
     plot_results = result_collector.get_results()
     logger.info(f"Collected {len(plot_results)} results for plotting")
     
-    # Generate and upload plot
+    # # Generate and upload plot
     if len(plot_results) > 0:
         logger.info("Generating evaluation plot...")
-        plot_dir = GC.EXPERIMENTS_DIR / "evaluation_plots"
+        plot_dir = GC.EXPERIMENTS_DIR / f"eval_plots_{run_name}"
         plot_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = time.strftime('%Y%m%d_%H%M%S')
-        plot_path = plot_dir / f"eval_plot_{config.project_name}_{run_name}_{timestamp}.html"
+        plot_path = plot_dir / f"eval_plot_{cfg.weave.project_name}_{run_name}_{timestamp}.html"
         
         plot_verification_vs_baseline(
             results=plot_results,
-            model_name=config.get_model_display_name(),
-            baseline_name=f"UAutomizer{config.verifier_config.version}",
-            split_name=args.split,
+            model_name=model_display_name,
+            baseline_name=f"UAutomizer{cfg.scorer.verifier.version}",
+            split_name=cfg.dataset.split,
             plot_path=plot_path
         )
         logger.info(f"Plot saved to: {plot_path}")
         
         # Upload to W&B (optional)
-        if not args.skip_wandb:
+        if not cfg.weave.skip_wandb:
             upload_plot_to_wandb(
                 plot_path=plot_path,
-                project_name=config.project_name,
+                project_name=cfg.weave.project_name,
                 run_name=f"plot-{run_name}",
                 artifact_name=f"eval-plot-{run_name}",
-                entity=config.weave_team
+                entity=cfg.weave.entity
             )
-        else:
-            logger.info("Skipping W&B upload (--skip_wandb flag)")
     else:
         logger.warning("No results collected for plotting - skipping plot generation")
     

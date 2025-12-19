@@ -18,3 +18,7 @@ experiments
 examples
 wandb
 unsloth_compiled_cache
+slurm
+tests/timing_test_reports
+outputs
+trained_models

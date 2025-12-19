@@ -8,7 +8,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from configs import global_configurations as GC
+from configs import global_config as GC
 
 
 
@@ -61,8 +61,12 @@ def write_file(file_path: Path, content: str) -> None:
         f.write(content)
 
 class UAutomizerVerifier:
-    def __init__(self, config: GC.DefaultVerificationConfig = GC.DefaultVerificationConfig()):
-        self.config = config
+    def __init__(self, uautomizer_path: Path, property_file_path: Path, arch: str = '32bit', timeout_seconds: float = 600.0, version: str = '25'):
+        self.uautomizer_path = uautomizer_path
+        self.property_file_path = property_file_path
+        self.arch = arch
+        self.timeout_seconds = timeout_seconds
+        self.version = version
 
     def verify(self, program_path: Path, reports_dir: Path, timeout_seconds: float = None) -> VerifierCallReport:
         """
@@ -84,7 +88,7 @@ class UAutomizerVerifier:
         err_file_path = reports_dir / f"{program_path.stem}.err"
         
         # Validate required files exist
-        for path in [self.config.uautomizer_path, program_path, self.config.property_file_path]:
+        for path in [self.uautomizer_path, program_path, self.property_file_path]:
             if not path.exists():
                 err_msg = f"Required file not found: {path}"
                 return VerifierCallReport(reports_dir=str(reports_dir), decision="ERROR", decision_reason=err_msg)
@@ -92,9 +96,9 @@ class UAutomizerVerifier:
         # Build command
         command = [
             'python3',
-            str(self.config.uautomizer_path),
-            '--spec', str(self.config.property_file_path),
-            '--architecture', self.config.arch,
+            str(self.uautomizer_path),
+            '--spec', str(self.property_file_path),
+            '--architecture', self.arch,
             '--file', str(program_path),
             '--full-output',
             '--witness-dir', str(reports_dir),
@@ -103,7 +107,7 @@ class UAutomizerVerifier:
         
         # Setup environment with uautomizer directory in PATH for SMT solvers
         env = os.environ.copy()
-        env['PATH'] = str( self.config.uautomizer_path.parent) + os.pathsep + env.get('PATH', '')
+        env['PATH'] = str(self.uautomizer_path.parent) + os.pathsep + env.get('PATH', '')
         
         report = VerifierCallReport(reports_dir=str(reports_dir))
         temp_work_dir = Path(tempfile.mkdtemp(prefix="uautomizer_"))
@@ -113,7 +117,7 @@ class UAutomizerVerifier:
                 command,
                 capture_output=True,
                 text=True,
-                timeout=self.config.timeout_seconds if timeout_seconds is None else timeout_seconds,
+                timeout=self.timeout_seconds if timeout_seconds is None else timeout_seconds,
                 check=False,
                 env=env,
                 cwd=temp_work_dir
@@ -127,7 +131,7 @@ class UAutomizerVerifier:
 
         except subprocess.TimeoutExpired as e:
             report.decision = "TIMEOUT"
-            report.time_taken = self.config.timeout_seconds if timeout_seconds is None else timeout_seconds
+            report.time_taken = self.timeout_seconds if timeout_seconds is None else timeout_seconds
             stdout_content = e.stdout.decode('utf-8', errors='ignore') if isinstance(e.stdout, bytes) else (e.stdout or "")
             stderr_content = e.stderr.decode('utf-8', errors='ignore') if isinstance(e.stderr, bytes) else (e.stderr or "")
             write_file(log_file_path, stdout_content)
@@ -170,13 +174,20 @@ if __name__ == "__main__":
     program_path = GC.ROOT_DIR / args.program_dir / args.program_name
     reports_dir = GC.EXPERIMENTS_DIR / args.reports_dir / args.program_name
     reports_dir.mkdir(parents=True, exist_ok=True)
-    verifier_config = GC.DefaultVerificationConfig(version=args.uautomizer_version, arch=args.arch, timeout_seconds=args.timeout_seconds)
-    verifier = UAutomizerVerifier(config=verifier_config)
+    uautomizer_path = GC.UAUTOMIZER_PATHS[args.uautomizer_version]
+    property_file_path = GC.PROPERTIES_DIR / "unreach-call.prp"
+    verifier = UAutomizerVerifier(
+        uautomizer_path=uautomizer_path,
+        property_file_path=property_file_path,
+        arch=args.arch,
+        timeout_seconds=args.timeout_seconds,
+        version=args.uautomizer_version
+    )
     result = verifier.verify(program_path=program_path, reports_dir=reports_dir, timeout_seconds=args.timeout_seconds)
     print("\n --- Running UAutomizer Verification ---")
-    print(f"  VerifierConfig: {verifier.config}")
+    print(f"  UAutomizer: {uautomizer_path}")
     print(f"  Program: {program_path}")
-    print(f"  Timeout: {args.timeout_seconds if args.timeout_seconds is not None else verifier.config.timeout_seconds}s")
+    print(f"  Timeout: {args.timeout_seconds}s")
 
     print("\n--- Verification Complete ---")
     result_dict = result.to_dict()
@@ -192,3 +203,4 @@ if __name__ == "__main__":
 
 
 # uv run -m src.verifiers.uautomizer
+# uv run -m src.verifiers.uautomizer --program_name test.c

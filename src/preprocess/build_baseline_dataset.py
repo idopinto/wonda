@@ -16,7 +16,7 @@ from pycparser import c_parser
 from tqdm import tqdm
 
 from src.preprocess.sft_tasks import task_generate_all_invariants, task_generate_one_invariant
-from configs import global_configurations as GC
+from configs import global_config as GC
 from src.verifiers.uautomizer import UAutomizerVerifier
 from src.utils.program import Program   
 from src.utils.program_normalizer import ProgramNormalizer
@@ -391,8 +391,13 @@ def main():
     logger.info(f"Results path: {results_path}")
 
     property_path = GC.PROPERTIES_DIR / args.property
-    verifier_config = GC.DefaultVerificationConfig(version=args.uautomizer_version, arch=args.arch, timeout_seconds=args.timeout, property_file_path=property_path)
-    verifier = UAutomizerVerifier(config=verifier_config)
+    verifier = UAutomizerVerifier(
+        uautomizer_path=GC.UAUTOMIZER_PATHS[args.uautomizer_version],
+        property_file_path=property_path,
+        arch=args.arch,
+        timeout_seconds=args.timeout,
+        version=args.uautomizer_version
+    )
     run_uautomizer_as_baseline(config=baseline_config, verifier=verifier, results_path=results_path)
     
     if args.dataset_type == "eval":

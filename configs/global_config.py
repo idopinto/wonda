@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 # Single source of truth for project root
@@ -24,14 +23,3 @@ UAUTOMIZER_PATHS = {
 }
 #  The Ultimate.py scripts automatically detect and use the correct Java version based on the UAutomizer directory.
 #  No manual switching is required.
-
-@dataclass
-class DefaultVerificationConfig:
-    """Default verification configuration. This is shared across all verification calls by this instance. """
-    version: str = '25'
-    property_file_path: Path = PROPERTIES_DIR / "unreach-call.prp"
-    arch: str = '32bit'
-    timeout_seconds: float = 600.0
-
-    def __post_init__(self):
-        self.uautomizer_path = UAUTOMIZER_PATHS[self.version]

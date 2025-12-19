@@ -48,3 +48,10 @@ def syntactic_validation(content: str) -> bool:
         # Log the error but return False for safety
         print(f"Warning: Failed to parse predicate '{content}': {e}")
         return False
+
+
+if __name__ == "__main__":
+    content = "2*yx - 2*xy - X + 2Y - v + 2*y == 0"
+    content2 ="2*y*x - 2*x*y - X + 2*Y - v + 2*y == 0"
+    print(syntactic_validation(content))
+    print(syntactic_validation(content2))

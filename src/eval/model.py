@@ -5,7 +5,7 @@ Contains the InvariantGeneratorModel class and model loading utilities.
 """
 import re
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import torch
 import weave
@@ -17,40 +17,9 @@ from transformers import (
     PreTrainedTokenizerBase,
 )
 
-from src.eval.config import LOCATION_LABELS, EvalConfig
 from src.utils.program import Program
 
-
-def load_model(config: EvalConfig) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
-    """
-    Load a trained model and tokenizer based on configuration.
-    
-    Args:
-        config: Evaluation configuration containing model settings.
-        
-    Returns:
-        Tuple of (tokenizer, model) ready for inference.
-    """
-    tokenizer = AutoTokenizer.from_pretrained(config.base_model_name, token=True)
-    model_kwargs = dict(
-        attn_implementation="eager",
-        dtype=torch.bfloat16,
-        use_cache=True,
-        device_map="auto"
-    )
-    model = AutoModelForCausalLM.from_pretrained(
-        config.base_model_name,
-        **model_kwargs,
-        token=True
-    )
-
-    if config.eval_finetuned_model:
-        model = PeftModel.from_pretrained(model, config.peft_model_id, token=True)
-        model = model.merge_and_unload()
-    
-    model.eval()
-    return tokenizer, model
-
+LOCATION_LABELS = [chr(ord('A') + i) for i in range(26)]
 
 class InvariantGeneratorModel(weave.Model):
     """
@@ -59,12 +28,25 @@ class InvariantGeneratorModel(weave.Model):
     This model takes a C program with marked assertion points and generates
     candidate invariants that can accelerate traditional verifiers.
     """
+    client: str
+    model_cfg: dict
     system_prompt: weave.StringPrompt
     user_prompt_template: weave.StringPrompt
-    model: PreTrainedModel
-    tokenizer: PreTrainedTokenizerBase
     sampling_params: Dict
     reasoning_effort: str
+    only_loop_beginnings: bool = True  # If True, only mark lines at the beginning of loops
+    # Optional: only needed for HuggingFace client (use Any to avoid Pydantic validation issues)
+    model: Optional[Any] = None 
+    tokenizer: Optional[Any] = None
+
+    def model_post_init(self, __context):
+        """Initialize model after Pydantic model creation."""
+        if self.client == "hf":
+            self.tokenizer, self.model = self._load_hf_model(self.model_cfg)
+        elif self.client == "vllm":  # when h200 is available
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_cfg["base_model_name"], token=True)
+        else:
+            raise ValueError(f"Invalid client: {self.client}")
 
     @weave.op
     def predict(self, program: Program) -> Dict:
@@ -76,46 +58,12 @@ class InvariantGeneratorModel(weave.Model):
         Returns:
             Dict containing the generated invariant, timing info, and usage stats.
         """
-        assertion_points = program.assertion_points
-        labeled_points, _ = self._label_assertion_points(assertion_points)
-        formatted_program = self._format_program_with_labels(
-            program=program,
-            labeled_points=labeled_points
-        )
-        user_prompt = self.user_prompt_template.content.format(program=formatted_program)
-        messages = [
-            {"role": 'developer', "content": self.system_prompt.content},
-            {"role": "user", "content": user_prompt},
-        ]
-        input_ids = self.tokenizer.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            return_tensors="pt",
-            reasoning_effort=self.reasoning_effort,
-        ).to(self.model.device)
-        inference_start_time = time.perf_counter()
-        with torch.inference_mode():
-            output_ids = self.model.generate(input_ids, **self.sampling_params)
-            model_latency = time.perf_counter() - inference_start_time
-
-        raw_output = self.tokenizer.batch_decode(output_ids)[0]
-        parsed_output = self._parse_harmony_output(raw_output)
-        reasoning, answer = parsed_output["analysis"], parsed_output["final"]
-        usage = {
-            "prompt_tokens": input_ids.shape[1],
-            "reasoning_tokens": len(self.tokenizer.encode(reasoning)) if reasoning else 0,
-            "answer_tokens": len(self.tokenizer.encode(answer)) if answer else 0,
-            "completion_tokens": output_ids.shape[1] - input_ids.shape[1],
-            "total_tokens": input_ids.shape[1] + output_ids.shape[1] - input_ids.shape[1],
-        }
-        
-        return {
-            "raw_output": raw_output,
-            "reasoning": reasoning,
-            "answer": answer,
-            "model_latency": model_latency,
-            "usage": usage
-        }
+        if self.client == "vllm":
+            return self.predict_vllm(program)
+        elif self.client == "hf":
+            return self.predict_hf(program)
+        else:
+            raise ValueError(f"Invalid client: {self.client}")
 
     @weave.op
     def _parse_harmony_output(self, raw_output: str) -> Dict[str, Optional[str]]:
@@ -139,18 +87,31 @@ class InvariantGeneratorModel(weave.Model):
         final = final_match.group(1).strip() if final_match else None
         return {"analysis": analysis, "final": final}
 
-    def _label_assertion_points(self, assertion_points: dict) -> tuple[dict, dict]:
+    def _label_assertion_points(self, assertion_points: dict, only_loop_beginnings: bool = True) -> tuple[dict, dict]:
         """
         Label assertion points and create bidirectional mapping.
         
         Args:
             assertion_points: Dict mapping line numbers to assertion attributes.
+            only_loop_beginnings: If True, only label assertion points that are at the beginning of loops.
             
         Returns:
             Tuple of (labeled_points, name_to_line) dicts.
         """
+        from src.utils.program import AssertionPointAttributes
+        
         labeled, name_to_line = {}, {}
-        for i, line_num in enumerate(sorted(assertion_points.keys())):
+        
+        # Filter assertion points if only_loop_beginnings is True
+        if only_loop_beginnings:
+            filtered_points = {
+                line_num: attrs for line_num, attrs in assertion_points.items()
+                if AssertionPointAttributes.BeginningOfLoop in attrs
+            }
+        else:
+            filtered_points = assertion_points
+        
+        for i, line_num in enumerate(sorted(filtered_points.keys())):
             if i < len(LOCATION_LABELS):
                 label = LOCATION_LABELS[i]
                 labeled[line_num] = label
@@ -192,3 +153,157 @@ class InvariantGeneratorModel(weave.Model):
         
         return "\n".join(lines)
 
+    @weave.op
+    def predict_hf(self, program: Program) -> Dict:
+        """
+        Generate a candidate invariant for a given program using Hugging Face.
+        
+        Args:
+            program: The C program to analyze.
+        Returns:
+            Dict containing the generated invariant, timing info, and usage stats.
+        """
+        assertion_points = program.assertion_points
+        labeled_points, _ = self._label_assertion_points(assertion_points, only_loop_beginnings=self.only_loop_beginnings)
+        formatted_program = self._format_program_with_labels(
+            program=program,
+            labeled_points=labeled_points
+        )
+        user_prompt = self.user_prompt_template.content.format(program=formatted_program)
+        messages = [
+            {"role": 'developer', "content": self.system_prompt.content},
+            {"role": "user", "content": user_prompt},
+        ]
+        input_ids = self.tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt",
+            reasoning_effort=self.reasoning_effort,
+        ).to(self.model.device)
+        inference_start_time = time.perf_counter()
+        with torch.inference_mode():
+            output_ids = self.model.generate(input_ids, **self.sampling_params)
+            model_latency = time.perf_counter() - inference_start_time
+
+        raw_output = self.tokenizer.batch_decode(output_ids)[0]
+        parsed_output = self._parse_harmony_output(raw_output)
+        reasoning, answer = parsed_output["analysis"], parsed_output["final"]
+        usage = {
+            "prompt_tokens": input_ids.shape[1],
+            "reasoning_tokens": len(self.tokenizer.encode(reasoning)) if reasoning else 0,
+            "answer_tokens": len(self.tokenizer.encode(answer)) if answer else 0,
+            "completion_tokens": output_ids.shape[1] - input_ids.shape[1],
+            "total_tokens": input_ids.shape[1] + output_ids.shape[1] - input_ids.shape[1],
+        }
+        
+        return {
+            "raw_output": raw_output,
+            "reasoning": reasoning,
+            "answer": answer,
+            "model_latency": model_latency,
+            "usage": usage
+        }
+
+    @weave.op
+    def predict_vllm(self, program: Program) -> Dict:
+        """
+        Generate a candidate invariant for a given program using VLLM.
+        
+        Args:
+            program: The C program to analyze.
+        Returns:
+            Dict containing the generated invariant, timing info, and usage stats.
+        """
+        import openai
+        
+        # Get vLLM config from model_cfg
+        vllm_base_url = self.model_cfg.get("vllm_base_url", "http://localhost:8000/v1")
+        vllm_model = self.model_cfg.get("vllm_model", "gen_inv_adapter")
+        
+        assertion_points = program.assertion_points
+        labeled_points, _ = self._label_assertion_points(assertion_points, only_loop_beginnings=self.only_loop_beginnings)
+        formatted_program = self._format_program_with_labels(
+            program=program,
+            labeled_points=labeled_points
+        )
+        user_prompt = self.user_prompt_template.content.format(program=formatted_program)
+        messages = [
+            {"role": 'developer', "content": self.system_prompt.content},
+            {"role": "user", "content": user_prompt},
+        ]
+        
+        # Create vLLM client
+        client = openai.OpenAI(
+            base_url=vllm_base_url,
+            api_key="dummy"  # vLLM doesn't require API key by default
+        )
+        
+        # Make request to vLLM server
+        inference_start_time = time.perf_counter()
+        response = client.chat.completions.create(
+            model=vllm_model,
+            messages=messages,
+            max_tokens=self.sampling_params.get("max_new_tokens", 16384),
+            temperature=self.sampling_params.get("temperature", 1.0),
+            top_p=self.sampling_params.get("top_p", 1.0),
+            extra_body={
+                "include_reasoning": True,
+                "reasoning_effort": self.reasoning_effort,
+            },
+        )
+        model_latency = time.perf_counter() - inference_start_time
+        
+        # Extract response components
+        message = response.choices[0].message
+        reasoning = getattr(message, 'reasoning_content', None) or getattr(message, 'reasoning', '') or ''
+        answer = message.content or ''
+        
+        # Build raw output for compatibility (combine reasoning + answer)
+        # raw_output = f"<|channel|>analysis<|message|>{reasoning}<|end|>\n<|channel|>final<|message|>{answer}<|return|>"
+        
+        # Build usage dict compatible with regular predict
+        usage = {
+            "prompt_tokens": response.usage.prompt_tokens,
+            "reasoning_tokens": len(self.tokenizer.encode(reasoning)) if reasoning else 0,
+            "answer_tokens": len(self.tokenizer.encode(answer)) if answer else 0,
+            "completion_tokens": response.usage.completion_tokens,
+            "total_tokens": response.usage.total_tokens,
+        }
+        
+        return {
+            # "raw_output": raw_output,
+            "reasoning": reasoning,
+            "answer": answer,
+            "model_latency": model_latency,
+            "usage": usage
+        }
+    def _load_hf_model(self, model_cfg: dict) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
+        """
+        Load a trained model and tokenizer based on configuration.
+        
+        Args:
+            model_cfg: Dictionary containing model settings.
+            
+        Returns:
+            Tuple of (tokenizer, model) ready for inference.
+        """
+        tokenizer = AutoTokenizer.from_pretrained(model_cfg["base_model_name"], token=True)
+        model_kwargs = dict(
+            attn_implementation="eager",
+            dtype=torch.bfloat16,
+            use_cache=True,
+            device_map="auto"
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_cfg["base_model_name"],
+            **model_kwargs,
+            token=True
+        )
+
+        if model_cfg.get("eval_finetuned_model") and model_cfg.get("is_lora"):
+            print(f"Loading finetuned model from {model_cfg['finetuned_model_id']}")
+            model = PeftModel.from_pretrained(model, model_cfg["finetuned_model_id"], token=True)
+            model = model.merge_and_unload()
+            print("Merged and unloaded")
+        model.eval()
+        return tokenizer, model
