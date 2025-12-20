@@ -15,11 +15,7 @@ class Predicate:
     """
 
     content: str
-    line_number: Optional[int] = None
     marker_name: Optional[str] = None
 
     def __repr__(self):
-        return (
-            f"Predicate(content={self.content}, line_number={self.line_number}, "
-            f"marker_name={self.marker_name})"
-        )
+        return f"Predicate(content={self.content}, marker_name={self.marker_name})"
