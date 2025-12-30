@@ -4,7 +4,7 @@
 #SBATCH --error=slurm/eval_hf_%j.err
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=100G
+#SBATCH --mem=128G
 #SBATCH --gres=gpu:l40s:2
 
 # Script to run evaluation using HuggingFace client (loads model directly)
@@ -60,5 +60,5 @@ echo "End time: $(date)"
 echo "=========================================="
 
 
-# sbatch scripts/eval/eval_hf.sbatch dataset.split=hard dataset.limit -1
+# sbatch scripts/eval/eval_hf.sbatch dataset.split=hard dataset.limit=-1
 # sbatch scripts/eval/eval_hf.sbatch dataset.split=hard model.eval_finetuned_model=true

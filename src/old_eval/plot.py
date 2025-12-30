@@ -2,7 +2,6 @@
 Interactive evaluation plot generation for InvBench results.
 Generates Plotly HTML plots with toggleable UNKNOWN points and generation time inclusion.
 """
-
 import json
 from pathlib import Path
 from typing import List, Optional
@@ -12,83 +11,98 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
-def _normalize_result_row(r: dict) -> dict:
+def reindent_c_code(code: str, indent_size: int = 4) -> str:
     """
-    Normalize result dicts across old/new pipelines into a common schema expected by plotting.
-
-    - Old pipeline may store: invariant_usefulness_report
-    - New/AST pipeline may store: usefulness_report, candidate={content, marker_name}, predicate_marker_name
+    Re-indent C code based on brace counting.
+    
+    This is useful for displaying code that was processed with clang-format
+    using IndentWidth: 0, which removes all indentation.
+    
+    Args:
+        code: C code string to re-indent.
+        indent_size: Number of spaces per indentation level.
+        
+    Returns:
+        Re-indented C code string.
     """
-    rr = dict(r) if isinstance(r, dict) else {}
-
-    cand = rr.get("candidate")
-    if isinstance(cand, dict):
-        rr.setdefault("predicate_content", cand.get("content", ""))
-        rr.setdefault("predicate_marker_name", cand.get("marker_name", ""))
-
-    # Some results store marker directly
-    rr.setdefault(
-        "predicate_marker_name",
-        rr.get("marker_name", rr.get("predicate_marker_name", "")),
-    )
-
-    # Usefulness report key differences
-    if "invariant_usefulness_report" not in rr and "usefulness_report" in rr:
-        rr["invariant_usefulness_report"] = rr["usefulness_report"]
-
-    # Baseline timing key differences
-    if "baseline_timing" not in rr and "median_timing" in rr:
-        rr["baseline_timing"] = rr["median_timing"]
-
-    return rr
+    if not code or not code.strip():
+        return code
+    
+    lines = code.split('\n')
+    result = []
+    indent_level = 0
+    
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            result.append('')
+            continue
+        
+        # Count braces in this line
+        open_count = stripped.count('{')
+        close_count = stripped.count('}')
+        
+        # Determine indent for THIS line:
+        # If line starts with }, decrease indent first
+        line_indent = indent_level
+        if stripped.startswith('}'):
+            line_indent = max(0, indent_level - 1)
+        
+        # Apply indent and add to result
+        indented_line = ' ' * (line_indent * indent_size) + stripped
+        result.append(indented_line)
+        
+        # Calculate indent for NEXT line based on net brace change
+        # But handle the case where line starts with } specially
+        if stripped.startswith('}'):
+            # We already decreased for this line, now handle any { on same line
+            # Example: "} else {" - net change from indent_level should be 0
+            # We decreased by 1 for the }, now increase by open_count
+            indent_level = max(0, indent_level - 1 + open_count)
+        else:
+            # Normal case: add opens, subtract closes
+            net_change = open_count - close_count
+            indent_level = max(0, indent_level + net_change)
+    
+    return '\n'.join(result)
 
 
 def convert_weave_summary_to_plot_metrics(summary: dict) -> dict:
     """
     Convert Weave evaluation summary to plot metrics format.
-
+    
     Args:
         summary: Weave summary dict from InvariantScorer.summarize()
-
+        
     Returns:
         dict: Metrics in plot-compatible format
     """
     return {
         "metrics_without_gen": {
-            "% Correct Invariant": float(
-                np.round(summary.get("invariant_correctness_rate", 0) * 100, 2)
-            ),
-            "% Speedup": float(
-                np.round(summary.get("speedup_rate_without_gen", 0) * 100, 2)
-            ),
+            "% Correct Invariant": float(np.round(summary.get("invariant_correctness_rate", 0) * 100, 2)),
+            "% Speedup": float(np.round(summary.get("speedup_rate_without_gen", 0) * 100, 2)),
             "Speedup>1": float(np.round(summary.get("speedup_gt1_without_gen", 1), 2)),
-            "Speedup_all": float(
-                np.round(summary.get("speedup_all_without_gen", 1), 2)
-            ),
+            "Speedup_all": float(np.round(summary.get("speedup_all_without_gen", 1), 2)),
         },
         "metrics_with_gen": {
-            "% Correct Invariant": float(
-                np.round(summary.get("invariant_correctness_rate", 0) * 100, 2)
-            ),
-            "% Speedup": float(
-                np.round(summary.get("speedup_rate_with_gen", 0) * 100, 2)
-            ),
+            "% Correct Invariant": float(np.round(summary.get("invariant_correctness_rate", 0) * 100, 2)),
+            "% Speedup": float(np.round(summary.get("speedup_rate_with_gen", 0) * 100, 2)),
             "Speedup>1": float(np.round(summary.get("speedup_gt1_with_gen", 1), 2)),
             "Speedup_all": float(np.round(summary.get("speedup_all_with_gen", 1), 2)),
-        },
+        }
     }
 
 
 def calculate_metrics_from_results(results: List[dict]) -> dict:
     """
     Calculate metrics directly from evaluation results list.
-
+    
     This computes the same metrics as InvariantScorer.summarize() but from
     raw results, useful when Weave summary is not available.
-
+    
     Args:
         results: List of evaluation result dicts
-
+        
     Returns:
         dict: Metrics in plot-compatible format
     """
@@ -106,63 +120,45 @@ def calculate_metrics_from_results(results: List[dict]) -> dict:
                 "% Speedup": 0.0,
                 "Speedup>1": 1.0,
                 "Speedup_all": 1.0,
-            },
+            }
         }
-
+    
     # Calculate invariant correctness rate
-    invariant_correctness_rate = (
-        sum(1 for r in results if r.get("correctness_score", False)) / n
-    )
-
+    invariant_correctness_rate = sum(
+        1 for r in results if r.get("correctness_score", False)
+    ) / n
+    
     # Calculate speedup rates
-    speedup_rate_without_gen = (
-        sum(1 for r in results if r.get("has_speedup_no_gen", False)) / n
-    )
-    speedup_rate_with_gen = (
-        sum(1 for r in results if r.get("has_speedup_gen", False)) / n
-    )
-
+    speedup_rate_without_gen = sum(
+        1 for r in results if r.get("has_speedup_no_gen", False)
+    ) / n
+    speedup_rate_with_gen = sum(
+        1 for r in results if r.get("has_speedup_gen", False)
+    ) / n
+    
     # Helper to check if result qualifies for speedup
     def qualifies(r: dict) -> bool:
-        return r.get("correctness_score", False) and r.get("final_decision") in [
-            "TRUE",
-            "FALSE",
-        ]
-
+        return (r.get("correctness_score", False) 
+                and r.get("final_decision") in ["TRUE", "FALSE"])
+    
     # Calculate Speedup>1 (average of only qualifying with speedup > 1)
-    speedups_gt1_without = [
-        r["speedup_no_gen"]
-        for r in results
-        if qualifies(r) and r.get("speedup_no_gen", 0) > 1
-    ]
-    speedups_gt1_with = [
-        r["speedup_gen"]
-        for r in results
-        if qualifies(r) and r.get("speedup_gen", 0) > 1
-    ]
-
-    speedup_gt1_without_gen = (
-        sum(speedups_gt1_without) / len(speedups_gt1_without)
-        if speedups_gt1_without
-        else 1.0
-    )
-    speedup_gt1_with_gen = (
-        sum(speedups_gt1_with) / len(speedups_gt1_with) if speedups_gt1_with else 1.0
-    )
-
+    speedups_gt1_without = [r["speedup_no_gen"] for r in results 
+                           if qualifies(r) and r.get("speedup_no_gen", 0) > 1]
+    speedups_gt1_with = [r["speedup_gen"] for r in results 
+                        if qualifies(r) and r.get("speedup_gen", 0) > 1]
+    
+    speedup_gt1_without_gen = sum(speedups_gt1_without) / len(speedups_gt1_without) if speedups_gt1_without else 1.0
+    speedup_gt1_with_gen = sum(speedups_gt1_with) / len(speedups_gt1_with) if speedups_gt1_with else 1.0
+    
     # Calculate Speedup_all (non-qualifying counted as 1)
     def get_speedup_or_one(r: dict, key: str) -> float:
         if qualifies(r) and r.get(key, 0) > 1:
             return r[key]
         return 1.0
-
-    speedup_all_without_gen = (
-        sum(get_speedup_or_one(r, "speedup_no_gen") for r in results) / n
-    )
-    speedup_all_with_gen = (
-        sum(get_speedup_or_one(r, "speedup_gen") for r in results) / n
-    )
-
+    
+    speedup_all_without_gen = sum(get_speedup_or_one(r, "speedup_no_gen") for r in results) / n
+    speedup_all_with_gen = sum(get_speedup_or_one(r, "speedup_gen") for r in results) / n
+    
     return {
         "metrics_without_gen": {
             "% Correct Invariant": float(np.round(invariant_correctness_rate * 100, 2)),
@@ -175,7 +171,7 @@ def calculate_metrics_from_results(results: List[dict]) -> dict:
             "% Speedup": float(np.round(speedup_rate_with_gen * 100, 2)),
             "Speedup>1": float(np.round(speedup_gt1_with_gen, 2)),
             "Speedup_all": float(np.round(speedup_all_with_gen, 2)),
-        },
+        }
     }
 
 
@@ -186,17 +182,17 @@ def plot_verification_vs_baseline(
     split_name: str = "easy",
     fig_size: tuple = (800, 800),
     plot_path: Path = Path("plot.html"),
-    metrics: Optional[dict] = None,
+    metrics: Optional[dict] = None
 ) -> Path:
     """
     Plot LLM verification vs. baseline time with interactive controls.
-
+    
     Features:
     - Color-coded by decision (TRUE=green, FALSE=red, UNKNOWN=blue)
     - Interactive checkboxes to toggle UNKNOWN visibility
     - Interactive checkbox to include/exclude generation time
     - Metrics annotation that updates with generation time toggle
-
+    
     Args:
         results: List of evaluation result dicts
         model_name: Name of the model being evaluated
@@ -205,36 +201,27 @@ def plot_verification_vs_baseline(
         fig_size: Tuple of (width, height) for the figure
         plot_path: Path to save the HTML file
         metrics: Optional pre-calculated metrics dict
-
+        
     Returns:
         Path to the generated HTML file
     """
-    results = [_normalize_result_row(r) for r in results]
     df = pd.DataFrame(results)
     n_total = len(df)
-
+    
     if n_total == 0:
         raise ValueError("No results to plot")
-
+    
     # Prepare columns with safe defaults
-    for col in [
-        "verification_time",
-        "total_time",
-        "baseline_timing",
-        "speedup_no_gen",
-        "speedup_gen",
-    ]:
+    for col in ["verification_time", "total_time", "baseline_timing", "speedup_no_gen", "speedup_gen"]:
         if col not in df.columns:
             df[col] = 0.0
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).round(2)
-
+    
     # Ensure required columns exist
     if "final_decision" not in df.columns:
         df["final_decision"] = "UNKNOWN"
     if "predicate_content" not in df.columns:
         df["predicate_content"] = ""
-    if "predicate_marker_name" not in df.columns:
-        df["predicate_marker_name"] = ""
     if "correctness_score" not in df.columns:
         df["correctness_score"] = False
     if "decision_rule" not in df.columns:
@@ -245,65 +232,54 @@ def plot_verification_vs_baseline(
         df["has_speedup_no_gen"] = False
     if "has_speedup_gen" not in df.columns:
         df["has_speedup_gen"] = False
-
-    # Extract usefulness decision (supports old/new report keys via normalization)
+    
+    # Extract usefulness decision from invariant_usefulness_report
     def extract_usefulness_decision(row):
         report = row.get("invariant_usefulness_report")
         if isinstance(report, dict):
             return report.get("decision", "N/A")
         return "N/A"
-
+    
     df["usefulness_decision"] = df.apply(extract_usefulness_decision, axis=1)
-
+    
     # Ensure program_for_usefulness is available for click-to-view
     if "program_for_usefulness" not in df.columns:
         df["program_for_usefulness"] = ""
-
+    
     # Calculate speedup if not present
     df["speedup_no_gen"] = np.where(
         df["verification_time"] > 0,
         (df["baseline_timing"] / df["verification_time"]).round(2),
-        0,
+        0
     )
     df["speedup_gen"] = np.where(
-        df["total_time"] > 0, (df["baseline_timing"] / df["total_time"]).round(2), 0
+        df["total_time"] > 0,
+        (df["baseline_timing"] / df["total_time"]).round(2),
+        0
     )
-
+    
     # Calculate metrics if not provided
     if metrics is None:
         metrics = calculate_metrics_from_results(results)
-
+    
     # Count decisions
     decision_counts = df["final_decision"].value_counts().to_dict()
     count_true = decision_counts.get("TRUE", 0)
     count_false = decision_counts.get("FALSE", 0)
     count_unknown = decision_counts.get("UNKNOWN", 0)
-    count_invalid = decision_counts.get("INVALID", 0)
-    counts_str = (
-        f"Model results: TRUE ({count_true}) | FALSE ({count_false}) | "
-        f"UNKNOWN ({count_unknown}) | INVALID ({count_invalid})"
-    )
+    counts_str = f"Model results: TRUE ({count_true}) | FALSE ({count_false}) | UNKNOWN ({count_unknown})"
 
     # Color and symbol maps
-    color_map = {"TRUE": "green", "FALSE": "red", "UNKNOWN": "blue", "INVALID": "gray"}
-    symbol_map = {
-        "TRUE": "circle",
-        "FALSE": "diamond",
-        "UNKNOWN": "triangle-up",
-        "INVALID": "x",
-    }
+    color_map = {"TRUE": "green", "FALSE": "red", "UNKNOWN": "blue"}
+    symbol_map = {"TRUE": "circle", "FALSE": "diamond", "UNKNOWN": "triangle-up"}
 
     # Prepare hover data columns
     df["task_index"] = range(len(df))
-    df["hover_validation"] = df["validation_score"].map(
-        {True: "VALID", False: "INVALID"}
-    )
+    df["hover_validation"] = df["validation_score"].map({True: "VALID", False: "INVALID"})
     df["hover_correct"] = df["correctness_score"].map({True: "TRUE", False: "FALSE"})
     df["hover_useful_no_gen"] = df["has_speedup_no_gen"].map({True: "YES", False: "NO"})
     df["hover_useful_with_gen"] = df["has_speedup_gen"].map({True: "YES", False: "NO"})
-    df["hover_usefulness_decision"] = df[
-        "usefulness_decision"
-    ]  # Actual verification result
+    df["hover_usefulness_decision"] = df["usefulness_decision"]  # Actual verification result
     df["hover_rule"] = df["decision_rule"]
 
     # Create figure
@@ -315,52 +291,34 @@ def plot_verification_vs_baseline(
     gen_indices_unknown = []
 
     # Add traces for WITHOUT gen time (visible by default)
-    for decision in ["TRUE", "FALSE", "UNKNOWN", "INVALID"]:
+    for decision in ["TRUE", "FALSE", "UNKNOWN"]:
         df_subset = df[df["final_decision"] == decision]
         if len(df_subset) > 0:
             hover_without = (
-                "<b>%{customdata[0]}</b><br>"
-                + "Marker=%{customdata[1]}<br>"
-                + "Final Decision=%{customdata[2]}<br>"
-                + "LLM-assisted Verification Time (s)=%{x}<br>"
-                + "Baseline Timing (s)=%{y}<br>"
-                + "Task Index=%{customdata[3]}<br>"
-                + "Speedup=%{customdata[4]}<br>"
-                + "Validation=%{customdata[5]}<br>"
-                + "Correctness=%{customdata[6]}<br>"
-                + "Usefulness Decision=%{customdata[7]}<br>"
-                + "Useful (speedup>1)=%{customdata[8]}<br>"
-                + "Rule=%{customdata[9]}<br>"
+                "<b>%{customdata[0]}</b><br>" +
+                "Final Decision=%{customdata[1]}<br>" +
+                "LLM-assisted Verification Time (s)=%{x}<br>" +
+                "Baseline Timing (s)=%{y}<br>" +
+                "Task Index=%{customdata[2]}<br>" +
+                "Speedup=%{customdata[3]}<br>" +
+                "Validation=%{customdata[4]}<br>" +
+                "Correctness=%{customdata[5]}<br>" +
+                "Usefulness Decision=%{customdata[6]}<br>" +
+                "Useful (speedup>1)=%{customdata[7]}<br>" +
+                "Rule=%{customdata[8]}<br>"
             )
-            fig.add_trace(
-                go.Scatter(
-                    x=df_subset["verification_time"],
-                    y=df_subset["baseline_timing"],
-                    mode="markers",
-                    marker=dict(
-                        size=10, color=color_map[decision], symbol=symbol_map[decision]
-                    ),
-                    name=decision,
-                    customdata=df_subset[
-                        [
-                            "predicate_content",
-                            "predicate_marker_name",
-                            "final_decision",
-                            "task_index",
-                            "speedup_no_gen",
-                            "hover_validation",
-                            "hover_correct",
-                            "hover_usefulness_decision",
-                            "hover_useful_no_gen",
-                            "hover_rule",
-                        ]
-                    ].values,
-                    hovertemplate=hover_without,
-                    visible=True,
-                    legendgroup=decision,
-                    showlegend=True,
-                )
-            )
+            fig.add_trace(go.Scatter(
+                x=df_subset["verification_time"],
+                y=df_subset["baseline_timing"],
+                mode='markers',
+                marker=dict(size=10, color=color_map[decision], symbol=symbol_map[decision]),
+                name=decision,
+                customdata=df_subset[["predicate_content", "final_decision", "task_index", "speedup_no_gen", "hover_validation", "hover_correct", "hover_usefulness_decision", "hover_useful_no_gen", "hover_rule"]].values,
+                hovertemplate=hover_without,
+                visible=True,
+                legendgroup=decision,
+                showlegend=True
+            ))
             current_idx = len(fig.data) - 1
             if decision == "UNKNOWN":
                 no_gen_indices_unknown.append(current_idx)
@@ -368,52 +326,34 @@ def plot_verification_vs_baseline(
                 no_gen_indices_always.append(current_idx)
 
     # Add traces for WITH gen time (hidden by default)
-    for decision in ["TRUE", "FALSE", "UNKNOWN", "INVALID"]:
+    for decision in ["TRUE", "FALSE", "UNKNOWN"]:
         df_subset = df[df["final_decision"] == decision]
         if len(df_subset) > 0:
             hover_with = (
-                "<b>%{customdata[0]}</b><br>"
-                + "Marker=%{customdata[1]}<br>"
-                + "Final Decision=%{customdata[2]}<br>"
-                + "LLM-assisted Verification+Gen Time (s)=%{x}<br>"
-                + "Baseline Timing (s)=%{y}<br>"
-                + "Task Index=%{customdata[3]}<br>"
-                + "Speedup=%{customdata[4]}<br>"
-                + "Validation=%{customdata[5]}<br>"
-                + "Correctness=%{customdata[6]}<br>"
-                + "Usefulness Decision=%{customdata[7]}<br>"
-                + "Useful (speedup>1)=%{customdata[8]}<br>"
-                + "Rule=%{customdata[9]}<br>"
+                "<b>%{customdata[0]}</b><br>" +
+                "Final Decision=%{customdata[1]}<br>" +
+                "LLM-assisted Verification+Gen Time (s)=%{x}<br>" +
+                "Baseline Timing (s)=%{y}<br>" +
+                "Task Index=%{customdata[2]}<br>" +
+                "Speedup=%{customdata[3]}<br>" +
+                "Validation=%{customdata[4]}<br>" +
+                "Correctness=%{customdata[5]}<br>" +
+                "Usefulness Decision=%{customdata[6]}<br>" +
+                "Useful (speedup>1)=%{customdata[7]}<br>" +
+                "Rule=%{customdata[8]}<br>"
             )
-            fig.add_trace(
-                go.Scatter(
-                    x=df_subset["total_time"],
-                    y=df_subset["baseline_timing"],
-                    mode="markers",
-                    marker=dict(
-                        size=10, color=color_map[decision], symbol=symbol_map[decision]
-                    ),
-                    name=decision,
-                    customdata=df_subset[
-                        [
-                            "predicate_content",
-                            "predicate_marker_name",
-                            "final_decision",
-                            "task_index",
-                            "speedup_gen",
-                            "hover_validation",
-                            "hover_correct",
-                            "hover_usefulness_decision",
-                            "hover_useful_with_gen",
-                            "hover_rule",
-                        ]
-                    ].values,
-                    hovertemplate=hover_with,
-                    visible=False,
-                    legendgroup=decision,
-                    showlegend=False,
-                )
-            )
+            fig.add_trace(go.Scatter(
+                x=df_subset["total_time"],
+                y=df_subset["baseline_timing"],
+                mode='markers',
+                marker=dict(size=10, color=color_map[decision], symbol=symbol_map[decision]),
+                name=decision,
+                customdata=df_subset[["predicate_content", "final_decision", "task_index", "speedup_gen", "hover_validation", "hover_correct", "hover_usefulness_decision", "hover_useful_with_gen", "hover_rule"]].values,
+                hovertemplate=hover_with,
+                visible=False,
+                legendgroup=decision,
+                showlegend=False
+            ))
             current_idx = len(fig.data) - 1
             if decision == "UNKNOWN":
                 gen_indices_unknown.append(current_idx)
@@ -422,68 +362,51 @@ def plot_verification_vs_baseline(
 
     # Calculate axis limits
     min_val = min(
-        df["verification_time"].min()
-        if not df["verification_time"].isna().all()
-        else 0.1,
+        df["verification_time"].min() if not df["verification_time"].isna().all() else 0.1,
         df["total_time"].min() if not df["total_time"].isna().all() else 0.1,
-        df["baseline_timing"].min() if not df["baseline_timing"].isna().all() else 0.1,
+        df["baseline_timing"].min() if not df["baseline_timing"].isna().all() else 0.1
     )
     min_val = max(0.1, min_val)  # Ensure positive for potential log scale
-
+    
     max_val = max(
-        df["verification_time"].max()
-        if not df["verification_time"].isna().all()
-        else 600,
+        df["verification_time"].max() if not df["verification_time"].isna().all() else 600,
         df["total_time"].max() if not df["total_time"].isna().all() else 600,
         df["baseline_timing"].max() if not df["baseline_timing"].isna().all() else 600,
-        600,
+        600
     )
     lims = [min_val, max_val]
 
     # Draw diagonal line (orange)
-    fig.add_shape(
-        type="line",
-        x0=lims[0],
-        y0=lims[0],
-        x1=lims[1],
-        y1=lims[1],
-        line=dict(color="orange"),
+    fig.add_shape(type="line",
+        x0=lims[0], y0=lims[0], x1=lims[1], y1=lims[1],
+        line=dict(color="orange")
     )
-
+    
     # Add dashed lines for timeout at 600s
-    fig.add_shape(
-        type="line",
-        x0=600,
-        y0=lims[0],
-        x1=600,
-        y1=lims[1],
-        line=dict(color="gray", dash="dash"),
+    fig.add_shape(type="line",
+        x0=600, y0=lims[0], x1=600, y1=lims[1],
+        line=dict(color="gray", dash="dash")
     )
-    fig.add_shape(
-        type="line",
-        x0=lims[0],
-        y0=600,
-        x1=lims[1],
-        y1=600,
-        line=dict(color="gray", dash="dash"),
+    fig.add_shape(type="line",
+        x0=lims[0], y0=600, x1=lims[1], y1=600,
+        line=dict(color="gray", dash="dash")
     )
 
     # Update layout
     fig.update_layout(
-        width=fig_size[0],
-        height=fig_size[1],
+        width=fig_size[0], height=fig_size[1],
         showlegend=True,
         xaxis=dict(
-            range=[lims[0] * 0.95, lims[1] * 1.05],
+            range=[lims[0]*0.95, lims[1]*1.05],
             title="LLM-assisted Verification Time (s)",
             autorange=False,
-            fixedrange=False,
+            fixedrange=False
         ),
         yaxis=dict(
-            range=[lims[0] * 0.95, lims[1] * 1.05],
+            range=[lims[0]*0.95, lims[1]*1.05],
             title="Baseline Time (s)",
             autorange=False,
-            fixedrange=False,
+            fixedrange=False
         ),
         margin=dict(t=140, b=120),
         title={
@@ -499,8 +422,8 @@ def plot_verification_vs_baseline(
                 f"{counts_str}"
                 f"</span>"
             ),
-            "x": 0.5,
-        },
+            "x": 0.5
+        }
     )
 
     # Prepare metrics strings
@@ -508,55 +431,43 @@ def plot_verification_vs_baseline(
     m_with = metrics["metrics_with_gen"]
     metric_str_without = " | ".join([f"<b>{k}: {v}</b>" for k, v in m_without.items()])
     metric_str_with = " | ".join([f"<b>{k}: {v}</b>" for k, v in m_with.items()])
-
+    
     # Add metrics annotation
     fig.add_annotation(
         text=f"{metric_str_without}",
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=-0.18,
+        xref="paper", yref="paper",
+        x=0.5, y=-0.18,
         showarrow=False,
         align="center",
         font=dict(size=15, color="#111", family="Arial"),
         bgcolor="rgba(255,255,255,0.9)",
         bordercolor="rgba(0,0,0,0.2)",
         borderpad=4,
-        name="metricsAnnotation",
+        name="metricsAnnotation"
     )
 
     # Generate HTML with custom checkboxes
-    html_string = fig.to_html(include_plotlyjs="cdn")
-
+    html_string = fig.to_html(include_plotlyjs='cdn')
+    
     # Serialize indices for JS
     ng_always_js = json.dumps(no_gen_indices_always)
     ng_unk_js = json.dumps(no_gen_indices_unknown)
     g_always_js = json.dumps(gen_indices_always)
     g_unk_js = json.dumps(gen_indices_unknown)
-
+    
     # Build code data for click-to-view (indexed by task_index)
+    # Re-indent code for better readability (original may have IndentWidth: 0 from clang-format)
     code_data = []
     for idx, row in df.iterrows():
         raw_code = str(row.get("program_for_usefulness", ""))
-        baseline_t = float(row.get("baseline_timing", 0.0) or 0.0)
-        verif_t = float(row.get("verification_time", 0.0) or 0.0)
-        speedup = (baseline_t / verif_t) if verif_t > 0 else 0.0
-        speedup_str = f"{baseline_t:.2f}\u2192{verif_t:.2f} ({speedup:.2f}x)"
-        code_data.append(
-            {
-                "task_index": int(row["task_index"]),
-                "predicate": str(row.get("predicate_content", "")),
-                "marker": str(row.get("predicate_marker_name", "")),
-                "program_for_usefulness": raw_code,
-                "final_decision": str(row.get("final_decision", "")),
-                "correctness_decision": "TRUE"
-                if bool(row.get("correctness_score", False))
-                else "FALSE",
-                "decision_rule": str(row.get("decision_rule", "")),
-                "speedup": speedup_str,
-                "usefulness_decision": str(row.get("usefulness_decision", "")),
-            }
-        )
+        formatted_code = reindent_c_code(raw_code) if raw_code else ""
+        code_data.append({
+            "task_index": int(row["task_index"]),
+            "predicate": str(row.get("predicate_content", "")),
+            "program_for_usefulness": formatted_code,
+            "final_decision": str(row.get("final_decision", "")),
+            "usefulness_decision": str(row.get("usefulness_decision", "")),
+        })
     code_data_js = json.dumps(code_data)
 
     # Inject custom checkbox controls
@@ -676,11 +587,7 @@ def plot_verification_vs_baseline(
             </div>
             <div class="code-modal-info">
                 <span><span class="label">Predicate:</span> <span class="value" id="modalPredicate"></span></span>
-                <span><span class="label">Marker:</span> <span class="value" id="modalMarker"></span></span>
-                <span><span class="label">Speedup:</span> <span class="value" id="modalSpeedup"></span></span>
                 <span><span class="label">Final Decision:</span> <span class="value" id="modalFinalDecision"></span></span>
-                <span><span class="label">Correctness Decision:</span> <span class="value" id="modalCorrectnessDecision"></span></span>
-                <span><span class="label">Decision Rule:</span> <span class="value" id="modalDecisionRule"></span></span>
                 <span><span class="label">Usefulness Decision:</span> <span class="value" id="modalUsefulnessDecision"></span></span>
             </div>
             <pre class="language-c"><code id="modalCode" class="language-c"></code></pre>
@@ -782,18 +689,10 @@ def plot_verification_vs_baseline(
         
         document.getElementById('modalTaskIndex').textContent = taskIndex;
         document.getElementById('modalPredicate').textContent = data.predicate || 'N/A';
-        document.getElementById('modalMarker').textContent = data.marker || 'N/A';
-        document.getElementById('modalSpeedup').textContent = data.speedup || 'N/A';
         
         var finalDecisionEl = document.getElementById('modalFinalDecision');
         finalDecisionEl.textContent = data.final_decision || 'N/A';
         finalDecisionEl.className = 'value ' + (data.final_decision === 'TRUE' ? 'true' : 'false');
-
-        var correctnessDecisionEl = document.getElementById('modalCorrectnessDecision');
-        correctnessDecisionEl.textContent = data.correctness_decision || 'N/A';
-        correctnessDecisionEl.className = 'value ' + (data.correctness_decision === 'TRUE' ? 'true' : 'false');
-
-        document.getElementById('modalDecisionRule').textContent = data.decision_rule || 'N/A';
         
         var usefulnessDecisionEl = document.getElementById('modalUsefulnessDecision');
         usefulnessDecisionEl.textContent = data.usefulness_decision || 'N/A';
@@ -839,17 +738,8 @@ def plot_verification_vs_baseline(
         plotDiv.on('plotly_click', function(data) {{
             if (data.points && data.points.length > 0) {{
                 var point = data.points[0];
-                // Task index position depends on schema:
-                // - Old schema customdata: [predicate, final_decision, task_index, ...] => index 2
-                // - New schema customdata: [predicate, marker, final_decision, task_index, ...] => index 3
-                var taskIndex = null;
-                if (point.customdata) {{
-                    if (point.customdata.length >= 4) {{
-                        taskIndex = point.customdata[3];
-                    }} else if (point.customdata.length >= 3) {{
-                        taskIndex = point.customdata[2];
-                    }}
-                }}
+                // Task index is in customdata[2]
+                var taskIndex = point.customdata ? point.customdata[2] : null;
                 if (taskIndex !== null && taskIndex !== undefined) {{
                     openCodeModal(parseInt(taskIndex));
                 }}
@@ -860,14 +750,14 @@ def plot_verification_vs_baseline(
     """
 
     # Insert checkbox HTML after opening body tag
-    html_string = html_string.replace("<body>", "<body>\n" + checkbox_html)
-
+    html_string = html_string.replace('<body>', '<body>\n' + checkbox_html)
+    
     # Save to file
     plot_path = Path(plot_path)
     plot_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(plot_path, "w") as f:
+    with open(plot_path, 'w') as f:
         f.write(html_string)
-
+    
     return plot_path
 
 
@@ -876,24 +766,24 @@ def plot_from_json(
     model_name: str = "gpt-oss-20b",
     baseline_name: str = "UAutomizer25",
     split_name: str = "easy",
-    plot_path: Optional[Path] = None,
+    plot_path: Optional[Path] = None
 ) -> Path:
     """
     Generate plot from a JSON results file.
-
+    
     Args:
         results_path: Path to JSON file with results
         model_name: Model name for title
         baseline_name: Baseline name for title
         split_name: Split name for title
         plot_path: Output path (defaults to same dir as results)
-
+        
     Returns:
         Path to generated HTML file
     """
-    with open(results_path, "r") as f:
+    with open(results_path, 'r') as f:
         data = json.load(f)
-
+    
     # Handle different JSON structures
     if isinstance(data, dict) and "results" in data:
         results = data["results"]
@@ -901,42 +791,37 @@ def plot_from_json(
         results = data
     else:
         raise ValueError(f"Unexpected JSON structure in {results_path}")
-
+    
     if plot_path is None:
         plot_path = results_path.parent / f"{results_path.stem}_plot.html"
-
+    
     return plot_verification_vs_baseline(
         results=results,
         model_name=model_name,
         baseline_name=baseline_name,
         split_name=split_name,
-        plot_path=plot_path,
+        plot_path=plot_path
     )
 
 
 if __name__ == "__main__":
     import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Generate evaluation plot from results"
-    )
-    parser.add_argument(
-        "--results", type=Path, required=True, help="Path to results JSON file"
-    )
+    
+    parser = argparse.ArgumentParser(description="Generate evaluation plot from results")
+    parser.add_argument("--results", type=Path, required=True, help="Path to results JSON file")
     parser.add_argument("--model", type=str, default="gpt-oss-20b", help="Model name")
-    parser.add_argument(
-        "--baseline", type=str, default="UAutomizer25", help="Baseline name"
-    )
+    parser.add_argument("--baseline", type=str, default="UAutomizer25", help="Baseline name")
     parser.add_argument("--split", type=str, default="easy", help="Split name")
     parser.add_argument("--output", type=Path, default=None, help="Output HTML path")
-
+    
     args = parser.parse_args()
-
+    
     plot_path = plot_from_json(
         results_path=args.results,
         model_name=args.model,
         baseline_name=args.baseline,
         split_name=args.split,
-        plot_path=args.output,
+        plot_path=args.output
     )
     print(f"Plot saved to: {plot_path}")
+

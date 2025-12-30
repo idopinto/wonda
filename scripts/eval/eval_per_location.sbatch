@@ -4,7 +4,7 @@
 #SBATCH --error=slurm/eval_per_location_%j.err
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=200G
+#SBATCH --mem=128G
 #SBATCH --gres=gpu:h200:1
 #SBATCH --killable
 

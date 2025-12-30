@@ -2,10 +2,13 @@ from enum import Enum
 from typing import List, Set, Dict, Optional
 from copy import copy
 import re
-from src.utils.predicate import Predicate
+from src.preprocess.predicate import Predicate
 
-PATCH = ('void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n'
-         'void assume(int cond) { if (!cond) { abort(); } }\n')
+PATCH = (
+    "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n"
+    "void assume(int cond) { if (!cond) { abort(); } }\n"
+)
+
 
 # PATCH_LINES = ['void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }',
 #                'void assume(int cond) { if (!cond) { abort(); } }']
@@ -16,14 +19,20 @@ class AssertionPointAttributes(Enum):
     BeginningOfLoop = 4
     EndOfLoop = 5
 
+
 class Program:
     def __init__(self, lines: List[str], replacement: Dict[str, str]):
         self.lines: List[str] = []
-        
-        self.assertions: List[Predicate] = []  # The assertion to add after the corresponding line number
-        self.lemmas: List[Predicate] = []  # The lemmas to add after the corresponding line number
+
+        self.assertions: List[
+            Predicate
+        ] = []  # The assertion to add after the corresponding line number
+        self.lemmas: List[
+            Predicate
+        ] = []  # The lemmas to add after the corresponding line number
         self.assertion_points: Dict[
-            int, Set[AssertionPointAttributes]] = {}  # Potentially adding assertions right after these lines
+            int, Set[AssertionPointAttributes]
+        ] = {}  # Potentially adding assertions right after these lines
 
         self.replacement_for_GPT: Dict[str, str] = replacement
         self.in_loop: Dict[int, int] = dict()
@@ -44,55 +53,80 @@ class Program:
             if last_line_in_loop and "}" in line:
                 left_bracket -= 1
                 if left_bracket == 0:
-                    self.add_assertion_point(len(self.lines), AssertionPointAttributes.EndOfLoop)
-                    #self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.InLoop)
+                    self.add_assertion_point(
+                        len(self.lines), AssertionPointAttributes.EndOfLoop
+                    )
+                    # self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.InLoop)
                     last_line_in_loop = False
             # print(line)
             stripped_line = line.strip()
             if stripped_line and stripped_line.split("(")[0] == "assert":
                 # print(stripped_line)
                 # print(stripped_line.split("(")[0])
-                self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.BeforeAssertion)
+                self.add_assertion_point(
+                    len(self.lines) - 1, AssertionPointAttributes.BeforeAssertion
+                )
                 if last_line_in_loop:
-                    self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.InLoop)
+                    self.add_assertion_point(
+                        len(self.lines) - 1, AssertionPointAttributes.InLoop
+                    )
 
-                result = re.search(r'assert\((.*?)\);', line)
+                result = re.search(r"assert\((.*?)\);", line)
                 if result:
-                    self.assertions.append(Predicate(result.group(1), len(self.lines) - 1))
+                    self.assertions.append(
+                        Predicate(result.group(1), len(self.lines) - 1)
+                    )
 
             elif stripped_line and stripped_line.split("(")[0] == "assume":
-                result = re.search(r'assume\((.*?)\);', line)
+                result = re.search(r"assume\((.*?)\);", line)
                 if result:
                     self.lemmas.append(Predicate(result.group(1), len(self.lines) - 1))
             else:
                 self.lines.append(line)
                 if stripped_line and stripped_line.split()[0] in ["for", "do", "while"]:
                     self.number_of_loops += 1
-                    self.add_assertion_point(len(self.lines) - 2, AssertionPointAttributes.BeforeLoop)
+                    self.add_assertion_point(
+                        len(self.lines) - 2, AssertionPointAttributes.BeforeLoop
+                    )
                     if last_line_in_loop:
-                        self.add_assertion_point(len(self.lines) - 2, AssertionPointAttributes.InLoop)
-                    self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.InLoop)
-                    self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.BeginningOfLoop)
+                        self.add_assertion_point(
+                            len(self.lines) - 2, AssertionPointAttributes.InLoop
+                        )
+                    self.add_assertion_point(
+                        len(self.lines) - 1, AssertionPointAttributes.InLoop
+                    )
+                    self.add_assertion_point(
+                        len(self.lines) - 1, AssertionPointAttributes.BeginningOfLoop
+                    )
                     if not last_line_in_loop:
-                        assert ("{" in line)
+                        assert "{" in line
                         left_bracket += 1
                     last_line_in_loop = True
                 if "{" in line:
                     if "}" not in line:
-                        self.unclosed_brackets[len(self.lines) - 1] = self.unclosed_brackets[len(self.lines) - 2] + 1
+                        self.unclosed_brackets[len(self.lines) - 1] = (
+                            self.unclosed_brackets[len(self.lines) - 2] + 1
+                        )
                     else:
-                        self.unclosed_brackets[len(self.lines) - 1] = self.unclosed_brackets[len(self.lines) - 2]
+                        self.unclosed_brackets[len(self.lines) - 1] = (
+                            self.unclosed_brackets[len(self.lines) - 2]
+                        )
                 elif "}" in line:
-                    self.unclosed_brackets[len(self.lines) - 1] = self.unclosed_brackets[len(self.lines) - 2] - 1
+                    self.unclosed_brackets[len(self.lines) - 1] = (
+                        self.unclosed_brackets[len(self.lines) - 2] - 1
+                    )
                 else:
-                    self.unclosed_brackets[len(self.lines) - 1] = self.unclosed_brackets[len(self.lines) - 2]
+                    self.unclosed_brackets[len(self.lines) - 1] = (
+                        self.unclosed_brackets[len(self.lines) - 2]
+                    )
 
         self.in_loop[len(self.lines) - 1] = False
         if self.number_of_loops > 0:
             del self.assertion_points[min(self.assertion_points)]
 
-
-    def add_assertion_point(self, line_number: int, attribute: AssertionPointAttributes):
+    def add_assertion_point(
+        self, line_number: int, attribute: AssertionPointAttributes
+    ):
         if line_number not in self.assertion_points:
             self.assertion_points[line_number] = set()
         self.assertion_points[line_number].add(attribute)
@@ -105,10 +139,14 @@ class Program:
     def assert_predicate(lines: List[str], predicate: Predicate):
         lines[predicate.line_number] += f"\nassert({predicate.content});"
 
-    def get_program_with_assertion(self, predicate: Optional[Predicate], assumptions: List[Predicate],
-                                   assertion_points: Dict[int,str],
-                                   forGPT : bool,
-                                   dump=False):
+    def get_program_with_assertion(
+        self,
+        predicate: Optional[Predicate],
+        assumptions: List[Predicate],
+        assertion_points: Dict[int, str],
+        forGPT: bool,
+        dump=False,
+    ):
         program = "" if forGPT else PATCH
 
         lines = copy(self.lines)
@@ -171,26 +209,39 @@ class Program:
         print("Deciding assertion point...")
         closest_line = None
         if AssertionPointAttributes.InLoop in self.assertion_points[goal.line_number]:
-            if AssertionPointAttributes.BeginningOfLoop in self.assertion_points[goal.line_number]:
-                #print("assertion is the beginning of the loop, get the line right before the loop")
-                assert(AssertionPointAttributes.BeforeLoop in self.assertion_points[goal.line_number - 1])
+            if (
+                AssertionPointAttributes.BeginningOfLoop
+                in self.assertion_points[goal.line_number]
+            ):
+                # print("assertion is the beginning of the loop, get the line right before the loop")
+                assert (
+                    AssertionPointAttributes.BeforeLoop
+                    in self.assertion_points[goal.line_number - 1]
+                )
                 closest_line = goal.line_number - 1
             else:
-                #print("assertion is in the loop, find the beginning of the closest loop")
+                # print("assertion is in the loop, find the beginning of the closest loop")
                 tmp = goal.line_number
                 while tmp >= 0:
                     tmp -= 1
-                    if (tmp in self.assertion_points and
-                            AssertionPointAttributes.BeginningOfLoop in self.assertion_points[tmp]):
+                    if (
+                        tmp in self.assertion_points
+                        and AssertionPointAttributes.BeginningOfLoop
+                        in self.assertion_points[tmp]
+                    ):
                         closest_line = tmp
                         break
         else:
-            #print("assertion is right after a loop, find the beginning of the closest loop")
+            # print("assertion is right after a loop, find the beginning of the closest loop")
             tmp = goal.line_number
             while tmp >= 0:
                 tmp -= 1
-                if (tmp in self.assertion_points and (not self.in_loop[tmp - 1]) and
-                        AssertionPointAttributes.BeginningOfLoop in self.assertion_points[tmp]):
+                if (
+                    tmp in self.assertion_points
+                    and (not self.in_loop[tmp - 1])
+                    and AssertionPointAttributes.BeginningOfLoop
+                    in self.assertion_points[tmp]
+                ):
                     closest_line = tmp
                     break
 
@@ -199,35 +250,43 @@ class Program:
         else:
             print(f"Deciding assertion point done: picked line {closest_line}.")
         return closest_line, self.assertion_points[closest_line]
-        
+
     def __repr__(self):
         lines = []
-        lines.append("--------------------------------- Program ---------------------------------------")
-        
+        lines.append(
+            "--------------------------------- Program ---------------------------------------"
+        )
+
         # Program lines (clean, without metadata)
-        lines.append(f"\n📝 Program lines without assertions ({len(self.lines)} total):")
+        lines.append(
+            f"\n📝 Program lines without assertions ({len(self.lines)} total):"
+        )
         lines.append("-" * 40)
         for i, line in enumerate(self.lines):
             lines.append(f"  {i:2d}: {line}")
-        
+
         # Assertions
         lines.append(f"\n🎯 Assertions ({len(self.assertions)} found):")
         lines.append("-" * 40)
         if self.assertions:
             for i, assertion in enumerate(self.assertions):
-                lines.append(f"  {i+1}.After Line {assertion.line_number}: assert({assertion.content})")
+                lines.append(
+                    f"  {i + 1}.After Line {assertion.line_number}: assert({assertion.content})"
+                )
         else:
             lines.append("  No assertions found")
-        
+
         # Lemmas
         lines.append(f"\n📋 Lemmas ({len(self.lemmas)} found):")
         lines.append("-" * 40)
         if self.lemmas:
             for i, lemma in enumerate(self.lemmas):
-                lines.append(f"  {i+1}. After Line {lemma.line_number}: assume({lemma.content})")
+                lines.append(
+                    f"  {i + 1}. After Line {lemma.line_number}: assume({lemma.content})"
+                )
         else:
             lines.append("  No lemmas found")
-        
+
         # Loop summary
         lines.append("\n🔄 Loop analysis:")
         lines.append("-" * 40)
@@ -242,19 +301,20 @@ class Program:
                 lines.append(f"  Line {line_num:2d}: {', '.join(attr_names)}")
         else:
             lines.append("  No assertion points found")
-        
+
         # GPT replacements
-        lines.append(f"\n🔄 GPT replacements ({len(self.replacement_for_GPT)} mappings):")
+        lines.append(
+            f"\n🔄 GPT replacements ({len(self.replacement_for_GPT)} mappings):"
+        )
         lines.append("-" * 40)
         if self.replacement_for_GPT:
             for before, after in self.replacement_for_GPT.items():
-
                 lines.append(f"  BEFORE: {before}")
                 lines.append(f"  AFTER:  {after}")
                 lines.append("  " + "-" * 30)
         else:
             lines.append("  No replacements defined")
-        
+
         lines.append("\n" + "-" * 80)
         return "\n".join(lines)
 
@@ -351,7 +411,9 @@ int main() {
     return 0;
 }"""
     normalizer = ProgramNormalizer(code=code, rewrite=True)
-    print(normalizer.new_code, )
+    print(
+        normalizer.new_code,
+    )
     program = Program(normalizer.lines_to_verify, normalizer.replacement)
     print(program)
     # labeled, name_to_line = _label_assertion_points(program.assertion_points, only_loop_beginnings=True)

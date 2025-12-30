@@ -1,0 +1,32 @@
+# Configuration for baseline dataset creation (AST-based)
+# Used by: src/preprocess/build_baseline_dataset_ast.py
+
+# Dataset configuration
+dataset:
+  type: "eval"  # 'train' or 'eval'
+  limit: -1  # Limit the number of files to process (useful for testing). Processes first k files. -1 for all
+  prefix: ""  # Filter files by prefix (used for testing specific files)
+
+# UAutomizer verifier configuration
+verifier:
+  version: "25"  # UAutomizer version: "23", "24", "25", or "26"
+  arch: "32bit"  # Architecture: "32bit" or "64bit"
+  property: "unreach-call.prp"  # Path to the property file (relative to PROPERTIES_DIR)
+  timeout: 600.0  # Timeout threshold for UAutomizer in seconds
+  k: 3  # Number of times to run UAutomizer for each file (to avoid outliers)
+
+# Processing configuration
+processing:
+  verify_original_programs: false  # Verify the original programs instead of normalized (default: verify normalized)
+  ignore_invariants: false  # Do not extract invariants from log/witness files (default: extract invariants)
+  difficulty_threshold: 30  # Difficulty threshold for easy/hard split in seconds
+
+# Output configuration
+output:
+  push_to_hub: false  # Push the dataset to the Hugging Face hub
+  test_mode: false  # Run the script in test mode (affects output directory naming)
+
+# Example usage:
+# uv run -m src.preprocess.build_baseline_dataset_ast dataset.type=eval output.test_mode=true dataset.limit=1 verifier.k=3 processing.ignore_invariants=true output.push_to_hub=true
+# uv run -m src.preprocess.build_baseline_dataset_ast dataset.type=train output.test_mode=true dataset.limit=1 verifier.k=1 output.push_to_hub=true
+

@@ -1,0 +1,61 @@
+weave:
+  entity: "ip-ai"
+  project_name: "cot-distilation"
+  log_to_weave: true
+
+verifier:
+  version: "25"
+  arch: "32bit"
+  property: "unreach-call.prp"
+  timeout: 600.0
+
+model:
+  name: "moonshotai/Kimi-K2-Thinking"
+  temperature: 1.0
+  max_tokens: 16384 # Reasoning models need more tokens for thinking + answer
+
+pipeline:
+    distil_cot: true
+
+dataset:
+  json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-raw-pp-lin.json"
+  limit: 10  # Number of samples to process (-1 for all)
+
+# Output configuration
+output:
+  cot_distilation_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-lin-cot.json"
+
+prompts:
+  system: |
+    You are an expert at C programming and highly proficient formal verification of C software.
+    
+    Given a C program and a verified-correct loop invariant that is intended to hold specifically at the loop head marker:
+    INVARIANT_MARKER_{target_label}
+    generate a clear, step-by-step proof explanation why the invariant holds and how it helps prove the target property.
+
+    Guidelines:
+    - Keep your explanation **concise** and **verifiable**.
+    - Use the standard inductive proof for loop invariants:
+      - **Initialization**
+        Show the invariant holds before the first loop iteration (after any initialization code, right before entering the loop).
+      - **Maintenance (Inductive Step)**
+        Assume the invariant holds at the start of an arbitrary iteration where the loop condition is true.
+        Show that after executing the loop body once, the invariant still holds.
+      - **Termination & Postcondition**
+        - Argue that the loop terminates (optionally via a ranking function).
+        - When the loop exits, use the invariant together with the negated loop condition to establish the target assertion.
+    - Use the program context to understand variable semantics and loop structure
+    - Your final response should not be with anything else than the core proof explanation.
+
+  user: |
+    You are given a C program and a verified-correct loop invariant that is intended to hold specifically at the loop head marker:
+    INVARIANT_MARKER_{target_label}
+    generate a clear, step-by-step proof explanation:
+    Program:
+    ```c
+    {program}
+    ```
+    Verified-correct loop invariant:
+    ```c
+    {ground_truth_invariant_content}
+    ```

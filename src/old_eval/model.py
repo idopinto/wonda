@@ -18,7 +18,9 @@ from transformers import (
     PreTrainedTokenizerBase,
 )
 
-from src.preprocess.program import Program
+from src.utils.program import Program
+
+LOCATION_LABELS = [chr(ord("A") + i) for i in range(26)]
 
 
 class InvariantGeneratorModel(weave.Model):
@@ -35,7 +37,10 @@ class InvariantGeneratorModel(weave.Model):
     user_prompt_template: weave.StringPrompt
     sampling_params: Dict
     reasoning_effort: str
-    # Optional: only needed for local huggingface loading (use Any to avoid Pydantic validation issues)
+    only_loop_beginnings: bool = (
+        True  # If True, only mark lines at the beginning of loops
+    )
+    # Optional: only needed for HuggingFace client (use Any to avoid Pydantic validation issues)
     model: Optional[Any] = None
     tokenizer: Optional[Any] = None
 
@@ -47,17 +52,11 @@ class InvariantGeneratorModel(weave.Model):
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_cfg["base_model_name"], token=True
             )
-        elif self.client == "together":
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_cfg["base_model_name"], token=True
-            )
         else:
             raise ValueError(f"Invalid client: {self.client}")
 
     @weave.op
-    def predict(
-        self, program: Program, target_label: Optional[str] = None, **_: Any
-    ) -> Dict:
+    def predict(self, program: Program) -> Dict:
         """
         Generate a candidate invariant for a given program.
 
@@ -67,9 +66,9 @@ class InvariantGeneratorModel(weave.Model):
             Dict containing the generated invariant, timing info, and usage stats.
         """
         if self.client == "vllm":
-            return self.predict_vllm(program, target_label=target_label)
+            return self.predict_vllm(program)
         elif self.client == "hf":
-            return self.predict_hf(program, target_label=target_label)
+            return self.predict_hf(program)
         else:
             raise ValueError(f"Invalid client: {self.client}")
 
@@ -97,10 +96,81 @@ class InvariantGeneratorModel(weave.Model):
         final = final_match.group(1).strip() if final_match else None
         return {"analysis": analysis, "final": final}
 
+    def _label_assertion_points(
+        self, assertion_points: dict, only_loop_beginnings: bool = True
+    ) -> tuple[dict, dict]:
+        """
+        Label assertion points and create bidirectional mapping.
+
+        Args:
+            assertion_points: Dict mapping line numbers to assertion attributes.
+            only_loop_beginnings: If True, only label assertion points that are at the beginning of loops.
+
+        Returns:
+            Tuple of (labeled_points, name_to_line) dicts.
+        """
+        from src.utils.program import AssertionPointAttributes
+
+        labeled, name_to_line = {}, {}
+
+        # Filter assertion points if only_loop_beginnings is True
+        if only_loop_beginnings:
+            filtered_points = {
+                line_num: attrs
+                for line_num, attrs in assertion_points.items()
+                if AssertionPointAttributes.BeginningOfLoop in attrs
+            }
+        else:
+            filtered_points = assertion_points
+
+        for i, line_num in enumerate(sorted(filtered_points.keys())):
+            if i < len(LOCATION_LABELS):
+                label = LOCATION_LABELS[i]
+                labeled[line_num] = label
+                name_to_line[label] = line_num
+        return labeled, name_to_line
+
+    def _format_program_with_labels(
+        self, program: Program, labeled_points: dict
+    ) -> str:
+        """
+        Format program with location labels and target assertion.
+
+        Args:
+            program: The program to format.
+            labeled_points: Dict mapping line numbers to labels.
+
+        Returns:
+            Formatted program string with labels.
+        """
+        lines = program.lines.copy()
+
+        # Apply GPT-friendly replacements
+        for i, line in enumerate(lines):
+            if line in program.replacement_for_GPT:
+                lines[i] = program.replacement_for_GPT[line]
+
+        # Add lemmas
+        for lemma in program.lemmas:
+            lines[lemma.line_number] += f"\nassume({lemma.content});"
+
+        # Add location labels
+        for line_num, label in labeled_points.items():
+            if line_num < len(lines):
+                lines[line_num] += f"\n// Line {label}"
+
+        # Add target assertion
+        if program.assertions:
+            target = program.assertions[0]
+            if target.line_number < len(lines):
+                lines[target.line_number] += (
+                    f"\nassert({target.content}); // Target property"
+                )
+
+        return "\n".join(lines)
+
     @weave.op
-    def predict_hf(
-        self, program: Program, target_label: Optional[str] = None, **_: Any
-    ) -> Dict:
+    def predict_hf(self, program: Program) -> Dict:
         """
         Generate a candidate invariant for a given program using Hugging Face.
 
@@ -109,8 +179,15 @@ class InvariantGeneratorModel(weave.Model):
         Returns:
             Dict containing the generated invariant, timing info, and usage stats.
         """
+        assertion_points = program.assertion_points
+        labeled_points, _ = self._label_assertion_points(
+            assertion_points, only_loop_beginnings=self.only_loop_beginnings
+        )
+        formatted_program = self._format_program_with_labels(
+            program=program, labeled_points=labeled_points
+        )
         user_prompt = self.user_prompt_template.content.format(
-            program=program.llm_code, target_label=target_label
+            program=formatted_program
         )
         messages = [
             {"role": "developer", "content": self.system_prompt.content},
@@ -125,7 +202,7 @@ class InvariantGeneratorModel(weave.Model):
         inference_start_time = time.perf_counter()
         with torch.inference_mode():
             output_ids = self.model.generate(input_ids, **self.sampling_params)
-        model_latency = time.perf_counter() - inference_start_time
+            model_latency = time.perf_counter() - inference_start_time
 
         raw_output = self.tokenizer.batch_decode(output_ids)[0]
         parsed_output = self._parse_harmony_output(raw_output)
@@ -151,9 +228,7 @@ class InvariantGeneratorModel(weave.Model):
         }
 
     @weave.op
-    def predict_vllm(
-        self, program: Program, target_label: Optional[str] = None, **_: Any
-    ) -> Dict:
+    def predict_vllm(self, program: Program) -> Dict:
         """
         Generate a candidate invariant for a given program using VLLM.
 
@@ -167,8 +242,16 @@ class InvariantGeneratorModel(weave.Model):
         # Get vLLM config from model_cfg
         vllm_base_url = self.model_cfg.get("vllm_base_url", "http://localhost:8000/v1")
         vllm_model = self.model_cfg.get("vllm_model", "gen_inv_adapter")
+
+        assertion_points = program.assertion_points
+        labeled_points, _ = self._label_assertion_points(
+            assertion_points, only_loop_beginnings=self.only_loop_beginnings
+        )
+        formatted_program = self._format_program_with_labels(
+            program=program, labeled_points=labeled_points
+        )
         user_prompt = self.user_prompt_template.content.format(
-            program=program.llm_code, target_label=target_label
+            program=formatted_program
         )
         messages = [
             {"role": "developer", "content": self.system_prompt.content},
@@ -204,6 +287,9 @@ class InvariantGeneratorModel(weave.Model):
             or ""
         )
         answer = message.content or ""
+
+        # Build raw output for compatibility (combine reasoning + answer)
+        # raw_output = f"<|channel|>analysis<|message|>{reasoning}<|end|>\n<|channel|>final<|message|>{answer}<|return|>"
 
         # Build usage dict compatible with regular predict
         usage = {

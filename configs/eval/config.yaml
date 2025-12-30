@@ -1,12 +1,12 @@
 # Weave configuration
 weave:
   entity: "ip-ai"
-  project_name: "eval-inv-gen"
-  skip_wandb: False
+  project_name: "eval-inv-gen-perloc"
+  skip_wandb: false
 
 # Evaluation configuration
 dataset:
-  name: "idopinto/invbench-evaluation-uautomizer25-k3"
+  name: "idopinto/invbench-eval-uautomizer25-k3-full"
   limit: -1 # number of samples to evaluate -1 for all
   prefix: "" # prefix to filter files by (useful for testing also)
   split: "hard" # split to evaluate on
@@ -14,16 +14,16 @@ dataset:
 # Model configuration
 model: 
   client: hf  # or hf
-  eval_finetuned_model: False
+  eval_finetuned_model: true
   base_model_name: "openai/gpt-oss-20b"
-  finetuned_model_id: "idopinto/gpt-oss-20b-gen-inv-sft"
-  reasoning_effort: "medium"
+  finetuned_model_id: "idopinto/gpt-oss-20b-gen-inv-sft-perloc"
+  reasoning_effort: "low"
   sampling_params:
     max_new_tokens: 16384
     temperature: 1.0
     top_p: 1.0
     top_k: 0.0
-  is_lora: True
+  is_lora: true
   # vLLM-specific config (only used when client=vllm)
   vllm_base_url: "http://localhost:8000/v1"
   vllm_model: "gen_inv_adapter"  # LoRA adapter name or base model name
@@ -35,34 +35,84 @@ scorer:
     property: "unreach-call.prp"
     arch: "32bit"
     timeout_seconds: 600.0
-  baseline_is_timeout: False
+  baseline_is_timeout: false
 
 # Prompt templates
 prompts:
-  only_loop_beginnings: True  # If True, only mark lines at the beginning of loops
-
+  # If True, the model is asked to produce an invariant specifically for INVARIANT_MARKER_{target_label}.
+  # Requires dataset examples to include a `target_label` field (e.g., "1", "2", ...).
+  eval_per_location: true
   default_system_prompt: |
     You are an expert C programmer and highly profiecient in generating strong loop invariants for C programs that accelerates traditional verifiers.
 
-  default_user_prompt_template: |
-    Generate a single candidate invariant for a given C program. you can place it at any of the marked lines with // Line <letter>, choose the most beneficial location:
-    ```c
-    {program}
-    ```
-    Answer only the invariant in the following format and nothing else:
-    assert(<invariant>); // Line <letter>
-
-    Example:
-    assert(a > 0 && a < 10); // Line A
 
   # Prompt for per-location evaluation (model generates invariant at a specific given location)
   per_location_user_prompt_template: |
-    Generate a single candidate invariant for the given C program at the marked location // Line {target_label}:
+    You are given a C program instrumented with loop markers of the form:
+    - INVARIANT_MARKER_k();  (appears at the *start of each loop body*)
+    The program also contains a target property as a normal assertion:
+    - assert(<target_property>);
+
+    Task:
+    - Propose ONE loop invariant that is intended to hold specifically at the loop head marker:
+      INVARIANT_MARKER_{target_label}
+    - The invariant should help prove the target property and be inductive if possible.
+
+    Output format (STRICT JSON):
+    - Output MUST be a single JSON object on one line and nothing else.
+    - The JSON MUST have exactly these keys:
+      - "marker": MUST be exactly "INVARIANT_MARKER_{target_label}"
+      - "content": ONLY a valid C boolean expression for the invariant (string), without "assert(...)", without "assume(...)", and without a trailing semicolon.
+
+    Not allowed:
+    - forall and exists quantifiers
+    - Any surrounding "assert"/"assume"
+    - Trailing semicolon
+    - English text, explanations, code blocks, extra lines
+
+    Example output:
+    {{"marker":"INVARIANT_MARKER_{target_label}","content":"x >= 0 && y <= n"}}
+
+    Program:
     ```c
     {program}
     ```
-    Answer only the invariant in the following format and nothing else:
-    assert(<invariant>);
 
-    Example:
-    assert(a > 0 && a < 10);
+  default_user_prompt_template: |
+    You are given a C program instrumented with loop markers of the form:
+    - INVARIANT_MARKER_k();  (appears at the *start of each loop body*)
+    The program also contains a target property as a normal assertion:
+    - assert(<target_property>);
+
+    Task:
+    - Propose ONE loop invariant that is intended to hold at the loop head of ONE chosen marker INVARIANT_MARKER_k.
+    - The invariant should help prove the target property and be inductive if possible.
+
+    Output format (STRICT JSON):
+    - Output MUST be a single JSON object on one line and nothing else.
+    - The JSON MUST have exactly these keys:
+      - "marker": the chosen marker name exactly, e.g. "INVARIANT_MARKER_1"
+      - "content": ONLY a valid C boolean expression for the invariant (string), without "assert(...)", without "assume(...)", and without a trailing semicolon.
+
+    Not allowed:
+    - forall and exists quantifiers
+    - Any surrounding "assert"/"assume"
+    - Trailing semicolon
+    - English text, explanations, code blocks, extra lines
+
+    Example output:
+    {{"marker":"INVARIANT_MARKER_2","content":"x >= 0 && y <= n"}}
+
+    Program:
+    ```c
+    {program}
+    ```
+
+  non_det_explanation: |
+    __VERIFIER_nondet_X(): In order to model nondeterministic values, the following functions can be assumed to return an arbitrary value of the indicated type: __VERIFIER_nondet_X() with X in {bool, char, int, int128, float, double, loff_t, long, longlong, pchar, pthread_t, sector_t, short, size_t, u32, uchar, uint, uint128, ulong, ulonglong, unsigned, ushort} (no side effects, pointer for void *, etc.). 
+    You may assume that the functions are implemented according to the following template:
+    X __VERIFIER_nondet_X() {{ X val; return val; }}
+
+
+#  uv run -m src.eval.evaluate model.client=vllm prompts.eval_per_location=true dataset.limit=1
+#  uv run -m src.eval.evaluate dataset.limit=1

@@ -8,10 +8,7 @@ from typing import Optional
 class Predicate:
     """
     Project-wide predicate container.
-
-    Historically predicates were tied to a concrete source line via `line_number`.
-    The AST-based pipeline can instead use `marker_name` (e.g., INVARIANT_MARKER_1,
-    TARGET_ASSERT_MARKER) and may leave `line_number=None`.
+    The AST-based pipeline can use `marker_name` (e.g., INVARIANT_MARKER_1)
     """
 
     content: str
@@ -19,3 +16,6 @@ class Predicate:
 
     def __repr__(self):
         return f"Predicate(content={self.content}, marker_name={self.marker_name})"
+
+    def __eq__(self, other: Predicate) -> bool:
+        return self.content == other.content and self.marker_name == other.marker_name

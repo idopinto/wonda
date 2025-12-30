@@ -1,76 +1,127 @@
-from dataclasses import dataclass
-from typing import Optional, Dict, List, Any
-import sys
+from __future__ import annotations
+
+import copy
+import os
 import re
 import subprocess
 import tempfile
-import os
-import copy
 from pathlib import Path
-from pycparser import c_parser, c_generator, c_ast
-from src.preprocess.predicate import Predicate  # type: ignore
+from typing import Any, Dict, List, Optional, Tuple
+
+from pycparser import c_ast, c_generator, c_parser
+
+from src.preprocess.predicate import Predicate
 
 PATCH = (
     "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n"
     "void assume(int cond) { if (!cond) { abort(); } }\n"
 )
 
+INVARIANT_MARKER_PREFIX = "INVARIANT_MARKER_"
+TARGET_ASSERT_MARKER = "TARGET_ASSERT_MARKER"
 
-class LoopLabeler(c_ast.NodeVisitor):
-    def __init__(self):
+
+def _gcc_preprocess(code: str) -> str:
+    """Preprocess code with gcc to remove comments/macros/includes expansion noise."""
+    # Remove includes before GCC preprocessing to avoid macro expansion
+    code = re.sub(r'^\s*#include\s+[<"].*?[>"]\s*$', "", code, flags=re.MULTILINE)
+
+    fd, path = tempfile.mkstemp(suffix=".c", prefix="gcc_preprocess_")
+    os.close(fd)
+    tmp_file = Path(path)
+    try:
+        tmp_file.write_text(code)
+        command = f"gcc -E -P -nostdinc {tmp_file}"
+        p = subprocess.run(command.split(), capture_output=True)
+        if p.returncode != 0:
+            stderr = p.stderr.decode("utf-8", errors="replace")
+            raise RuntimeError(f"GCC preprocessing failed: {stderr}")
+        return p.stdout.decode("utf-8", errors="replace")
+    finally:
+        if tmp_file.exists():
+            tmp_file.unlink()
+
+
+def _rewrite_verifier_builtins(code: str) -> str:
+    """Normalize SV-COMP verifier intrinsics to assert/assume and strip GCC extensions."""
+    code = re.sub(r"__attribute__\s*\(\([^)]*\)\)", "", code)
+    code = re.sub(r"printf\s*\([^)]*\)\s*;", "", code)
+    code = re.sub(r"__extension__\s*", "", code)
+
+    code = code.replace("__VERIFIER_assert", "assert")
+    code = code.replace("assume_abort_if_not", "assume")
+    code = re.sub(r"\n\s*\n\s*\n+", "\n\n", code).strip()
+    return code
+
+
+def _is_call_named(node: Any, name: str) -> bool:
+    """Check if a C AST node is a function call with the specified name.
+
+    Args:
+        node: A C AST node to check
+        name: The function name to match against
+
+    Returns:
+        True if the node is a FuncCall node with the given name, False otherwise
+    """
+    return (
+        isinstance(node, c_ast.FuncCall)
+        and isinstance(node.name, c_ast.ID)
+        and node.name.name == name
+    )
+
+
+class _LoopMarkerInserter(c_ast.NodeVisitor):
+    """Insert INVARIANT_MARKER_k(); at the top of every loop body."""
+
+    def __init__(self) -> None:
         self.loop_count = 0
+        self.marker_names: List[str] = []  # Track all marker names created
 
-    def _add_marker(self, node):
-        """Helper method to add an invariant marker to a loop body."""
+    def _add_marker(self, node: Any) -> None:
         self.loop_count += 1
-        # Create a marker: we use a FunctionCall as a placeholder for the assertion
-        # because it's easier for the AST generator to render than a raw comment string
-        marker_name = f"INVARIANT_MARKER_{self.loop_count}"
-        marker = c_ast.FuncCall(name=c_ast.ID(marker_name), args=None)
+        marker_name = f"{INVARIANT_MARKER_PREFIX}{self.loop_count}"
+        self.marker_names.append(marker_name)  # Track this marker
+        marker_stmt = c_ast.FuncCall(name=c_ast.ID(marker_name), args=None)
 
         if isinstance(node.stmt, c_ast.Compound):
-            # Insert at the very top of the { } block
-            node.stmt.block_items.insert(0, marker)
+            if node.stmt.block_items is None:
+                node.stmt.block_items = [marker_stmt]
+            else:
+                node.stmt.block_items.insert(0, marker_stmt)
         else:
-            # Convert single line loop to compound block
-            node.stmt = c_ast.Compound(block_items=[marker, node.stmt])
+            node.stmt = c_ast.Compound(block_items=[marker_stmt, node.stmt])
 
-    def visit_While(self, node):
+    def visit_While(self, node: c_ast.While) -> None:
         self._add_marker(node)
         self.generic_visit(node)
 
-    def visit_For(self, node):
+    def visit_For(self, node: c_ast.For) -> None:
         self._add_marker(node)
         self.generic_visit(node)
 
-    def visit_DoWhile(self, node):
+    def visit_DoWhile(self, node: c_ast.DoWhile) -> None:
         self._add_marker(node)
         self.generic_visit(node)
 
 
-class DeclarationRemover(c_ast.NodeVisitor):
-    """Visitor to remove functions and extern declarations from the AST."""
+class _DeclarationPruner(c_ast.NodeVisitor):
+    """Remove unwanted function definitions and extern declarations."""
 
-    def __init__(self, functions_to_remove=None, remove_externs=True):
-        """
-        Args:
-            functions_to_remove: Set or list of function names to remove. If None, no functions are removed.
-            remove_externs: If True, remove all extern declarations.
-        """
-        self.functions_to_remove = (
-            set(functions_to_remove) if functions_to_remove else set()
-        )
+    def __init__(
+        self,
+        functions_to_remove: Optional[List[str]] = None,
+        remove_externs: bool = True,
+    ):
+        self.functions_to_remove = set(functions_to_remove or [])
         self.remove_externs = remove_externs
 
-    def visit_FileAST(self, node):
-        """Visit the root node and filter out unwanted declarations."""
+    def visit_FileAST(self, node: c_ast.FileAST) -> None:
         if node.ext:
             node.ext = [ext for ext in node.ext if not self._should_remove(ext)]
         self.generic_visit(node)
 
-    def _should_remove(self, ext):
-        """Check if a declaration should be removed."""
-        # Remove functions by name
+    def _should_remove(self, ext: Any) -> bool:
         if self.functions_to_remove:
             if (
                 isinstance(ext, c_ast.FuncDef)
@@ -79,7 +130,6 @@ class DeclarationRemover(c_ast.NodeVisitor):
             ):
                 return True
 
-        # Remove extern declarations
         if self.remove_externs:
             if isinstance(ext, c_ast.Decl) and ext.storage and "extern" in ext.storage:
                 return True
@@ -87,94 +137,38 @@ class DeclarationRemover(c_ast.NodeVisitor):
         return False
 
 
-class MarkerReplacer(c_ast.NodeVisitor):
-    """Visitor to replace INVARIANT_MARKER_K function calls with assume/assert statements."""
-
-    def __init__(self, predicates: Dict[str, str], parser: c_parser.CParser):
-        """
-        Args:
-            predicates: Dictionary mapping marker names to predicate content.
-                       e.g., {"INVARIANT_MARKER_1": "x > 0", "INVARIANT_MARKER_2": "y < 10"}
-            parser: C parser instance for parsing predicate expressions.
-        """
-        self.predicates = predicates
-        self.parser = parser
-
-    def _parse_predicate_expression(self, predicate_content: str) -> c_ast.Node:
-        """Parse a predicate string into an AST expression node."""
-        try:
-            # Wrap in a simple expression context to parse
-            wrapped = f"void _temp() {{ int _dummy = {predicate_content}; }}"
-            temp_ast = self.parser.parse(wrapped)
-            # Extract the expression from the assignment
-            for ext in temp_ast.ext:
-                if isinstance(ext, c_ast.FuncDef):
-                    for stmt in ext.body.block_items:
-                        if isinstance(stmt, c_ast.Decl) and stmt.init:
-                            return stmt.init
-        except Exception:
-            pass
-        # Fallback: try to parse as a condition
-        try:
-            wrapped = f"void _temp() {{ if ({predicate_content}) {{ }} }}"
-            temp_ast = self.parser.parse(wrapped)
-            for ext in temp_ast.ext:
-                if isinstance(ext, c_ast.FuncDef):
-                    for stmt in ext.body.block_items:
-                        if isinstance(stmt, c_ast.If):
-                            return stmt.cond
-        except Exception:
-            pass
-        # Final fallback: return as ID
-        return c_ast.ID(predicate_content)
-
-    def visit_Compound(self, node):
-        """Visit compound statements to find and replace markers in block_items."""
-        if node.block_items:
-            new_block_items = []
-            for item in node.block_items:
-                if isinstance(item, c_ast.FuncCall) and isinstance(item.name, c_ast.ID):
-                    marker_name = item.name.name
-                    if (
-                        marker_name.startswith("INVARIANT_MARKER_")
-                        and marker_name in self.predicates
-                    ):
-                        # Replace marker with assume statement
-                        predicate_content = self.predicates[marker_name]
-                        predicate_expr = self._parse_predicate_expression(
-                            predicate_content
-                        )
-                        assume_call = c_ast.FuncCall(
-                            name=c_ast.ID("assume"),
-                            args=c_ast.ExprList(exprs=[predicate_expr]),
-                        )
-                        # FuncCall itself is a valid statement in C
-                        new_block_items.append(assume_call)
-                    else:
-                        new_block_items.append(item)
-                else:
-                    new_block_items.append(item)
-            node.block_items = new_block_items
-        self.generic_visit(node)
-
-
 class Program:
+    """
+    AST-based preprocessor + marker-based instrumentation.
+
+    - Keeps the target assertion at its original location using TARGET_ASSERT_MARKER();
+    - Places candidate assumes/asserts at loop markers INVARIANT_MARKER_k();
+    - Emits llm_code with nondet->rand rewrites.
+    """
+
     def __init__(self):
         self.input_path: Optional[Path] = None
         self.code: Optional[str] = None
+
         self.pp_code: Optional[str] = None
         self.llm_code: Optional[str] = None
         self.marked_code_from_ast: Optional[str] = None
+
         self.ast: Optional[c_ast.FileAST] = None
-        self.llm_ast: Optional[c_ast.FileAST] = None
         self.marked_ast: Optional[c_ast.FileAST] = None
-        # Compatibility with src.utils.program.Program API
+        self.llm_ast: Optional[c_ast.FileAST] = None
+        # Number of loops (= number of INVARIANT_MARKER_k inserted)
+        self.num_loops: int = 0
+
+        # List of all available markers for validation
+        self.available_markers: List[str] = []
+
+        # Public API compatibility: one "target" assertion stored here
         self.assertions: List[Predicate] = []
-        self.lemmas: List[Predicate] = []
-        # Marker name used to represent the (single) target assertion location in the AST
-        self.target_assert_marker: str = "TARGET_ASSERT_MARKER"
-        self.parser: Optional[c_parser.CParser] = c_parser.CParser()
-        self.generator: Optional[c_generator.CGenerator] = c_generator.CGenerator()
+        self.lemmas: List[Predicate] = []  # reserved (not used in this AST pipeline)
+
+        self.parser = c_parser.CParser()
+        self.generator = c_generator.CGenerator()
 
     def from_file_path(self, input_path: Path) -> "Program":
         self.input_path = input_path
@@ -186,51 +180,99 @@ class Program:
         return self
 
     def preprocess(self) -> str:
-        """Preprocess C file using GCC to handle directives, comments, and includes."""
-        # Remove includes before GCC preprocessing to avoid macro expansion
-        self.pp_code = re.sub(
-            r'^\s*#include\s+[<"].*?[>"]\s*$', "", self.code, flags=re.MULTILINE
-        )
-        fd, path = tempfile.mkstemp(suffix=".c", prefix="gcc_preprocess_")
-        os.close(fd)
-        tmp_file = Path(path)
+        if not self.code:
+            raise ValueError("Code is not set")
+        pp = _gcc_preprocess(self.code)
+        pp = _rewrite_verifier_builtins(pp)
+        self.pp_code = pp
+        return pp
+
+    def process(
+        self, functions_to_remove: Optional[List[str]] = None, print_ast: bool = False
+    ) -> Tuple[str, str]:
+        """
+        Build:
+        - self.ast: cleaned AST with the target assert replaced by TARGET_ASSERT_MARKER();
+        - self.marked_ast: same, plus INVARIANT_MARKER_k inserted into loop bodies;
+        - self.llm_ast: marked_ast but with the target marker materialized back to assert(target).
+        Also builds pp_code/marked_code_from_ast/llm_code strings.
+        """
+        if functions_to_remove is None:
+            functions_to_remove = [
+                "reach_error",
+                "__VERIFIER_assert",
+                "assert",
+                "assume_abort_if_not",
+                "assume",
+            ]
         try:
-            # Write cleaned code to temp location
-            tmp_file.write_text(self.pp_code)
-            command = f"gcc -E -P -nostdinc {tmp_file}"
-            p = subprocess.run(command.split(), capture_output=True)
-            if p.returncode != 0:
-                stderr = p.stderr.decode("utf-8", errors="replace")
-                raise RuntimeError(f"GCC preprocessing failed: {stderr}")
-            output = p.stdout.decode("utf-8", errors="replace")
-            self.pp_code = output
-        finally:
-            if tmp_file.exists():
-                tmp_file.unlink()
+            self.preprocess()
+        except Exception as e:
+            raise RuntimeError(f"Preprocessing failed: {e}") from e
 
-        # Remove __attribute__ declarations (GCC extension, keep regex removal before parsing)
-        self.pp_code = re.sub(r"__attribute__\s*\(\([^)]*\)\)", "", self.pp_code)
-        self.pp_code = re.sub(r"printf\s*\([^)]*\)\s*;", "", self.pp_code)
+        assert self.pp_code is not None
 
-        # Remove __extension__ prefixes (GCC extension, keep regex removal before parsing)
-        self.pp_code = re.sub(r"__extension__\s*", "", self.pp_code)
-        self.pp_code = self.pp_code.replace("__VERIFIER_assert", "assert")
-        self.pp_code = self.pp_code.replace("assume_abort_if_not", "assume")
-        self.pp_code = re.sub(r"\n\s*\n\s*\n+", "\n\n", self.pp_code).strip()
+        # Parse and prune declarations
+        # print("PP CODE:", self.pp_code)
+        self.ast = self.parser.parse(self.pp_code)
+        _DeclarationPruner(
+            functions_to_remove=functions_to_remove, remove_externs=True
+        ).visit(self.ast)
 
-    @staticmethod
-    def _is_call_named(node: Any, name: str) -> bool:
-        return (
-            isinstance(node, c_ast.FuncCall)
-            and isinstance(node.name, c_ast.ID)
-            and node.name.name == name
+        # Replace the (single) target assertion with a marker at its original location
+        self.assertions = []
+        self._replace_first_assert_with_target_marker(self.ast)
+        if not self.assertions:
+            raise ValueError("No target assert(...) found in program")
+
+        # Loop markers for placement (verification-time and LLM-time)
+        self.marked_ast = copy.deepcopy(self.ast)
+        inserter = _LoopMarkerInserter()
+        inserter.visit(self.marked_ast)
+        self.num_loops = inserter.loop_count
+
+        # Store all available markers (loop markers + target marker)
+        self.available_markers = inserter.marker_names.copy()
+        if self.assertions:  # Only add if target assert was found
+            self.available_markers.append(TARGET_ASSERT_MARKER)
+
+        # LLM-facing: show the target property as assert(...) (not as a marker call)
+        self.llm_ast = copy.deepcopy(self.marked_ast)
+        self._replace_marker_with_call(
+            self.llm_ast,
+            marker_name=TARGET_ASSERT_MARKER,
+            call_name="assert",
+            predicate_content=self.assertions[0].content,
         )
+
+        # Emit code strings (no PATCH here; PATCH is added by get_program_with_assertion when for_llm=False)
+        self.pp_code = self.generator.visit(self.ast).strip()
+        self.marked_code_from_ast = self.generator.visit(self.marked_ast).strip()
+        self.llm_code = self._replace_nondet_with_rand(
+            self.generator.visit(self.llm_ast).strip()
+        )
+
+        if print_ast:
+            print("AST:", self.ast)
+            print("MARKED AST:", self.marked_ast)
+            print("LLM AST:", self.llm_ast)
+
+        return self.pp_code, self.llm_code
+
+    def get_target_assert(self) -> Predicate:
+        return self.assertions[0]
+
+    def get_available_markers(self) -> List[str]:
+        """Return list of all available markers for validation.
+
+        Returns:
+            List of marker names including:
+            - INVARIANT_MARKER_1, INVARIANT_MARKER_2, ... (loop markers)
+            - TARGET_ASSERT_MARKER (target assertion marker)
+        """
+        return self.available_markers.copy()
 
     def _extract_first_arg_as_text(self, call: c_ast.FuncCall) -> str:
-        """
-        Best-effort extraction of the call's first argument as C text.
-        Falls back to "" if the structure is unexpected.
-        """
         try:
             if call.args is None:
                 return ""
@@ -241,245 +283,67 @@ class Program:
             return ""
 
     def _replace_first_assert_with_target_marker(self, ast: c_ast.FileAST) -> None:
-        """
-        Find the first statement-level assert(...) call in the program and replace it
-        with a marker statement TARGET_ASSERT_MARKER(); while recording its predicate.
-
-        This lets us keep the *original location* of the target assertion in the AST,
-        and later choose whether to materialize it (usefulness) or hide/replace it (correctness).
-        """
         program_self = self
 
         class Markerizer(c_ast.NodeVisitor):
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self.done = False
 
             def _maybe_replace_stmt(self, stmt: Any) -> Any:
                 if self.done:
                     return stmt
-                if Program._is_call_named(stmt, "assert"):
+                if _is_call_named(stmt, "assert"):
                     program_self.assertions.append(
                         Predicate(
-                            marker_name=program_self.target_assert_marker,
                             content=program_self._extract_first_arg_as_text(stmt),
+                            marker_name=TARGET_ASSERT_MARKER,
                         )
                     )
                     self.done = True
                     return c_ast.FuncCall(
-                        name=c_ast.ID(program_self.target_assert_marker), args=None
+                        name=c_ast.ID(TARGET_ASSERT_MARKER), args=None
                     )
                 return stmt
 
-            def visit_Compound(self, node: c_ast.Compound):
+            def visit_Compound(self, node: c_ast.Compound) -> None:
                 if node.block_items:
                     new_items = []
-                    for item in node.block_items:
-                        if isinstance(item, c_ast.Label):
-                            item.stmt = self._maybe_replace_stmt(item.stmt)
-                            new_items.append(item)
+                    for it in node.block_items:
+                        if isinstance(it, c_ast.Label):
+                            # Preserve the label, but replace its inner statement if needed
+                            it.stmt = self._maybe_replace_stmt(it.stmt)
+                            new_items.append(it)
                         else:
-                            new_items.append(self._maybe_replace_stmt(item))
+                            new_items.append(self._maybe_replace_stmt(it))
                     node.block_items = new_items
                 self.generic_visit(node)
 
         Markerizer().visit(ast)
 
-    def _remove_unresolved_markers(self, ast: c_ast.FileAST) -> None:
-        """Remove any remaining marker statements to keep generated C valid."""
-
-        class Cleaner(c_ast.NodeVisitor):
-            def _is_marker_stmt(self, stmt: Any) -> bool:
-                return (
-                    isinstance(stmt, c_ast.FuncCall)
-                    and isinstance(stmt.name, c_ast.ID)
-                    and (
-                        stmt.name.name.startswith("INVARIANT_MARKER_")
-                        or stmt.name.name == self_marker
-                    )
-                )
-
-            def visit_Compound(self, node: c_ast.Compound):
-                if node.block_items:
-                    new_items = []
-                    for item in node.block_items:
-                        if self._is_marker_stmt(item):
-                            new_items.append(c_ast.EmptyStatement())
-                        elif isinstance(item, c_ast.Label) and self._is_marker_stmt(
-                            item.stmt
-                        ):
-                            item.stmt = c_ast.EmptyStatement()
-                            new_items.append(item)
-                        else:
-                            new_items.append(item)
-                    node.block_items = new_items
-                self.generic_visit(node)
-
-        self_marker = self.target_assert_marker
-        Cleaner().visit(ast)
-
-    def replace_nondet_with_rand_for_llm(self, llm_code_from_ast: str):
-        """Replace __VERIFIER_nondet_*() calls with rand() in LLM code."""
-        self.llm_code = llm_code_from_ast
-        pattern = r"\b__VERIFIER_nondet_\w+\b"
-        tokens = set(re.findall(pattern, llm_code_from_ast))
-        for token in tokens:
-            pattern = token + "()"
-            replacement = (
-                self.nondet_type(token.split("__VERIFIER_nondet_")[1]) + " rand()"
-            )
-            self.llm_code = self.llm_code.replace(pattern, replacement)
-
-    def process(self, functions_to_remove=None, print_ast=False) -> str:
-        """
-        Complete processing pipeline: preprocess, parse, remove functions, add loop markers to LLM AST only.
-
-        Args:
-            functions_to_remove: List of function names to remove from AST.
-                                Defaults to ["reach_error", "__VERIFIER_assert"]
-            print_ast: If True, print the AST after parsing
-
-        Returns:
-            Generated C code with loop markers added
-        """
-        if not self.code:
-            raise ValueError("Code is not set")
-
-        if functions_to_remove is None:
-            functions_to_remove = [
-                "reach_error",
-                "__VERIFIER_assert",
-                "assert",
-                "assume_abort_if_not",
-                "assume",
-            ]
-
+    def _parse_expr(self, expr_src: str) -> c_ast.Node:
+        """Parse a predicate expression into a pycparser expression node (best-effort)."""
         try:
-            # Preprocess the file using GCC
-            self.preprocess()
-
-            # Debug: check if code is empty or malformed
-            if not self.pp_code or not self.pp_code.strip():
-                raise ValueError("Preprocessed code is empty")
-
-            # 1. Parse the preprocessed code
-            self.ast = self.parser.parse(self.pp_code)
-            if print_ast:
-                print("PP AST:", self.ast)
-
-            # 2. Remove unwanted functions and extern declarations from AST
-            declaration_remover = DeclarationRemover(
-                functions_to_remove=functions_to_remove, remove_externs=True
-            )
-            declaration_remover.visit(self.ast)
-            # 8. Add PATCH to both codes
-            self.pp_code = PATCH + self.pp_code
-            self.ast = self.parser.parse(self.pp_code)
-            if print_ast:
-                print("PP AST:", self.ast)
-
-            # 2.5 Replace the (single) target assertion with a marker at the original location
-            self.assertions = []
-            self._replace_first_assert_with_target_marker(self.ast)
-
-            # 3. Create a loop-marked AST for verification-time insertion (assert/assume by marker)
-            self.marked_ast = copy.deepcopy(self.ast)
-            # 4. Add loop markers to the marked AST
-            labeler = LoopLabeler()
-            labeler.visit(self.marked_ast)
-            if print_ast:
-                print("MARKED AST:", self.marked_ast)
-
-            # 5. Create LLM-facing AST from the marked AST (includes markers)
-            self.llm_ast = copy.deepcopy(self.marked_ast)
-
-            # 5.5 In the LLM-facing AST, show the target assert (not the marker) at its original location
-            if self.assertions:
-                target = self.assertions[0]
-                self._replace_marker_with_call(
-                    self.llm_ast,
-                    marker_name=self.target_assert_marker,
-                    call_name="assert",
-                    predicate_content=target.content,
-                )
-
-            # 6. Generate Code back from ASTs
-            self.pp_code = self.generator.visit(self.ast).strip()
-            self.llm_code = self.generator.visit(self.llm_ast).strip()
-            # self.replace_nondet_with_rand_for_llm(
-            #     self.generator.visit(self.llm_ast).strip()
-            # )
-            # self.llm_ast = self.parser.parse(self.llm_code)
-            # self.llm_code = self.generator.visit(self.llm_ast).strip()
-            self.marked_code_from_ast = self.generator.visit(self.marked_ast).strip()
-
-        except Exception as e:
-            import traceback
-
-            raise RuntimeError(f"Error: {e}\n{traceback.format_exc()}") from e
-
-    def nondet_type(self, type_str: str):
-        """Convert nondet type to C cast expression."""
-        if type_str == "uchar":
-            return "(unsigned char)"
-        elif type_str == "char":
-            return "(signed char)"
-        elif type_str == "uint":
-            return "(unsigned int)"
-        else:
-            return f"({type_str})"
-
-    def _parse_predicate_expression(self, predicate_content: str) -> c_ast.Node:
-        """Parse a predicate string into an AST expression node."""
-        # Wrap in a simple expression context to parse
-        wrapped = f"void _temp() {{ int _dummy = {predicate_content}; }}"
-        temp_ast = self.parser.parse(wrapped)
-        # Extract the expression from the assignment
-        for ext in temp_ast.ext:
-            if isinstance(ext, c_ast.FuncDef):
-                for stmt in ext.body.block_items:
-                    if isinstance(stmt, c_ast.Decl) and stmt.init:
-                        return stmt.init
-        # Fallback: return as ID if parsing fails
-        return c_ast.ID(predicate_content)
-
-    def _add_assume_to_ast(self, ast: c_ast.FileAST, predicate_content: str):
-        """(Legacy helper) Add an assume statement at the beginning of main function."""
-        for ext in ast.ext:
-            if isinstance(ext, c_ast.FuncDef) and isinstance(ext.decl, c_ast.Decl):
-                if ext.decl.name == "main":
-                    assume_expr = self._parse_predicate_expression(predicate_content)
-                    assume_call = c_ast.FuncCall(
-                        name=c_ast.ID("assume"),
-                        args=c_ast.ExprList(exprs=[assume_expr]),
-                    )
-                    if isinstance(ext.body, c_ast.Compound):
-                        if ext.body.block_items is None:
-                            ext.body.block_items = [assume_call]
-                        else:
-                            ext.body.block_items.insert(0, assume_call)
-                    else:
-                        ext.body = c_ast.Compound(block_items=[assume_call, ext.body])
-                    break
-
-    def _add_assert_to_ast(self, ast: c_ast.FileAST, predicate_content: str):
-        """(Legacy helper) Add an assert statement at the end of main function."""
-        for ext in ast.ext:
-            if isinstance(ext, c_ast.FuncDef) and isinstance(ext.decl, c_ast.Decl):
-                if ext.decl.name == "main":
-                    assert_expr = self._parse_predicate_expression(predicate_content)
-                    assert_call = c_ast.FuncCall(
-                        name=c_ast.ID("assert"),
-                        args=c_ast.ExprList(exprs=[assert_expr]),
-                    )
-                    if isinstance(ext.body, c_ast.Compound):
-                        if ext.body.block_items is None:
-                            ext.body.block_items = [assert_call]
-                        else:
-                            ext.body.block_items.append(assert_call)
-                    else:
-                        ext.body = c_ast.Compound(block_items=[ext.body, assert_call])
-                    break
+            wrapped = f"void _temp() {{ int _dummy = {expr_src}; }}"
+            temp_ast = self.parser.parse(wrapped)
+            for ext in temp_ast.ext:
+                if isinstance(ext, c_ast.FuncDef):
+                    for stmt in ext.body.block_items or []:
+                        if isinstance(stmt, c_ast.Decl) and stmt.init is not None:
+                            return stmt.init
+        except Exception:
+            pass
+        try:
+            wrapped = f"void _temp() {{ if ({expr_src}) {{ }} }}"
+            temp_ast = self.parser.parse(wrapped)
+            for ext in temp_ast.ext:
+                if isinstance(ext, c_ast.FuncDef):
+                    for stmt in ext.body.block_items or []:
+                        if isinstance(stmt, c_ast.If):
+                            return stmt.cond
+        except Exception:
+            pass
+        return c_ast.ID(expr_src)
 
     def _replace_marker_with_call(
         self,
@@ -488,15 +352,13 @@ class Program:
         call_name: str,
         predicate_content: str,
     ) -> None:
-        """Replace a specific marker statement with call_name(predicate_content)."""
-
-        pred_expr = self._parse_predicate_expression(predicate_content)
         call_stmt = c_ast.FuncCall(
-            name=c_ast.ID(call_name), args=c_ast.ExprList(exprs=[pred_expr])
+            name=c_ast.ID(call_name),
+            args=c_ast.ExprList(exprs=[self._parse_expr(predicate_content)]),
         )
 
         class Replacer(c_ast.NodeVisitor):
-            def visit_Compound(self, node: c_ast.Compound):
+            def visit_Compound(self, node: c_ast.Compound) -> None:
                 if node.block_items:
                     new_items = []
                     for item in node.block_items:
@@ -524,14 +386,17 @@ class Program:
     def _replace_loop_markers(
         self, ast: c_ast.FileAST, replacements: Dict[str, Dict[str, str]]
     ) -> None:
-        """
-        Replace INVARIANT_MARKER_k with assume/assert calls.
-
-        replacements: { marker_name: { "kind": "assume"|"assert", "expr": "<c expr>" } }
-        """
+        program_self = self
 
         class LoopMarkerReplacer(c_ast.NodeVisitor):
-            def visit_Compound(self, node: c_ast.Compound):
+            def _make_replacement(self, marker_name: str) -> c_ast.FuncCall:
+                spec = replacements[marker_name]
+                return c_ast.FuncCall(
+                    name=c_ast.ID(spec["kind"]),
+                    args=c_ast.ExprList(exprs=[program_self._parse_expr(spec["expr"])]),
+                )
+
+            def visit_Compound(self, node: c_ast.Compound) -> None:
                 if node.block_items:
                     new_items = []
                     for item in node.block_items:
@@ -540,132 +405,200 @@ class Program:
                             and isinstance(item.name, c_ast.ID)
                             and item.name.name in replacements
                         ):
-                            spec = replacements[item.name.name]
-                            expr = program_self._parse_predicate_expression(
-                                spec["expr"]
-                            )
-                            new_items.append(
-                                c_ast.FuncCall(
-                                    name=c_ast.ID(spec["kind"]),
-                                    args=c_ast.ExprList(exprs=[expr]),
-                                )
-                            )
+                            new_items.append(self._make_replacement(item.name.name))
+                        elif isinstance(item, c_ast.Label):
+                            # Preserve labels, but replace marker inside if needed
+                            if (
+                                isinstance(item.stmt, c_ast.FuncCall)
+                                and isinstance(item.stmt.name, c_ast.ID)
+                                and item.stmt.name.name in replacements
+                            ):
+                                item.stmt = self._make_replacement(item.stmt.name.name)
+                            new_items.append(item)
                         else:
                             new_items.append(item)
                     node.block_items = new_items
                 self.generic_visit(node)
 
-        program_self = self
         LoopMarkerReplacer().visit(ast)
+
+    def _remove_unresolved_markers(self, ast: c_ast.FileAST) -> None:
+        class Cleaner(c_ast.NodeVisitor):
+            def _is_marker_stmt(self, stmt: Any) -> bool:
+                return (
+                    isinstance(stmt, c_ast.FuncCall)
+                    and isinstance(stmt.name, c_ast.ID)
+                    and (
+                        stmt.name.name.startswith(INVARIANT_MARKER_PREFIX)
+                        or stmt.name.name == TARGET_ASSERT_MARKER
+                    )
+                )
+
+            def visit_Compound(self, node: c_ast.Compound) -> None:
+                if node.block_items:
+                    new_items = []
+                    for item in node.block_items:
+                        if self._is_marker_stmt(item):
+                            new_items.append(c_ast.EmptyStatement())
+                        elif isinstance(item, c_ast.Label) and self._is_marker_stmt(
+                            item.stmt
+                        ):
+                            item.stmt = c_ast.EmptyStatement()
+                            new_items.append(item)
+                        else:
+                            new_items.append(item)
+                    node.block_items = new_items
+                self.generic_visit(node)
+
+        Cleaner().visit(ast)
+
+    def _replace_nondet_with_rand(self, code: str) -> str:
+        out = code
+        tokens = set(re.findall(r"\b__VERIFIER_nondet_\w+\b", code))
+        for token in tokens:
+            out = out.replace(
+                token + "()",
+                nondet_type(token.split("__VERIFIER_nondet_")[1]) + " rand()",
+            )
+        return out
 
     def get_program_with_assertion(
         self,
         predicate: Optional[Predicate],
         assumptions: List[Predicate],
         for_llm: bool,
+        preserve_predicate_format: bool = True,
     ) -> str:
         """
-        Generate program with caller-selected assertions/assumptions.
+        Marker-based instrumentation.
 
-        Args:
-            predicate: Optional predicate to assert (typically: candidate for correctness, or target for usefulness).
-            assumptions: List of predicates to assume at the start of main (typically: candidate(s) for usefulness).
-            for_llm: If True, use the loop-marked llm_ast; otherwise use ast.
-
-        Returns:
-            Generated C code with inserted assumes/assert (and optional marker replacement).
+        - assumptions: each must have marker_name=INVARIANT_MARKER_k
+        - predicate:
+            - if marker_name==TARGET_ASSERT_MARKER: assert(target) at original target location
+            - else marker_name==INVARIANT_MARKER_k: assert(candidate) at that loop marker
+        - preserve_predicate_format: if True, use string replacement to preserve the original
+            predicate format (avoids pycparser adding extra parentheses)
         """
-        if not self.ast:
-            raise ValueError("AST not initialized. Call process() first.")
-        if not self.marked_ast:
-            raise ValueError("Marked AST not initialized. Call process() first.")
+        if self.marked_ast is None or self.llm_ast is None:
+            raise ValueError("Call process() first")
 
-        # Select which AST to use
+        # Use placeholder for string-based replacement to preserve predicate format
+        PLACEHOLDER = "__PREDICATE_PLACEHOLDER__"
+        original_predicates: Dict[str, str] = {}  # marker -> original content
+
         working_ast = copy.deepcopy(self.llm_ast if for_llm else self.marked_ast)
 
-        # 1) Loop-marker driven assumes
-        loop_repls: Dict[str, Dict[str, str]] = {}
+        repls: Dict[str, Dict[str, str]] = {}
         for a in assumptions:
-            marker = getattr(a, "marker_name", None)
-            if not marker or not marker.startswith("INVARIANT_MARKER_"):
-                raise ValueError(
-                    "AST pipeline expects assumptions to carry marker_name like INVARIANT_MARKER_k"
-                )
-            loop_repls[marker] = {"kind": "assume", "expr": a.content}
+            if not a.marker_name or not a.marker_name.startswith(
+                INVARIANT_MARKER_PREFIX
+            ):
+                raise ValueError("assumptions must have marker_name=INVARIANT_MARKER_k")
+            if preserve_predicate_format:
+                placeholder_id = f"{PLACEHOLDER}_{a.marker_name}"
+                original_predicates[placeholder_id] = a.content
+                repls[a.marker_name] = {"kind": "assume", "expr": placeholder_id}
+            else:
+                repls[a.marker_name] = {"kind": "assume", "expr": a.content}
 
-        # 2) Assertion placement:
-        # - If predicate matches the target, materialize it at its original marker location.
-        # - Else, if it targets a loop marker, assert at that loop marker.
         if predicate is not None:
-            pred_marker = getattr(predicate, "marker_name", None)
-            is_target_by_marker = pred_marker == self.target_assert_marker
-            # is_target_by_content = self.assertions and predicate.content == self.assertions[0].content and pred_marker is None
-
-            if is_target_by_marker:
-                self._replace_marker_with_call(
-                    working_ast,
-                    marker_name=self.target_assert_marker,
-                    call_name="assert",
-                    predicate_content=predicate.content,
-                )
-            elif pred_marker and pred_marker.startswith("INVARIANT_MARKER_"):
-                loop_repls[pred_marker] = {"kind": "assert", "expr": predicate.content}
+            if predicate.marker_name == TARGET_ASSERT_MARKER:
+                if preserve_predicate_format:
+                    placeholder_id = f"{PLACEHOLDER}_{TARGET_ASSERT_MARKER}"
+                    original_predicates[placeholder_id] = predicate.content
+                    self._replace_marker_with_call(
+                        working_ast,
+                        marker_name=TARGET_ASSERT_MARKER,
+                        call_name="assert",
+                        predicate_content=placeholder_id,
+                    )
+                else:
+                    self._replace_marker_with_call(
+                        working_ast,
+                        marker_name=TARGET_ASSERT_MARKER,
+                        call_name="assert",
+                        predicate_content=predicate.content,
+                    )
+            elif predicate.marker_name and predicate.marker_name.startswith(
+                INVARIANT_MARKER_PREFIX
+            ):
+                if preserve_predicate_format:
+                    placeholder_id = f"{PLACEHOLDER}_{predicate.marker_name}"
+                    original_predicates[placeholder_id] = predicate.content
+                    repls[predicate.marker_name] = {
+                        "kind": "assert",
+                        "expr": placeholder_id,
+                    }
+                else:
+                    repls[predicate.marker_name] = {
+                        "kind": "assert",
+                        "expr": predicate.content,
+                    }
             else:
                 raise ValueError(
-                    "AST pipeline expects predicate to be either the target or have marker_name=INVARIANT_MARKER_k"
+                    "predicate must have marker_name=TARGET_ASSERT_MARKER or INVARIANT_MARKER_k"
                 )
 
-        # 3) Apply loop marker replacements (assume/assert)
-        if loop_repls:
-            self._replace_loop_markers(working_ast, loop_repls)
+        if repls:
+            self._replace_loop_markers(working_ast, repls)
 
-        # 5) Remove any unresolved markers so verifier code stays valid C
         if not for_llm:
             self._remove_unresolved_markers(working_ast)
 
-        # Generate code
         program = self.generator.visit(working_ast).strip()
+
+        # Replace placeholders with original predicate content (preserves formatting)
+        if preserve_predicate_format:
+            for placeholder_id, original_content in original_predicates.items():
+                program = program.replace(placeholder_id, original_content)
+
+        if for_llm:
+            program = self._replace_nondet_with_rand(program)
+        else:
+            program = PATCH + program
         return program
 
-    def get_target_assert(self) -> Predicate:
-        return self.assertions[0]
+
+def nondet_type(type_str: str) -> str:
+    if type_str == "uchar":
+        return "(unsigned char)"
+    if type_str == "char":
+        return "(signed char)"
+    if type_str == "uint":
+        return "(unsigned int)"
+    return f"({type_str})"
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python labeler.py <preprocessed_file.c>")
-    else:
-        program = Program().from_file_path(Path(sys.argv[1]))
-        program.process(print_ast=True)
-        print("--------------------------------")
-        print("PP Code:")
-        print(program.pp_code)
-        print("--------------------------------")
-        print("LLM Code:")
-        print(program.llm_code)
-        print("--------------------------------")
-        print("Marked Code from AST:")
-        print(program.marked_code_from_ast)
-        print("--------------------------------")
-        for_llm = False
-        predicate = Predicate(content="x > 0", marker_name="INVARIANT_MARKER_1")
-        assumptions = []
-        program_with_assertion = program.get_program_with_assertion(
-            predicate, assumptions, for_llm
-        )
-        print("--------------------------------")
-        print("Program with Assertion:")
-        print(program_with_assertion)
+    import sys
 
-        print("--------------------------------")
-        predicate = program.get_target_assert()
-        assumptions = [
-            Predicate(content="x > 0", marker_name="INVARIANT_MARKER_1"),
-            Predicate(content="y > 0", marker_name="INVARIANT_MARKER_2"),
-        ]
-        program_with_assertion = program.get_program_with_assertion(
-            predicate, assumptions, for_llm
-        )
-        print("--------------------------------")
-        print("Program with Assertion:")
-        print(program_with_assertion)
+    # if len(sys.argv) < 2:
+    #     print("Usage: python -m src.preprocess.program <file.c>")
+    #     raise SystemExit(2)
+
+    path = "/cs/labs/guykatz/idopinto12/projects/inv-gen/examples/test5.c"
+    p = Program().from_file_path(Path(path))
+    pp, llm = p.process(print_ast=True)
+    print("----- PP (no patch) -----")
+    print(pp)
+    # print("----- LLM (nondet->rand) -----")
+    # print(llm)
+
+    # predicate = Predicate(content="x > 0", marker_name="INVARIANT_MARKER_1")
+    # assumptions = []
+    # program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
+    # print("----- Program -----")
+    # print(program)
+
+    # predicate = p.get_target_assert()
+    # print("----- Target Assert -----")
+    # print(predicate)
+    # assumptions = [
+    #     # Predicate(content="y > 0", marker_name="INVARIANT_MARKER_2"),
+    #     # Predicate(content="z > 0", marker_name="INVARIANT_MARKER_3"),
+    # ]
+    # program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
+    # print("----- Program -----")
+    # print(program)
+    # print("----- Available Markers -----")
+    print(p.get_available_markers())

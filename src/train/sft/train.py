@@ -74,8 +74,8 @@ def run_inference(tokenizer: AutoTokenizer, model: AutoModelForCausalLM, message
 
 def apply_lora(model: AutoModelForCausalLM, lora_config: LoraConfig)->AutoModelForCausalLM:
     peft_model = get_peft_model(model, lora_config)
-    if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
-        peft_model.print_trainable_parameters()
+    # if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
+    peft_model.print_trainable_parameters()
     return peft_model
 
 
@@ -150,10 +150,12 @@ def evaluate(output_dir: str, model_name: str, messages: List[dict], model_eval_
         
         input_ids = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt").to(model.device)
         with torch.inference_mode():
-            from transformers import TextStreamer
-            output_ids = model.generate(input_ids, **generate_kwargs, streamer=TextStreamer(tokenizer))
+            # from transformers import TextStreamer
+            # output_ids = model.generate(input_ids, **generate_kwargs, streamer=TextStreamer(tokenizer))
+            output_ids = model.generate(input_ids, **generate_kwargs)
             # response = tokenizer.batch_decode(output_ids)[0]
-
+            response = tokenizer.batch_decode(output_ids)[0]
+            print(response)
         # print("=== Evaluation Results ===")
         # print(f"{response}")
         print(f"Response length: {output_ids.shape[1]} tokens")
@@ -171,7 +173,7 @@ def split_dataset(dataset: Dataset, split_ratio: float = 0.8)->(Dataset, Dataset
     logger.info(f"Split dataset into train and validation sets. Train size: {len(train_dataset)}, Validation size: {len(validation_dataset)}")
     return train_dataset, validation_dataset
 
-@hydra.main(version_base=None, config_path="../../../configs/train", config_name="config_gen_all")
+@hydra.main(version_base=None, config_path="../../../configs/train", config_name="config")
 def main(cfg: DictConfig):
     print("="*50)
     print(OmegaConf.to_yaml(cfg))
@@ -235,3 +237,10 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
+
+# Example usage:   
+# uv run -m src.train.sft.train
+# Config Location:
+# configs/train/config.yaml
+# sbatch command:
+# sbatch --job-name=sft-train --output=logs/sft-train-%j.log --error=logs/sft-train-%j.log --time=12:00:00 --partition=gpu --gres=gpu:1 --cpus-per-task=10 src/train/sft/train.py
