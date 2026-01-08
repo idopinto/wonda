@@ -21,6 +21,7 @@ class DecisionProcedureReport:
     candidate: Optional[Predicate] = None
     # Always keep the raw model output for debugging, even if parsing fails.
     raw_candidate: Optional[str] = None
+    target_marker: Optional[str] = None
     is_valid: bool = False
     correctness_report: Optional[VerifierCallReport] = None
     usefulness_report: Optional[VerifierCallReport] = None
@@ -50,6 +51,7 @@ class DecisionProcedureReport:
             else None,
             "raw_candidate": self.raw_candidate,
             "is_valid": self.is_valid,
+            "target_marker": self.target_marker,
             "correctness_report": self.correctness_report.to_dict()
             if self.correctness_report
             else None,
@@ -236,25 +238,47 @@ class DecisionProcedure:
 
         return report
 
+    def parse_candidate(self, candidate: str) -> Predicate:
+        """
+        Parse candidate string to extract marker and content.
+        
+        First tries to extract JSON from ```json ... ``` code block,
+        then falls back to parsing the string directly as JSON.
+        """
+        import re
+        
+        # Try to extract JSON from markdown code block first
+        json_block_pattern = r"```json\s*(\{.*?\})\s*```"
+        match = re.search(json_block_pattern, candidate, re.DOTALL)
+        
+        if match:
+            json_str = match.group(1)
+        else:
+            # Fall back to parsing the candidate directly
+            json_str = candidate
+        
+        json_candidate = json.loads(json_str)
+        marker = json_candidate["marker"]
+        content = json_candidate["content"]
+        return Predicate(content=content, marker_name=marker)
+
     @weave.op()
-    def run(self, candidate: str, model_latency: float) -> DecisionProcedureReport:
+    def run(self, candidate: str, model_latency: float, target_marker: Optional[str] = None) -> DecisionProcedureReport:
         final_report = DecisionProcedureReport(
             target=self.target,
             model_latency=model_latency,
             raw_candidate=candidate,
+            target_marker=target_marker,
         )
         parsed_candidate: Optional[Predicate] = None
         is_valid = False
         try:
-            json_candidate = json.loads(candidate)
-            marker = json_candidate["marker"]
-            content = json_candidate["content"]
-            parsed_candidate = Predicate(content=content, marker_name=marker)
-            is_valid = (
-                syntactic_validation(parsed_candidate.content)
-                and marker in self.available_markers
-                and marker != "TARGET_ASSERT_MARKER"
-            )
+            parsed_candidate = self.parse_candidate(candidate)
+            # print(f"Parsed candidate: {parsed_candidate}")
+            # print(f"Target marker: {target_marker}")
+            is_valid = syntactic_validation(parsed_candidate.content)
+            if target_marker:
+                is_valid = is_valid and parsed_candidate.marker_name == target_marker
         except Exception:
             # Any parsing/formatting failure => invalid candidate. Keep raw_candidate for inspection.
             is_valid = False

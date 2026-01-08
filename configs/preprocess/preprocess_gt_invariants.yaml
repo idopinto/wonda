@@ -11,32 +11,54 @@ verifier:
 
 model:
   name: "moonshotai/Kimi-K2-Thinking"
-  # name: "openai/gpt-oss-120b"
   temperature: 1.0
-  max_tokens: 16384 # Reasoning models need more tokens for thinking + answer
+  max_tokens: 32768 
+  n: 1 # increase for more candidates
   
 pipeline:
-    generalize_invariants: false
-    cot_distilation: false
+    prettify: true
+    simplify: true
+    verify: true
 
 dataset:
-  json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-raw.json"
+  name: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-raw.json"
   limit: -1  # Number of samples to process (-1 for all)
 
 # Output configuration
 output:
-  preprocessed_invariants_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-cleaned.json"
-  # cot_distilation_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-lin-cot.json"
-prompts:
-  system: |
-    You are an expert at deriving loop invariants from scratch by analyzing programs.
-    
-    You will be given a C program. Your task is to derive a compact, general loop invariant by analyzing the program's behavior, loop structure, and variable relationships. 
-    Act as if you are thinking to yourself, reasoning step-by-step about what must be true at the loop head marker.
-    
-    IMPORTANT: Ignore any original verbose invariant you may see. Derive the invariant fresh from the program logic alone, as if you are discovering it for the first time.
+  preprocessed_invariants_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-v3.json"
+  push_to_hub: true  # Push the dataset to the Hugging Face hub
+  hub_name: "invbench-train-uautomizer25-k1-full-v3"  # Optional: custom hub name (defaults to dataset name from output path)
+  hub_organization: "idopinto"
 
-    Guidelines:
+prompts:  
+  simplify_invariant_system_prompt: |
+    You are an expert C programmer and highly proficient in formal verification of C software.
+    
+    ## Input format
+    - c program: A C program instrumented with loop markers of the form: 
+      ```c
+      INVARIANT_MARKER_k();  // appears at the *start of each loop body*
+      ```
+      - The program contains a single target property as an assertion of the form:
+      ```c
+      assert(<target_property>);
+      ```
+    - invariant: A loop invariant that uautomizer generated for the program when trying to prove the target property.
+    - marker: The marker for the invariant. The invariant is intended to hold specifically at this loop head marker
+
+    ## Task
+    Given the C program and the invariant, your task is to simplify the invariant to a more compact and general form.
+
+    ## Output format
+    - Output MUST be a single JSON object.
+    - The JSON MUST have exactly these keys:
+      - "simplified_invariant": A single compact, inductive, C boolean expression, nothing else.
+      - "rationale": A short explanation of why you simplified the invariant to the given form.
+    ## Output format example
+    {"simplified_invariant":"<simplified_invariant>","rationale":"<rationale>"}
+
+    ## Guidelines
     - Prefer using LINEAR arithmetic expressions (the verifier struggles with non-linear math)
     - Prefer mathematical relationships over case enumeration
     - Look for patterns across disjuncts (e.g., repeated structure with varying constants)
@@ -48,20 +70,20 @@ prompts:
     - Use the program context to understand variable semantics and loop structure
     - Use ONLY plain ASCII characters in your output. Do NOT use Unicode formatting characters like narrow no-break spaces (U+202F), mathematical symbols (≤, ≥), or other Unicode spaces. Use regular spaces and ASCII operators (<=, >=, ==) instead.
 
-    Output: 
-    JSON object with the following keys:
-    - "invariant": A single compact, inductive, C boolean expression, nothing else.
-    - "rationale": Write your internal thought process as if you are thinking to yourself while analyzing the program. Show your step-by-step reasoning: what you observe about the program's behavior, what relationships you notice between variables, what must be true at the loop head, and how you arrive at the final invariant. Write in first person, as if reasoning out loud. Do NOT reference or derive from any original invariant - think only about the program itself.
-    
-  user: |
-    Analyze this program and derive a loop invariant for the marker INVARIANT_MARKER_k (where k is the loop number).
-    
-    Program:
+  simplify_invariant_user_prompt: |
+    Simplify the following invariant for the given C program and marker.
+    c_program:
     ```c
     {program}
     ```
-    
-    Think through the program step by step: what happens in the loop? What relationships hold between variables? What must be true at the loop head marker? Derive the invariant from scratch by reasoning about the program's behavior.
+    invariant:
+    ```c
+    {invariant}
+    ```
+    marker:
+    ```c
+    {marker}
+    ```
 
   # Real examples from training data
   few_shot_examples:
@@ -71,41 +93,17 @@ prompts:
       output: "1 <= i && i <= 6"
       explanation: "Enumerated values of i from 1-6, generalize to range. b == 1 is redundant since it is always true."
 
-    # # Factorial sequence
-    # - input: |
-    #     factorial == 120 && 6 == i || i == 8 && factorial == 5040 || 9 == i && factorial == 40320 || factorial == 362880 && i == 10 || i == 4 && factorial == 6 || factorial == 24 && 5 == i || 7 == i && factorial == 720 || factorial == 1 && 2 == i || factorial == 1 && i == 1 || 3 == i && factorial == 2
-    #   output: "i >= 1 && factorial > 0"
-    #   explanation: "Factorial sequence - simplified to basic bounds since C has no factorial operator"
-
-    # # Triangular numbers / summation
-    # - input: |
-    #     sum_computed == 1830 && i == 61 || sum_computed == 78 && i == 13 || i == 92 && sum_computed == 4186 || sum_computed == 378 && i == 28 || sum_computed == 1326 && 52 == i || sum_computed == 2415 && i == 70 || 21 == i && sum_computed == 210 || sum_computed == 496 && 32 == i
-    #   output: "i >= 0 && sum_computed == i * (i - 1) / 2"
-    #   explanation: "Triangular numbers: sum from 0 to i-1"
-
     # Bounds with shared constraint
     - input: |
         0 <= b && i == 1 && b <= 10 && a <= 10 && 0 <= a && sum_b == 0 || 0 <= b && b <= 10 && a <= 10 && 2 <= i && 0 <= a && 0 <= sum_b || 0 <= b && i == 0 && b <= 10 && a <= 10 && 0 <= a && sum_b == 0
       output: "0 <= a && a <= 10 && 0 <= b && b <= 10 && i >= 0 && sum_b >= 0"
       explanation: "Extract common bounds, generalize i values"
 
-    # # Binary search / power of 2
-    # - input: |
-    #     currentValue == 2097152 && target >= 2097152 || currentValue == 8192 && target >= 8192 || currentValue == 32768 && target >= 32768 || currentValue == 131072 && target >= 131072
-    #   output: "currentValue > 0 && (currentValue & (currentValue - 1)) == 0 && currentValue <= target"
-    #   explanation: "Values are powers of 2 that are <= target"
-
     # Search result tracking
     - input: |
         target == 10 && 5 == size && res == 0 && i == 0 || target == 10 && 5 == size && i == 1 && res <= 1 || target == 10 && 5 == size && 2 == i && res <= 3 || 5 == size && 3 < i
       output: "i >= 0 && res >= 0"
       explanation: "Simplify to basic bounds. size == 5 and target == 10 are redundant since they are always true."
-
-    # Fibonacci bounds pattern
-    - input: |
-        curr <= 2 && prev <= 1 && n < 8 + i || prev <= 8 && curr <= 13 && n < 4 + i || prev <= 2 && curr <= 3 && n < 7 + i || prev <= 21 && curr <= 34 && n < 2 + i || prev <= 5 && curr <= 8 && n < 5 + i || prev <= 13 && curr <= 21 && n < 3 + i
-      output: "prev >= 0 && curr >= 0 && prev <= curr && n >= 1 && i >= 0"
-      explanation: "Generalize to ordering constraint"
 
 # Filtering criteria for identifying verbose invariants that need generalization
 filtering:
@@ -114,41 +112,76 @@ filtering:
   min_char_length: 100      # Minimum length to consider verbose
   max_char_length: 30000    # Skip extremely long ones
 
-cot_distilation_prompts:
-  system: |
-      You are an expert at C programming and highly proficient formal verification of C software.
+# cot_distilation_prompts:
+#   system: |
+#       You are an expert at C programming and highly proficient formal verification of C software.
       
-      Given a C program and a verified-correct loop invariant that is intended to hold specifically at the loop head marker:
-      INVARIANT_MARKER_{target_label}
-      generate a clear, step-by-step proof explanation why the invariant holds and how it helps prove the target property.
+#       Given a C program and a verified-correct loop invariant that is intended to hold specifically at the loop head marker:
+#       INVARIANT_MARKER_{target_label}
+#       generate a clear, step-by-step proof explanation why the invariant holds and how it helps prove the target property.
 
-      Guidelines:
-      - Keep your explanation **concise** and **verifiable**.
-      - Use the standard inductive proof for loop invariants:
-        - **Initialization**
-          Show the invariant holds before the first loop iteration (after any initialization code, right before entering the loop).
-        - **Maintenance (Inductive Step)**
-          Assume the invariant holds at the start of an arbitrary iteration where the loop condition is true.
-          Show that after executing the loop body once, the invariant still holds.
-        - **Termination & Postcondition**
-          - Argue that the loop terminates (optionally via a ranking function).
-          - When the loop exits, use the invariant together with the negated loop condition to establish the target assertion.
-      - Use the program context to understand variable semantics and loop structure
-      - Your final response should not be with anything else than the core proof explanation.
+#       Guidelines:
+#       - Keep your explanation **concise** and **verifiable**.
+#       - Use the standard inductive proof for loop invariants:
+#         - **Initialization**
+#           Show the invariant holds before the first loop iteration (after any initialization code, right before entering the loop).
+#         - **Maintenance (Inductive Step)**
+#           Assume the invariant holds at the start of an arbitrary iteration where the loop condition is true.
+#           Show that after executing the loop body once, the invariant still holds.
+#         - **Termination & Postcondition**
+#           - Argue that the loop terminates (optionally via a ranking function).
+#           - When the loop exits, use the invariant together with the negated loop condition to establish the target assertion.
+#       - Use the program context to understand variable semantics and loop structure
+#       - Your final response should not be with anything else than the core proof explanation.
 
-  user: |
-      You are given a C program and a verified-correct loop invariant that is intended to hold specifically at the loop head marker:
-      INVARIANT_MARKER_{target_label}
-      generate a clear, step-by-step proof explanation:
-      Program:
-      ```c
-      {program}
-      ```
-      Verified-correct loop invariant:
-      ```c
-      {ground_truth_invariant_content}
-      ```
+#   user: |
+#       You are given a C program and a verified-correct loop invariant that is intended to hold specifically at the loop head marker:
+#       INVARIANT_MARKER_{target_label}
+#       generate a clear, step-by-step proof explanation:
+#       Program:
+#       ```c
+#       {program}
+#       ```
+#       Verified-correct loop invariant:
+#       ```c
+#       {ground_truth_invariant_content}
+#       ```
 # you generated for me this invariant, now explain how you derived it.
 # Example usage:
 # uv run -m src.preprocess.preprocess_gt_invariants dataset.limit=1
 # uv run -m src.preprocess.preprocess_gt_invariants dataset.limit=-1  # Process all
+
+  # system: |
+  #   You are an expert at deriving loop invariants from scratch by analyzing programs.
+    
+  #   You will be given a C program. Your task is to derive a compact, general loop invariant by analyzing the program's behavior, loop structure, and variable relationships. 
+  #   Act as if you are thinking to yourself, reasoning step-by-step about what must be true at the loop head marker.
+    
+  #   IMPORTANT: Ignore any original verbose invariant you may see. Derive the invariant fresh from the program logic alone, as if you are discovering it for the first time.
+
+  #   Guidelines:
+  #   - Prefer using LINEAR arithmetic expressions (the verifier struggles with non-linear math)
+  #   - Prefer mathematical relationships over case enumeration
+  #   - Look for patterns across disjuncts (e.g., repeated structure with varying constants)
+  #   - Remove tautological constraints (e.g., "a == a", "n <= n", "0 <= 0", etc.)
+  #   - Remove constraints on variables that are constant throughout the program (e.g., if a variable is initialized but never modified in the loop, constraints like "x == 5" are redundant)
+  #   - Replace redundant constraints with their simpler equivalents (e.g., "a <= b && b <= a" → "a == b")
+  #   - Replace enumerated values with relationships (e.g., "i == 1, i == 2, ..." → "i >= 1")
+  #   - The simplified invariant should be logically equivalent or weaker than the original but still inductive and strong enough to prove the target property.
+  #   - Use the program context to understand variable semantics and loop structure
+  #   - Use ONLY plain ASCII characters in your output. Do NOT use Unicode formatting characters like narrow no-break spaces (U+202F), mathematical symbols (≤, ≥), or other Unicode spaces. Use regular spaces and ASCII operators (<=, >=, ==) instead.
+
+  #   Output: 
+  #   JSON object with the following keys:
+  #   - "invariant": A single compact, inductive, C boolean expression, nothing else.
+  #   - "rationale": Write your internal thought process as if you are thinking to yourself while analyzing the program. Show your step-by-step reasoning: what you observe about the program's behavior, what relationships you notice between variables, what must be true at the loop head, and how you arrive at the final invariant. Write in first person, as if reasoning out loud. Do NOT reference or derive from any original invariant - think only about the program itself.
+    
+  # user: |
+  #   Analyze this program and derive a loop invariant for the marker INVARIANT_MARKER_k (where k is the loop number).
+    
+  #   Program:
+  #   ```c
+  #   {program}
+  #   ```
+    
+  #   Think through the program step by step: what happens in the loop? What relationships hold between variables? What must be true at the loop head marker? Derive the invariant from scratch by reasoning about the program's behavior.

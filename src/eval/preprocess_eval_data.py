@@ -88,27 +88,6 @@ def get_evaluation_dataset(
     return dataset
 
 
-# def preprocess_example(example: dict) -> dict:
-#     """
-#     Preprocess a dataset example for model input.
-
-#     Converts the raw C program into a Program object suitable for
-#     the invariant generator model.
-
-#     Args:
-#         example: Dataset example containing 'original_program' and 'median_timing'.
-
-#     Returns:
-#         Dict with 'program' (Program object) and 'baseline_timing' (float).
-#     """
-#     code = str(example["original_program"])
-
-#     normalizer = ProgramNormalizer(code=code)
-#     program = Program(normalizer.lines_to_verify, normalizer.replacement)
-
-#     return {"program": program, "baseline_timing": example["median_timing"]}
-
-
 def preprocess_example(example: dict) -> dict:
     """
     Preprocess example for the new marker-based evaluation pipeline.
@@ -124,3 +103,18 @@ def preprocess_example(example: dict) -> dict:
         "program": program,
         "baseline_timing": example["median_timing"],
     }
+
+
+def preprocess_for_model(example: dict, eval_per_marker: bool) -> dict:
+    """
+    One preprocess function that supports both modes.
+
+    - Always returns an AST-based Program under key `program`
+    - Always returns `baseline_timing`
+    - If eval_per_marker=True, also returns `target_marker` (required by per-marker prompt)
+    """
+    out = preprocess_example(example)
+    if eval_per_marker:
+        target_marker = example["target_marker"]
+        out["target_marker"] = str(target_marker)
+    return out

@@ -176,9 +176,11 @@ class UAutomizerVerifier:
             write_file(err_file_path, stderr_content)
 
         except Exception as e:
+            import traceback
             report.decision = "ERROR"
-            report.decision_reason = str(e)
+            report.decision_reason = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
             write_file(err_file_path, report.decision_reason)
+            print(f"[VERIFIER ERROR] {report.decision_reason}")
 
         finally:
             shutil.rmtree(temp_work_dir)

@@ -58,7 +58,7 @@ class InvariantScorer(weave.Scorer):
     baseline_is_timeout: bool
 
     @weave.op()
-    def score(self, output: Dict, original_program: str, median_timing: float) -> Dict:
+    def score(self, output: Dict, original_program: str, median_timing: float, target_marker: Optional[str] = None) -> Dict:
         """
         Score a model-generated invariant.
 
@@ -66,7 +66,7 @@ class InvariantScorer(weave.Scorer):
             output: Model output containing 'reasoning', 'answer', and 'model_latency'.
             original_program: The C program source code from the dataset.
             median_timing: Baseline verification time from the dataset (may be Weave ref).
-
+            target_marker: The target marker for the invariant. (INVARIANT_MARKER_k, Optional)
         Returns:
             Dict containing all evaluation metrics and artifacts.
         """
@@ -95,7 +95,7 @@ class InvariantScorer(weave.Scorer):
                 timeout=timeout,
             )
             decision_procedure_report = decision_procedure.run(
-                candidate=candidate, model_latency=output.get("model_latency", 0.0)
+                candidate=candidate, model_latency=output.get("model_latency", 0.0), target_marker=target_marker
             )
 
         correctness_score = (

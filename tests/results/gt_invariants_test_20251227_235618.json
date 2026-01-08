@@ -1,0 +1,424 @@
+{
+  "timestamp": "2025-12-27T23:56:18.704435",
+  "config": {
+    "limit": -1,
+    "verifier_timeout": 600.0
+  },
+  "summary": {
+    "original": {
+      "total": 118,
+      "correct": 114,
+      "failed": 4,
+      "rate": 96.61016949152543
+    },
+    "pretty": {
+      "total": 118,
+      "correct": 115,
+      "failed": 3,
+      "rate": 97.45762711864407,
+      "skipped": 0
+    },
+    "simplified": {
+      "total": 22,
+      "correct": 19,
+      "failed": 3,
+      "rate": 86.36363636363636,
+      "skipped": 1,
+      "same_as_pretty": 95
+    }
+  },
+  "length_reduction": {
+    "original_to_pretty": {
+      "count": 118,
+      "avg_original_len": 199.9915254237288,
+      "avg_new_len": 133.20338983050848,
+      "avg_reduction_pct": 33.48107080001195,
+      "total_original_len": 23599,
+      "total_new_len": 15718
+    },
+    "pretty_to_simplified": {
+      "count": 22,
+      "avg_original_len": 497.40909090909093,
+      "avg_new_len": 46.31818181818182,
+      "avg_reduction_pct": 82.67320824791781,
+      "total_original_len": 10943,
+      "total_new_len": 1019
+    },
+    "original_to_simplified": {
+      "count": 22,
+      "avg_original_len": 726.0909090909091,
+      "avg_new_len": 46.31818181818182,
+      "avg_reduction_pct": 88.16954400003175,
+      "total_original_len": 15974,
+      "total_new_len": 1019
+    }
+  },
+  "failures": {
+    "original": [
+      {
+        "file": "2686_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "((((((((((((b == 10) && (a == 10)) && (c == 384)) || (((c == 0) && (b == 10)) && (a == 1))) || (((b == 10) && (3 == a)) && (c == 13))) || (((b == 10) && (284 == c)) && (9 == a))) || (((c == 139) && (b == 10)) && (7 == a))) || (((b == 10) && (c == 54)) && (5 == a))) || (((b == 10) && (c == 90)) && (6 == a))) || (((b == 10) && (29 == c)) && (a == 4))) || (((b == 10) && (a == 8)) && (c == 203))) || (((b == 10) && (2 == a)) && (c == 4)))",
+        "reason": "default",
+        "time": 600.0
+      },
+      {
+        "file": "9149_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "((((((((5 == n) && (3 == i)) && (2 == result)) || (((5 == n) && (i == 4)) && (6 == result))) || (((5 == n) && (result == 1)) && (2 == i))) || (((5 == n) && (5 == i)) && (result == 24))) || (((5 == n) && (120 == result)) && (6 == i))) || (((5 == n) && (result == 1)) && (i == 1)))",
+        "reason": "default",
+        "time": 600.0
+      },
+      {
+        "file": "593_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "(x == ((r + ((unsigned long long) q * y)) % 4294967296))",
+        "reason": "default",
+        "time": 600.0
+      },
+      {
+        "file": "4078_2.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "((((n < 1) || (((__int128) n * result) == 1)) || (1 < n)) && ((result == 1) || (1 < n)))",
+        "reason": "",
+        "time": 22.645956923952326
+      }
+    ],
+    "pretty": [
+      {
+        "file": "2686_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "b == 10 && a == 10 && c == 384 || c == 0 && b == 10 && a == 1 || b == 10 && 3 == a && c == 13 || b == 10 && 284 == c && 9 == a || c == 139 && b == 10 && 7 == a || b == 10 && c == 54 && 5 == a || b == 10 && c == 90 && 6 == a || b == 10 && 29 == c && a == 4 || b == 10 && a == 8 && c == 203 || b == 10 && 2 == a && c == 4",
+        "original": "((((((((((((b == 10) && (a == 10)) && (c == 384)) || (((c == 0) && (b == 10)) && (a == 1))) || (((b == 10) && (3 == a)) && (c == 13))) || (((b == 10) && (284 == c)) && (9 == a))) || (((c == 139) && (b == 10)) && (7 == a))) || (((b == 10) && (c == 54)) && (5 == a))) || (((b == 10) && (c == 90)) && (6 == a))) || (((b == 10) && (29 == c)) && (a == 4))) || (((b == 10) && (a == 8)) && (c == 203))) || (((b == 10) && (2 == a)) && (c == 4)))",
+        "reason": "default",
+        "time": 600.0
+      },
+      {
+        "file": "9149_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "5 == n && 3 == i && 2 == result || 5 == n && i == 4 && 6 == result || 5 == n && result == 1 && 2 == i || 5 == n && 5 == i && result == 24 || 5 == n && 120 == result && 6 == i || 5 == n && result == 1 && i == 1",
+        "original": "((((((((5 == n) && (3 == i)) && (2 == result)) || (((5 == n) && (i == 4)) && (6 == result))) || (((5 == n) && (result == 1)) && (2 == i))) || (((5 == n) && (5 == i)) && (result == 24))) || (((5 == n) && (120 == result)) && (6 == i))) || (((5 == n) && (result == 1)) && (i == 1)))",
+        "reason": "default",
+        "time": 600.0
+      },
+      {
+        "file": "4078_2.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "(n < 1 || n * result == 1 || 1 < n) && (result == 1 || 1 < n)",
+        "original": "((((n < 1) || (((__int128) n * result) == 1)) || (1 < n)) && ((result == 1) || (1 < n)))",
+        "reason": "",
+        "time": 24.16434665513225
+      }
+    ],
+    "simplified": [
+      {
+        "file": "9149_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "1 <= i && i <= 6 && result >= 1",
+        "original": "((((((((5 == n) && (3 == i)) && (2 == result)) || (((5 == n) && (i == 4)) && (6 == result))) || (((5 == n) && (result == 1)) && (2 == i))) || (((5 == n) && (5 == i)) && (result == 24))) || (((5 == n) && (120 == result)) && (6 == i))) || (((5 == n) && (result == 1)) && (i == 1)))",
+        "reason": "default",
+        "time": 600.0
+      },
+      {
+        "file": "2872_1.c",
+        "marker": "INVARIANT_MARKER_1",
+        "invariant": "1 <= a && a <= 5 && 1 <= b && b <= 5 && 0 <= n && n <= 10 && 0 <= i && a * i + b * i <= sum && sum <= 100 && prod < 1000000",
+        "original": "(((((((((((((((((((((n <= ((long long) 5 + i)) && (a <= 5)) && (n <= 10)) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (0 <= i)) && (((((__int128) ((long long) b * n) + ((long long) a * n)) < ((__int128) sum + 1)) || (sum <= (((long long) 5 * a) + ((long long) 5 * b)))) || (prod < 1000000))) && (1 <= n)) && (sum <= 50)) || (((((((((((__int128) ((long long) a + b) + sum) <= 100) && (n <= ((long long) i + 1))) && (a <= 5)) && (n <= 10)) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (1 <= n))) || (((((((((a <= 5) && (sum <= (((long long) b * 4) + ((long long) a * 4)))) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (0 <= i)) && (1 <= n)) && (n <= ((long long) 6 + i)))) || ((((((((((a <= 5) && (n <= 10)) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (n <= ((long long) 3 + i))) && (0 <= i)) && (((__int128) (((long long) 3 * b) + ((long long) 3 * a)) + sum) <= 100)) && (1 <= n))) || (((((((((((((__int128) ((long long) b * 4) + sum) + ((long long) a * 4)) <= 100) && (a <= 5)) && (n <= 10)) && (n <= ((long long) i + 4))) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (0 <= i)) && (1 <= n))) || ((((((((((a <= 5) && (n <= 10)) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (n <= ((long long) 2 + i))) && (0 <= i)) && (1 <= n)) && ((((__int128) ((long long) 2 * b) + sum) + ((long long) 2 * a)) <= 100))) || (((((((((n <= i) && (a <= 5)) && (n <= 10)) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (sum <= 100)) && (1 <= n))) || (((((((((i == 0) && (sum == 0)) && (a <= 5)) && (n <= 10)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (prod == 1)) && (0 <= n))) || ((((((((sum == (((long long) 2 * b) + ((long long) 2 * a))) && (2 == i)) && (a <= 5)) && (n <= 10)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (1 <= n))) || ((((((((((((long long) 3 * b) + ((long long) 3 * a)) == sum) && (3 <= n)) && (a <= 5)) && (((__int128) ((long long) a * i) + ((long long) b * i)) <= sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (0 <= i)) && (n <= ((long long) 7 + i)))) || (((((((((a <= 5) && (n <= 10)) && (i == 1)) && (((long long) a + b) == sum)) && (b <= 5)) && (1 <= b)) && (1 <= a)) && (prod <= a)) && (1 <= n)))",
+        "reason": "",
+        "time": 115.20421545486897
+      },
+      {
+        "file": "1614_3.c",
+        "marker": "INVARIANT_MARKER_2",
+        "invariant": "counter2 >= k",
+        "original": "((((((((k <= 100) && (((long long) counter1 + 4) <= ((long long) counter2 + k))) && (counter2 <= counter1)) || ((((k <= 100) && (((long long) counter1 + 2) <= ((long long) counter2 + k))) && (1 <= k)) && (((long long) counter2 + 2) <= counter1))) || ((((k <= 100) && ((((long long) 2 * k) + 1) <= counter1)) && (1 <= k)) && (((long long) 2 + k) <= counter2))) || ((((((long long) 2 * k) <= counter1) && (((long long) 2 * k) <= counter2)) && (k <= 100)) && (1 <= k))) || ((((2 <= k) && (((long long) 2 * k) <= ((long long) counter2 + 1))) && (k <= 100)) && ((((long long) 2 * k) + 1) <= counter1))) || ((((k <= 100) && (((long long) counter2 + 1) <= counter1)) && (((long long) counter1 + 3) <= ((long long) counter2 + k))) && (1 <= k)))",
+        "reason": "",
+        "time": 25.819894339889288
+      }
+    ]
+  },
+  "timing": {
+    "original": {
+      "count": 118,
+      "avg_time": 46.89063040718586,
+      "min_time": 18.717766507994384,
+      "max_time": 600.0,
+      "total_time": 5533.094388047932
+    },
+    "pretty": {
+      "count": 118,
+      "avg_time": 40.62174523013873,
+      "min_time": 16.182166127022356,
+      "max_time": 600.0,
+      "total_time": 4793.36593715637
+    },
+    "simplified": {
+      "count": 22,
+      "avg_time": 65.60920518403873,
+      "min_time": 21.20214052987285,
+      "max_time": 600.0,
+      "total_time": 1443.402514048852
+    }
+  },
+  "speedup_analysis": {
+    "vs_original": {
+      "count": 18,
+      "avg_speedup": 1.1251678405211079,
+      "faster_count": 13,
+      "slower_count": 5,
+      "total_time_saved": -71.9064896965865
+    },
+    "vs_pretty": {
+      "count": 18,
+      "avg_speedup": 1.0497346366072675,
+      "faster_count": 11,
+      "slower_count": 7,
+      "total_time_saved": -105.30514129064977
+    }
+  },
+  "time_comparisons_detail": [
+    {
+      "file": "2686_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 600.0,
+      "pretty_time": 600.0,
+      "simplified_time": 30.24121184600517,
+      "original_verified": false,
+      "pretty_verified": false
+    },
+    {
+      "file": "3047_2.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 25.97275294107385,
+      "pretty_time": 27.74500716291368,
+      "simplified_time": 26.47860108106397,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 0.9808959643131647,
+      "time_saved_vs_original": -0.5058481399901211,
+      "speedup_vs_pretty": 1.0478275297842443,
+      "time_saved_vs_pretty": 1.2664060818497092
+    },
+    {
+      "file": "5621_2.c",
+      "marker": "INVARIANT_MARKER_2",
+      "original_time": 28.85690644895658,
+      "pretty_time": 31.085375127149746,
+      "simplified_time": 125.10055401804857,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 0.2306696934754847,
+      "time_saved_vs_original": -96.24364756909199,
+      "speedup_vs_pretty": 0.2484831132135912,
+      "time_saved_vs_pretty": -94.01517889089882
+    },
+    {
+      "file": "5621_2.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 25.52887613279745,
+      "pretty_time": 25.53483924199827,
+      "simplified_time": 24.960007823072374,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.0227911911629783,
+      "time_saved_vs_original": 0.568868309725076,
+      "speedup_vs_pretty": 1.0230300977067217,
+      "time_saved_vs_pretty": 0.5748314189258963
+    },
+    {
+      "file": "2519_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 31.62942141201347,
+      "pretty_time": 25.382355625974014,
+      "simplified_time": 27.53599333204329,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.1486573602270127,
+      "time_saved_vs_original": 4.093428079970181,
+      "speedup_vs_pretty": 0.9217882688995601,
+      "time_saved_vs_pretty": -2.1536377060692757
+    },
+    {
+      "file": "5609_2.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 28.76511193602346,
+      "pretty_time": 28.477944324957207,
+      "simplified_time": 27.412130749085918,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.0493570236958927,
+      "time_saved_vs_original": 1.3529811869375408,
+      "speedup_vs_pretty": 1.0388810919379854,
+      "time_saved_vs_pretty": 1.0658135758712888
+    },
+    {
+      "file": "3530_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 32.98059237888083,
+      "pretty_time": 34.88901580590755,
+      "simplified_time": 98.50165718002245,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 0.3348227159123346,
+      "time_saved_vs_original": -65.52106480114162,
+      "speedup_vs_pretty": 0.3541972470792455,
+      "time_saved_vs_pretty": -63.6126413741149
+    },
+    {
+      "file": "2248_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 28.492600552970544,
+      "pretty_time": 27.907815338112414,
+      "simplified_time": 26.57250345381908,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.0722587957317773,
+      "time_saved_vs_original": 1.9200970991514623,
+      "speedup_vs_pretty": 1.0502516402571553,
+      "time_saved_vs_pretty": 1.3353118842933327
+    },
+    {
+      "file": "4412_10.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 28.849482927005738,
+      "pretty_time": 25.5342373480089,
+      "simplified_time": 26.820058073149994,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.0756681752261914,
+      "time_saved_vs_original": 2.029424853855744,
+      "speedup_vs_pretty": 0.9520574966081692,
+      "time_saved_vs_pretty": -1.2858207251410931
+    },
+    {
+      "file": "1681_4.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 30.04495959705673,
+      "pretty_time": 25.641414707060903,
+      "simplified_time": 23.167127624852583,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.296878926191348,
+      "time_saved_vs_original": 6.877831972204149,
+      "speedup_vs_pretty": 1.106801633861335,
+      "time_saved_vs_pretty": 2.4742870822083205
+    },
+    {
+      "file": "3342_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 37.67209050501697,
+      "pretty_time": 26.265132102183998,
+      "simplified_time": 26.041462268913165,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.4466196297274672,
+      "time_saved_vs_original": 11.630628236103803,
+      "speedup_vs_pretty": 1.0085889890114903,
+      "time_saved_vs_pretty": 0.2236698332708329
+    },
+    {
+      "file": "253_2.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 32.11895654979162,
+      "pretty_time": 30.147115126019344,
+      "simplified_time": 28.97111896588467,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.1086543321855717,
+      "time_saved_vs_original": 3.1478375839069486,
+      "speedup_vs_pretty": 1.0405920172265173,
+      "time_saved_vs_pretty": 1.1759961601346731
+    },
+    {
+      "file": "6856_5.c",
+      "marker": "INVARIANT_MARKER_2",
+      "original_time": 36.375422629062086,
+      "pretty_time": 29.208524208981544,
+      "simplified_time": 33.695015996927395,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.0795490535567371,
+      "time_saved_vs_original": 2.680406632134691,
+      "speedup_vs_pretty": 0.8668499878927207,
+      "time_saved_vs_pretty": -4.486491787945852
+    },
+    {
+      "file": "814_1.c",
+      "marker": "INVARIANT_MARKER_2",
+      "original_time": 40.28991588787176,
+      "pretty_time": 39.43066094908863,
+      "simplified_time": 46.59836127702147,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 0.8646208747203193,
+      "time_saved_vs_original": -6.3084453891497105,
+      "speedup_vs_pretty": 0.8461812790943066,
+      "time_saved_vs_pretty": -7.167700327932835
+    },
+    {
+      "file": "3924_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 34.729163371026516,
+      "pretty_time": 36.29333292716183,
+      "simplified_time": 26.830517733003944,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.2943903549168763,
+      "time_saved_vs_original": 7.898645638022572,
+      "speedup_vs_pretty": 1.3526885052433324,
+      "time_saved_vs_pretty": 9.462815194157884
+    },
+    {
+      "file": "1371_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 24.272827978013083,
+      "pretty_time": 22.619774291990325,
+      "simplified_time": 29.460450240178034,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 0.82391232245697,
+      "time_saved_vs_original": -5.18762226216495,
+      "speedup_vs_pretty": 0.7678013780367,
+      "time_saved_vs_pretty": -6.840675948187709
+    },
+    {
+      "file": "3965_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 28.92699778988026,
+      "pretty_time": 25.59339821897447,
+      "simplified_time": 21.20214052987285,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.364343272280619,
+      "time_saved_vs_original": 7.724857260007411,
+      "speedup_vs_pretty": 1.2071138847002048,
+      "time_saved_vs_pretty": 4.3912576891016215
+    },
+    {
+      "file": "8154_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 65.21254416089505,
+      "pretty_time": 63.52576440805569,
+      "simplified_time": 24.491743494058028,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 2.662633804600981,
+      "time_saved_vs_original": 40.72080066683702,
+      "speedup_vs_pretty": 2.593762441757883,
+      "time_saved_vs_pretty": 39.034020913997665
+    },
+    {
+      "file": "9233_1.c",
+      "marker": "INVARIANT_MARKER_1",
+      "original_time": 39.5120795131661,
+      "pretty_time": 41.550344202900305,
+      "simplified_time": 28.297748567070812,
+      "original_verified": true,
+      "pretty_verified": true,
+      "speedup_vs_original": 1.3962976389982151,
+      "time_saved_vs_original": 11.214330946095288,
+      "speedup_vs_pretty": 1.4683268566196506,
+      "time_saved_vs_pretty": 13.252595635829493
+    }
+  ]
+}

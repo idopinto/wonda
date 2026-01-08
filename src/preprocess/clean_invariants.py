@@ -16,23 +16,14 @@ from __future__ import annotations
 
 import re
 from typing import Optional, Tuple
-import json
-from typing import Any
 from pycparser import c_ast, c_generator, c_parser
-import hydra
-from omegaconf import DictConfig
-from loguru import logger
-from pathlib import Path
-from tqdm import tqdm
-import json
-from typing import Any
 
 _LIST_CHILD_RE = re.compile(r"^(?P<field>[A-Za-z_]\w*)\[(?P<idx>\d+)\]$")
 
 
 def parse_invariant_expr(
     expr_src: str, *, parser: Optional[c_parser.CParser] = None
-) -> c_ast.Node:
+) -> Optional[c_ast.Node]:
     """
     Parse an invariant string (a C expression) into a `pycparser` expression node.
 
@@ -40,11 +31,23 @@ def parse_invariant_expr(
     - This is **syntactic** parsing only; identifiers don't need to be declared.
     - We parse by wrapping the expression inside a dummy function, similar to
       `Program._parse_expr` in `src/preprocess/program.py`.
-    - If parsing fails, returns `c_ast.ID(expr_src)` as a best-effort placeholder.
+    - If parsing fails, returns `None` (callers should fall back to the original string).
     """
+    expr_src = (expr_src or "").strip()
+    # UAutomizer sometimes emits trailing semicolons; pycparser expects an expression.
+    if expr_src.endswith(";"):
+        expr_src = expr_src[:-1].strip()
+
+    if not expr_src:
+        return None
+
     p = parser or c_parser.CParser()
     wrapped = f"void _temp() {{ int _dummy = {expr_src}; }}"
-    temp_ast = p.parse(wrapped)
+    try:
+        temp_ast = p.parse(wrapped)
+    except Exception:
+        return None
+
     for ext in temp_ast.ext:
         if isinstance(ext, c_ast.FuncDef):
             for stmt in ext.body.block_items or []:
@@ -348,7 +351,10 @@ def clean_invariant(
     We also remove tautological constraints like `x <= x`, `0 < 1`, etc.
     """
     ast = parse_invariant_expr(invariant_src, parser=parser)
-    if ast:
+    if ast is None:
+        # Best-effort: return the original string (trimmed) if parsing fails.
+        return (invariant_src or "").strip().rstrip(";").strip()
+    else:
         if print_ast:
             print(ast)
         new_ast = clean_invariant_ast(
@@ -362,8 +368,6 @@ def clean_invariant(
             if pretty
             else invariant_ast_to_src(new_ast)
         )
-    else:
-        return "ERROR: Could not parse invariant"
 
 
 def pretty_invariant_src(
@@ -380,6 +384,8 @@ def pretty_invariant_src(
       parse -> (optionally) strip casts/tautologies -> pretty-print with minimal parentheses.
     """
     ast = parse_invariant_expr(invariant_src, parser=parser)
+    if ast is None:
+        return (invariant_src or "").strip().rstrip(";").strip()
     if strip_casts or remove_tautologies:
         ast = clean_invariant_ast(
             ast,

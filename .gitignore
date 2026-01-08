@@ -22,3 +22,8 @@ slurm
 tests/timing_test_reports
 outputs
 trained_models
+sv-benchmarks
+
+.pytest_cache/
+Ultimate.log
+a.out

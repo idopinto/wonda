@@ -21,7 +21,7 @@ from transformers import (
 from src.preprocess.program import Program
 
 
-class InvariantGeneratorModel(weave.Model):
+class InvariantGeneratorOssModel(weave.Model):
     """
     Weave Model for generating loop invariants.
 
@@ -29,30 +29,24 @@ class InvariantGeneratorModel(weave.Model):
     candidate invariants that can accelerate traditional verifiers.
     """
 
-    client: str
     model_cfg: dict
     system_prompt: weave.StringPrompt
     user_prompt_template: weave.StringPrompt
     sampling_params: Dict
     reasoning_effort: str
+    eval_ft_model: bool = False
+    # Set in model_post_init from model_cfg
+    base_model_id: Optional[str] = None
+    ft_model_id: Optional[str] = None
     # Optional: only needed for local huggingface loading (use Any to avoid Pydantic validation issues)
     model: Optional[Any] = None
     tokenizer: Optional[Any] = None
 
     def model_post_init(self, __context):
         """Initialize model after Pydantic model creation."""
-        if self.client == "hf":
-            self.tokenizer, self.model = self._load_hf_model(self.model_cfg)
-        elif self.client == "vllm":  # when h200 is available
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_cfg["base_model_name"], token=True
-            )
-        elif self.client == "together":
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_cfg["base_model_name"], token=True
-            )
-        else:
-            raise ValueError(f"Invalid client: {self.client}")
+        self.base_model_id = self.model_cfg["base_model"]["id"]
+        self.ft_model_id = self.model_cfg["ft_model"]["id"]
+        self.tokenizer, self.model = self._load_hf_model()
 
     @weave.op
     def predict(
@@ -66,12 +60,8 @@ class InvariantGeneratorModel(weave.Model):
         Returns:
             Dict containing the generated invariant, timing info, and usage stats.
         """
-        if self.client == "vllm":
-            return self.predict_vllm(program, target_label=target_label)
-        elif self.client == "hf":
-            return self.predict_hf(program, target_label=target_label)
-        else:
-            raise ValueError(f"Invalid client: {self.client}")
+        
+        return self.predict_hf(program, target_label=target_label)
 
     @weave.op
     def _parse_harmony_output(self, raw_output: str) -> Dict[str, Optional[str]]:
@@ -120,7 +110,6 @@ class InvariantGeneratorModel(weave.Model):
             messages,
             add_generation_prompt=True,
             return_tensors="pt",
-            reasoning_effort=self.reasoning_effort,
         ).to(self.model.device)
         inference_start_time = time.perf_counter()
         with torch.inference_mode():
@@ -143,6 +132,7 @@ class InvariantGeneratorModel(weave.Model):
         }
 
         return {
+            "prompt": "\n".join([message["content"] for message in messages]),
             "raw_output": raw_output,
             "reasoning": reasoning,
             "answer": answer,
@@ -217,6 +207,7 @@ class InvariantGeneratorModel(weave.Model):
         }
 
         return {
+            "prompt": "\n".join([message["content"] for message in messages]),
             # "raw_output": raw_output,
             "reasoning": reasoning,
             "answer": answer,
@@ -224,20 +215,15 @@ class InvariantGeneratorModel(weave.Model):
             "usage": usage,
         }
 
-    def _load_hf_model(
-        self, model_cfg: dict
-    ) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
+    def _load_hf_model(self) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
         """
         Load a trained model and tokenizer based on configuration.
-
-        Args:
-            model_cfg: Dictionary containing model settings.
 
         Returns:
             Tuple of (tokenizer, model) ready for inference.
         """
         tokenizer = AutoTokenizer.from_pretrained(
-            model_cfg["base_model_name"], token=True
+            self.base_model_id, token=True
         )
         model_kwargs = dict(
             attn_implementation="eager",
@@ -246,15 +232,25 @@ class InvariantGeneratorModel(weave.Model):
             device_map="auto",
         )
         model = AutoModelForCausalLM.from_pretrained(
-            model_cfg["base_model_name"], **model_kwargs, token=True
+            self.base_model_id, **model_kwargs, token=True
         )
 
-        if model_cfg.get("eval_finetuned_model") and model_cfg.get("is_lora"):
-            print(f"Loading finetuned model from {model_cfg['finetuned_model_id']}")
+        if self.eval_ft_model and self.model_cfg.get("ft_model", {}).get("is_lora", False):
+            print(f"Loading finetuned model from {self.ft_model_id}")
             model = PeftModel.from_pretrained(
-                model, model_cfg["finetuned_model_id"], token=True
+                model, self.ft_model_id, token=True
             )
             model = model.merge_and_unload()
             print("Merged and unloaded")
         model.eval()
         return tokenizer, model
+
+    def get_display_name(self) -> str:
+        """Return the display name for this model configuration."""
+        base_name = self.base_model_id.split("/")[-1]
+        suffix = self.reasoning_effort if self.reasoning_effort else "no-reasoning"
+        return f"{base_name}-{suffix}"
+
+    def get_run_name(self) -> str:
+        """Return the run name for evaluation tracking."""
+        return f"eval-{self.get_display_name()}"

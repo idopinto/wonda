@@ -187,6 +187,8 @@ def plot_verification_vs_baseline(
     fig_size: tuple = (800, 800),
     plot_path: Path = Path("plot.html"),
     metrics: Optional[dict] = None,
+    baseline_is_timeout: bool = False,
+    timeout_seconds: float = 600.0,
 ) -> Path:
     """
     Plot LLM verification vs. baseline time with interactive controls.
@@ -205,6 +207,8 @@ def plot_verification_vs_baseline(
         fig_size: Tuple of (width, height) for the figure
         plot_path: Path to save the HTML file
         metrics: Optional pre-calculated metrics dict
+        baseline_is_timeout: If True, timeout is set to baseline timing; otherwise uses timeout_seconds
+        timeout_seconds: Default timeout value in seconds (used when baseline_is_timeout is False)
 
     Returns:
         Path to the generated HTML file
@@ -493,7 +497,7 @@ def plot_verification_vs_baseline(
                 f"Model: {model_name} | Baseline: {baseline_name} | Split: {split_name} [{n_total}]"
                 f"</span><br>"
                 f"<span style='font-size:1.1em; color: #666;'>"
-                f"Timeout: set to baseline time."
+                f"Timeout: {'set to baseline time' if baseline_is_timeout else f'{timeout_seconds}s'}"
                 f"</span><br>"
                 f"<span style='font-size:1.0em; color: #333;'>"
                 f"{counts_str}"
@@ -690,14 +694,8 @@ def plot_verification_vs_baseline(
     <div style="position: fixed; top: 10px; right: 10px; background: white; padding: 12px; border: 2px solid #ddd; border-radius: 5px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="margin-bottom: 8px;">
             <label style="cursor: pointer; font-family: Arial; font-size: 14px;">
-                <input type="checkbox" id="toggleUnknown" checked style="margin-right: 5px; cursor: pointer;">
-                Show UNKNOWN points
-            </label>
-        </div>
-        <div style="margin-bottom: 8px;">
-            <label style="cursor: pointer; font-family: Arial; font-size: 14px;">
-                <input type="checkbox" id="toggleGenTime" style="margin-right: 5px; cursor: pointer;">
-                Include Generation Time
+                <input type="checkbox" id="toggleModelLatency" style="margin-right: 5px; cursor: pointer;">
+                Include Model Latency
             </label>
         </div>
         <div style="font-size: 11px; color: #666; font-family: Arial;">
@@ -727,24 +725,23 @@ def plot_verification_vs_baseline(
 
     function updatePlot() {{
         var plotDiv = document.getElementsByClassName('plotly-graph-div')[0];
-        var showUnknown = document.getElementById('toggleUnknown').checked;
-        var includeGenTime = document.getElementById('toggleGenTime').checked;
+        var includeModelLatency = document.getElementById('toggleModelLatency').checked;
 
         var currentXRange = plotDiv.layout.xaxis.range.slice();
         var currentYRange = plotDiv.layout.yaxis.range.slice();
 
-        if (includeGenTime) {{
+        if (includeModelLatency) {{
             setVisible(plotDiv, noGenIndicesAlways, false);
             setVisible(plotDiv, noGenIndicesUnknown, false);
             setVisible(plotDiv, genIndicesAlways, true);
-            setVisible(plotDiv, genIndicesUnknown, showUnknown);
+            setVisible(plotDiv, genIndicesUnknown, true);
 
             var annotations = plotDiv.layout.annotations;
             if (annotations && annotations.length > 0) {{
                 annotations[annotations.length - 1].text = metricWithGen;
             }}
             Plotly.relayout(plotDiv, {{
-                'xaxis.title.text': 'LLM Verification+Gen Time (s)',
+                'xaxis.title.text': 'LLM Verification + Model Latency (s)',
                 'xaxis.range': currentXRange,
                 'xaxis.autorange': false,
                 'yaxis.range': currentYRange,
@@ -755,7 +752,7 @@ def plot_verification_vs_baseline(
             setVisible(plotDiv, genIndicesAlways, false);
             setVisible(plotDiv, genIndicesUnknown, false);
             setVisible(plotDiv, noGenIndicesAlways, true);
-            setVisible(plotDiv, noGenIndicesUnknown, showUnknown);
+            setVisible(plotDiv, noGenIndicesUnknown, true);
 
             var annotations = plotDiv.layout.annotations;
             if (annotations && annotations.length > 0) {{
@@ -831,8 +828,7 @@ def plot_verification_vs_baseline(
     }});
 
     document.addEventListener('DOMContentLoaded', function() {{
-        document.getElementById('toggleUnknown').addEventListener('change', updatePlot);
-        document.getElementById('toggleGenTime').addEventListener('change', updatePlot);
+        document.getElementById('toggleModelLatency').addEventListener('change', updatePlot);
         
         // Add click handler for plot points
         var plotDiv = document.getElementsByClassName('plotly-graph-div')[0];

@@ -1,0 +1,29 @@
+client: hf # or hf / vllm / openrouter
+eval_ft_model: false
+
+vllm: #  vLLM-specific config (only used when client=vllm)
+  base_url: "http://localhost:8000/v1"
+  model: "gen_inv_adapter" # LoRA adapter name or base model name
+
+base_model: 
+  id: "Qwen/Qwen3-0.6B"
+  sampling_params:
+    max_new_tokens: 1024
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 20
+    min_p: 0
+    repetition_penalty: 1.1
+  extra_body: 
+    enable_thinking: false
+    
+
+ft_model:
+  id: "idopinto/qwen3-0.6b-gen-inv-sft-v0-exp2"
+  is_lora: false
+
+# https://huggingface.co/collections/Qwen/qwen3
+# sbatch --job-name=eval_qwen scripts/eval/evaluate_g.sbatch models=qwen_no_think_config dataset.limit=-1 
+# sbatch --job-name=eval_qwenv0 scripts/eval/evaluate_g.sbatch models=qwen_no_think_config models.eval_ft_model=true models.ft_model.id=idopinto/qwen-3-0.6b-gen-inv-sft-v0-exp2
+# sbatch --job-name=eval_qwenv1 scripts/eval/evaluate_g.sbatch models=qwen_no_think_config models.eval_ft_model=true models.ft_model.id=idopinto/qwen-3-0.6b-gen-inv-sft-v1-exp2
+
