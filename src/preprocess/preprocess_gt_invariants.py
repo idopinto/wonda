@@ -17,7 +17,7 @@ import json
 import logging
 from pathlib import Path
 import tempfile
-from typing import Any
+from typing import Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hydra
 from dotenv import load_dotenv
@@ -33,7 +33,7 @@ from src.preprocess.clean_invariants import (
 )
 import weave
 from src.preprocess.program import Program, Predicate
-from src.preprocess.syntactic_validation import syntactic_validation
+from src.eval.validate import syntactic_validation
 from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 from configs import global_config as GC
 from dataclasses import dataclass, field
@@ -143,6 +143,7 @@ class QualityGradeResult:
     is_correct: bool = field(default=False)
     does_target_property_still_hold: bool = field(default=False)
     has_speedup: bool = field(default=False)
+    speedup: Optional[float] = field(default=None)
     quality_grade: int = field(default=-1) # -1 means unknown (unchecked) quality.
 
 @weave.op()
@@ -184,7 +185,7 @@ def decide_if_worth_keeping_invariant(verifier: UAutomizerVerifier, baseline_dec
                 elif future == usefulness_future:
                     quality_grade_result.does_target_property_still_hold = result.decision in  {"TRUE", "FALSE"} and result.decision == baseline_decision
                     quality_grade_result.has_speedup = result.time_taken < baseline_timing
-
+                    quality_grade_result.speedup = result.time_taken / baseline_timing
     if not quality_grade_result.is_correct:
         quality_grade_result.quality_grade = 0
     elif not quality_grade_result.does_target_property_still_hold:
@@ -251,6 +252,7 @@ def preprocess_all_gt_invariants(
                         invariant_entry["simplified_invariant"]["does_target_property_still_hold"] = quality_grade_result.does_target_property_still_hold
                         invariant_entry["simplified_invariant"]["has_speedup"] = quality_grade_result.has_speedup
                         invariant_entry["simplified_invariant"]["quality_grade"] = quality_grade_result.quality_grade
+                        invariant_entry["simplified_invariant"]["speedup"] = quality_grade_result.speedup
                         entry["gt_invariant"] = invariant_entry
                         processed_data.append(entry)
                     else:
