@@ -1,16 +1,18 @@
+test_mode: false
+
 wandb:
   use_wandb: true
   entity: "ip-ai"
-  project: train-qwen-for-inv-gen
-  name: qwen-0.6b-sft-gen-inv-v1-exp2
+  project: train-qwen-for-inv-gen-latest
+  name: qwen3-8b-sft-gen-inv-v1-latest
 
 model:
-  base_model_name: "Qwen/Qwen3-0.6B"
+  base_model_name: "Qwen/Qwen3-8B"
   
   enable_thinking: false
   
   init_kwargs_train:
-    attn_implementation: "eager" # use flash_attention_2 when running on Ampere or newer PGU
+    attn_implementation: "flash_attention_2"
     use_cache: False
     device_map: "auto"
 
@@ -24,14 +26,16 @@ model:
 
 dataset:
   repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
+  json_path: null
   limit: -1 # (3513 -> 4000)
   split: "full" # "full" or "easy" or "hard"
   split_ratio: 0.8
   inv_mode: "pretty" # "raw" or "pretty" or "simplified"
+  min_grade: null
 
 sft:
-  output_dir: "trained_models/qwen-3-0.6b-gen-inv-sft-v1-exp2"
-  num_train_epochs: 2 # saw that 3 epochs caused overfitting
+  output_dir: "trained_models/qwen3-8b-gen-inv-sft-v1-latest"
+  num_train_epochs: 3
   per_device_train_batch_size: 16
   gradient_accumulation_steps: 2
   gradient_checkpointing: True
@@ -39,7 +43,7 @@ sft:
   logging_steps: 1
   save_strategy: "epoch"
   save_only_model: true
-  learning_rate: 1e-4
+  learning_rate: 5e-4
   max_length: 1024
   # assistant_only_loss: True
   max_grad_norm: 0.3
@@ -52,15 +56,25 @@ sft:
   report_to: "wandb"
   push_to_hub: True
 
-use_peft: false
+use_peft: true
 
 lora:
-  lora_alpha: 16
+  lora_alpha: 64
   lora_dropout: 0.05
-  r: 16
+  r: 128
   bias: "none"
-  target_modules: "all-linear"
+  target_modules: [
+    "embed_tokens",
+    "q_proj",
+    "v_proj",
+    "o_proj",
+    "k_proj",
+    "up_proj",
+    "down_proj",
+    "gate_proj",
+  ]
   task_type: "CAUSAL_LM"
+  
   modules_to_save: ["lm_head", "embed_tokens"] # make sure to save the lm_head and the embed_tokens as you train the special tokens (?)
 
 prompts:

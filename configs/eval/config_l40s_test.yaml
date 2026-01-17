@@ -2,8 +2,8 @@ eval_per_marker: true
 # Weave configuration
 weave:
   entity: "ip-ai"
-  project_name: "eval-inv-gen-new-latest-trails"
-  skip_wandb: false
+  project_name: "eval-inv-gen-new-latest-trails-test"
+  skip_wandb: true
 
 # Statistics configuration
 statistics:
@@ -13,8 +13,8 @@ statistics:
 # Evaluation configuration
 dataset:
   # https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-full
-  name: "idopinto/invbench-eval-uautomizer25-k3-full" 
-  limit: -1 # number of samples to evaluate -1 for all
+  name: "idopinto/invbench-eval-uautomizer25-k3-l40s-full" 
+  limit: 10 # number of samples to evaluate -1 for all
   prefix: "" # prefix to filter files by (useful for testing also)
   split: "hard" # split to evaluate on
   re_split: true # re-split the dataset by difficultiy threshold
@@ -79,9 +79,11 @@ prompts:
 # Model and task configuration
 defaults:
    - _self_ # load the default configuration
-   - models: oss_config # oss or qwen_config
+   - models: qwen_no_think_config # oss or qwen_config
 
 # Examples:
 #  uv run -m src.eval.evaluate models=openai_config dataset.limit=1
 #  uv run -m src.eval.evaluate models=qwen_config dataset.limit=1
 #  uv run -m src.eval.evaluate models=oss_config dataset.limit=1
+
+#  uv run -m src.eval.evaluate_vbs models=qwen_no_think_config

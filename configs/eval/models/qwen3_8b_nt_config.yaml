@@ -1,12 +1,8 @@
 client: hf # or hf / vllm / openrouter
 eval_ft_model: false
 
-vllm: #  vLLM-specific config (only used when client=vllm)
-  base_url: "http://localhost:8000/v1"
-  model: "gen_inv_adapter" # LoRA adapter name or base model name
-
 base_model: 
-  id: "Qwen/Qwen3-0.6B"
+  id: "Qwen/Qwen3-8B"
   sampling_params:
     max_new_tokens: 1024
     temperature: 0.7
@@ -19,8 +15,9 @@ base_model:
     
 
 ft_model:
-  id: "idopinto/qwen3-0.6b-gen-inv-sft-v0"
-  is_lora: false
+  sft_version: "v0"
+  id: "idopinto/qwen3-8b-gen-inv-sft-${.sft_version}-latest"
+  is_lora: true
 
 # https://huggingface.co/collections/Qwen/qwen3
 # Qwen/Qwen3-0.6B

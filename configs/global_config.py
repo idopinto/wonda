@@ -21,5 +21,8 @@ UAUTOMIZER_PATHS = {
     "25": TOOLS_DIR / "UAutomizer25" / "Ultimate.py", # (0.3.0-dev-d790fec): Java 21 [default] (jdk-21.0.1)
     "26": TOOLS_DIR / "UAutomizer26" / "Ultimate.py", # (0.3.0-dev-9c83a1c48e): Java 21 (jdk-21.0.1)
 }
+
+MEMORY_LIMIT_MB = 16384
+WEAVE_PARALLELISM = "1"
 #  The Ultimate.py scripts automatically detect and use the correct Java version based on the UAutomizer directory.
 #  No manual switching is required.

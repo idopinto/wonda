@@ -2,9 +2,9 @@
 #SBATCH --job-name=train-qwen
 #SBATCH --output=slurm/train_qwen_%j.out
 #SBATCH --error=slurm/train_qwen_%j.err
-#SBATCH --time=24:00:00
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --time=48:00:00
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=256G
 #SBATCH --gres=gpu:h200:1
 #SBATCH --killable
 
@@ -18,8 +18,8 @@
 #   wandb.use_wandb=true|false           Enable/disable wandb logging (default: true)
 #
 # Examples:
+#   sbatch scripts/train/train_qwen3_8b.sbatch
 #   sbatch scripts/train/train_qwen.sbatch
-#   sbatch scripts/train/train_qwen.sbatch --config-name=qwen_0_6b_v1
 #   sbatch scripts/train/train_qwen.sbatch dataset.limit=100 sft.num_train_epochs=1
 
 echo "Starting Qwen training..."
@@ -50,7 +50,8 @@ echo "=========================================="
 echo ""
 
 # Run training with config
-uv run -m src.train.sft.train_qwen "$@"
+# uv run -m src.train.sft.train_qwen --config-name=qwen3_8b_nt_v0 "$@"
+uv run -m src.train.sft.train_qwen --config-name=qwen3_8b_nt_v1 "$@"
 
 echo ""
 echo "=========================================="

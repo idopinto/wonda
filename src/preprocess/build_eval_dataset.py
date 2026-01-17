@@ -10,7 +10,8 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from configs import global_config as GC
-from src.verifiers.uautomizer import UAutomizerVerifier
+# from src.verifiers.uautomizer import UAutomizerVerifier
+from src.verifiers.uautomizer_runlim import UAutomizerVerifier
 from src.preprocess.baseline_dataset_common import (
     run_uautomizer_as_baseline,
     logger,
@@ -36,7 +37,7 @@ def main(cfg: DictConfig):
     output_dir = (
         GC.DATASET_DIR
         / "eval"
-        / f"invbench-eval-uautomizer{cfg.verifier.version}-k{cfg.verifier.k}-{test_suffix}"
+        / f"invbench-eval-uautomizer{cfg.verifier.version}-k{cfg.verifier.k}-{cfg.compute_node_type}-{test_suffix}-runlim"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / f"{output_dir.name}.json"

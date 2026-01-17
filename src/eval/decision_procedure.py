@@ -2,80 +2,57 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
+import logging
 from typing import Optional
 
 import weave  # type: ignore[import-not-found]
 
-from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
+logger = logging.getLogger(__name__)
+
+from src.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
 from src.preprocess.predicate import Predicate
 from src.preprocess.program import Program
-from src.eval.validate import syntactic_validation
 
 @dataclass
 class DecisionProcedureReport:
     final_decision: str = "UNKNOWN"
     decision_rule: str = ""
-    # program: Optional[Program] = None
-    target: Optional[Predicate] = None
-    # target_property_file_path: Optional[Path] = None
-    candidate: Optional[Predicate] = None
-    # Always keep the raw model output for debugging, even if parsing fails.
-    raw_candidate: Optional[str] = None
-    target_marker: Optional[str] = None
-    is_valid: bool = False
+    target_assert: Optional[Predicate] = None
+    candidate_invariant: Optional[Predicate] = None
     correctness_report: Optional[VerifierCallReport] = None
     usefulness_report: Optional[VerifierCallReport] = None
     verification_time: float = 0.0  # Only verification time (without model latency)
-    model_latency: float = 0.0  # Model inference/token generation time
-    total_time: float = 0.0  # verification_time + model_latency
     report_path: str = ""
     program_for_correctness: Optional[str] = None
     program_for_usefulness: Optional[str] = None
-
+    
     def to_dict(self) -> dict:
         """Convert the report to a dictionary for JSON serialization."""
+        # Convert target_assert and candidate_invariant to dictionaries if they exist
+        target_assert_dict = {
+            "content": self.target_assert.content if self.target_assert else None,
+            "marker_name": self.target_assert.marker_name if self.target_assert else None,
+        } if self.target_assert else None
+        candidate_invariant_dict = {
+            "content": self.candidate_invariant.content if self.candidate_invariant else None,
+            "marker_name": self.candidate_invariant.marker_name if self.candidate_invariant else None,
+        } if self.candidate_invariant else None
         return {
             "final_decision": self.final_decision,
             "decision_rule": self.decision_rule,
-            "target": {
-                "content": self.target.content,
-                "marker_name": self.target.marker_name,
-            }
-            if self.target
-            else None,
-            "candidate": {
-                "content": self.candidate.content,
-                "marker_name": self.candidate.marker_name,
-            }
-            if self.candidate
-            else None,
-            "raw_candidate": self.raw_candidate,
-            "is_valid": self.is_valid,
-            "target_marker": self.target_marker,
-            "correctness_report": self.correctness_report.to_dict()
-            if self.correctness_report
-            else None,
+            "target_assert": target_assert_dict,
+            "candidate_invariant": candidate_invariant_dict,
+            "correctness_report": self.correctness_report.to_dict() if self.correctness_report else None,
+            "usefulness_report": self.usefulness_report.to_dict() if self.usefulness_report else None,
             "program_for_correctness": self.program_for_correctness,
             "program_for_usefulness": self.program_for_usefulness,
-            "usefulness_report": self.usefulness_report.to_dict()
-            if self.usefulness_report
-            else None,
             "verification_time": self.verification_time,
-            "model_latency": self.model_latency,
-            "total_time": self.total_time,
             "report_path": self.report_path,
         }
 
     def save_json(self, report_path: str):
         with open(report_path, "w") as f:
             json.dump(self.to_dict(), f, indent=4)
-
-    @classmethod
-    def from_json(cls, report_path: str):
-        with open(report_path, "r") as f:
-            data = json.load(f)
-        return cls(**data)
-
 
 class DecisionProcedure:
     def __init__(
@@ -97,7 +74,7 @@ class DecisionProcedure:
             self.program.process(print_ast=False)
 
         # Target is the (single) target assertion recorded during process()
-        self.target = (
+        self.target_assert = (
             self.program.get_target_assert() if self.program.assertions else None
         )
         self.available_markers = self.program.get_available_markers()
@@ -113,18 +90,19 @@ class DecisionProcedure:
         )
         return verifier_report
 
+    @weave.op()
     def decide(
-        self, candidate: Predicate, report: DecisionProcedureReport
+        self, candidate_invariant: Predicate   
     ) -> DecisionProcedureReport:
+
         program_for_correctness = self.program.get_program_with_assertion(
-            predicate=candidate, assumptions=[], for_llm=False
+            predicate=candidate_invariant, assumptions=[], for_llm=False
         )
 
-        program_for_usefullness = self.program.get_program_with_assertion(
-            predicate=self.target, assumptions=[candidate], for_llm=False
+        program_for_usefulness = self.program.get_program_with_assertion(
+            predicate=self.target_assert, assumptions=[candidate_invariant], for_llm=False
         )
-        report.program_for_correctness = program_for_correctness
-        report.program_for_usefulness = program_for_usefullness
+
         # Parallel evaluation: run both verifier queries concurrently
         # da = V(P, Ø, q): Check if q is an invariant
         # db = V(P, {q}, p*): Check if target property holds assuming q is true
@@ -138,7 +116,7 @@ class DecisionProcedure:
 
             usefulness_future = executor.submit(
                 self.run_verifier,
-                program_str=program_for_usefullness,
+                program_str=program_for_usefulness,
                 kind="usefulness",
             )
 
@@ -146,29 +124,50 @@ class DecisionProcedure:
             invariant_correctness_report = None
             invariant_usefulness_report = None
 
-            # Use as_completed to process results as they arrive (enables short-circuiting DEC-FALSE)
-            # DEC-FALSE: If db = F, we can decide F without waiting for da to complete
+            # Use as_completed to process results as they arrive.
+            #
+            # Note: even if we can *decide* FALSE based only on usefulness (DEC-FALSE),
+            # ThreadPoolExecutor's context manager will still wait for running tasks on exit.
+            # So we always attempt to collect both reports to keep timing/metrics consistent.
             for future in as_completed([correctness_future, usefulness_future]):
-                result = future.result()
+                try:
+                    result = future.result()
+                except Exception as e:
+                    result = VerifierCallReport(
+                        decision="ERROR",
+                        decision_reason=f"future_exception: {type(e).__name__}: {e}",
+                        time_taken=0.0,
+                        reports_dir=str(self.reports_dir),
+                    )
+
                 if future == correctness_future:
                     invariant_correctness_report = result
                 elif future == usefulness_future:
                     invariant_usefulness_report = result
-                    # Short-circuit DEC-FALSE: if usefulness is Falsified, we can skip waiting for correctness
-                    # and decide F immediately (DEC-FALSE doesn't require da)
-                    if invariant_usefulness_report.decision == "FALSE":
-                        # Try to cancel correctness if it's still running
-                        if not correctness_future.done():
-                            correctness_future.cancel()
-                        # We have what we need for DEC-FALSE, break early
-                        break
 
-            # After loop: if correctness completed but wasn't captured, get it now
-            if invariant_correctness_report is None and correctness_future.done():
+            # After loop (and executor shutdown): ensure both reports are captured.
+            # Because we used the executor as a context manager, both futures should now be done.
+            if invariant_correctness_report is None:
                 try:
                     invariant_correctness_report = correctness_future.result()
-                except Exception:
-                    pass  # If it was cancelled or failed, leave it as None
+                except Exception as e:
+                    invariant_correctness_report = VerifierCallReport(
+                        decision="ERROR",
+                        decision_reason=f"correctness_exception: {type(e).__name__}: {e}",
+                        time_taken=0.0,
+                        reports_dir=str(self.reports_dir),
+                    )
+
+            if invariant_usefulness_report is None:
+                try:
+                    invariant_usefulness_report = usefulness_future.result()
+                except Exception as e:
+                    invariant_usefulness_report = VerifierCallReport(
+                        decision="ERROR",
+                        decision_reason=f"usefulness_exception: {type(e).__name__}: {e}",
+                        time_taken=0.0,
+                        reports_dir=str(self.reports_dir),
+                    )
 
         decision_rule = ""
         # Apply decision calculus
@@ -189,6 +188,7 @@ class DecisionProcedure:
         elif (
             invariant_correctness_report
             and invariant_correctness_report.decision == "TRUE"
+            and invariant_usefulness_report
             and invariant_usefulness_report.decision
             in {"TRUE", "UNKNOWN", "TIMEOUT", "ERROR"}
         ):
@@ -207,89 +207,41 @@ class DecisionProcedure:
         elif (
             invariant_correctness_report
             and invariant_correctness_report.decision != "TRUE"
+            and invariant_usefulness_report
             and invariant_usefulness_report.decision != "FALSE"
         ):
             final_decision = "UNKNOWN"
             decision_rule = "DEC-U"
 
         # Calculate verification time: max of both runs since they execute in parallel
-        # Use 0 if correctness was cancelled (short-circuited)
+        # Use 0 if correctness was cancelled (short-circuited) or time_taken is None
         correctness_time = (
             invariant_correctness_report.time_taken
-            if invariant_correctness_report
+            if invariant_correctness_report and invariant_correctness_report.time_taken is not None
             else 0.0
         )
         usefulness_time = (
             invariant_usefulness_report.time_taken
-            if invariant_usefulness_report
+            if invariant_usefulness_report and invariant_usefulness_report.time_taken is not None
             else 0.0
         )
         verification_time = max(correctness_time, usefulness_time)
 
-        # Update the report with decision results (keep all other fields from the initial report)
-        report.final_decision = final_decision
-        report.decision_rule = decision_rule
-        report.correctness_report = invariant_correctness_report
-        report.usefulness_report = invariant_usefulness_report
-        report.verification_time = verification_time
-        report.total_time = (
-            verification_time + report.model_latency
-        )  # assumes model_latency is set as input
 
-        return report
-
-    def parse_candidate(self, candidate: str) -> Predicate:
-        """
-        Parse candidate string to extract marker and content.
-        
-        First tries to extract JSON from ```json ... ``` code block,
-        then falls back to parsing the string directly as JSON.
-        """
-        import re
-        
-        # Try to extract JSON from markdown code block first
-        json_block_pattern = r"```json\s*(\{.*?\})\s*```"
-        match = re.search(json_block_pattern, candidate, re.DOTALL)
-        
-        if match:
-            json_str = match.group(1)
-        else:
-            # Fall back to parsing the candidate directly
-            json_str = candidate
-        
-        json_candidate = json.loads(json_str)
-        marker = json_candidate["marker"]
-        content = json_candidate["content"]
-        return Predicate(content=content, marker_name=marker)
-
-    @weave.op()
-    def run(self, candidate: str, model_latency: float, target_marker: Optional[str] = None) -> DecisionProcedureReport:
-        final_report = DecisionProcedureReport(
-            target=self.target,
-            model_latency=model_latency,
-            raw_candidate=candidate,
-            target_marker=target_marker,
+        report = DecisionProcedureReport(
+            final_decision=final_decision,
+            decision_rule=decision_rule,
+            target_assert=self.target_assert,
+            candidate_invariant=candidate_invariant,
+            correctness_report=invariant_correctness_report,
+            usefulness_report=invariant_usefulness_report,
+            program_for_correctness=program_for_correctness,
+            program_for_usefulness=program_for_usefulness,
+            verification_time=verification_time,
         )
-        parsed_candidate: Optional[Predicate] = None
-        is_valid = False
-        try:
-            parsed_candidate = self.parse_candidate(candidate)
-            # print(f"Parsed candidate: {parsed_candidate}")
-            # print(f"Target marker: {target_marker}")
-            is_valid = syntactic_validation(parsed_candidate.content)
-            if target_marker:
-                is_valid = is_valid and parsed_candidate.marker_name == target_marker
-        except Exception:
-            # Any parsing/formatting failure => invalid candidate. Keep raw_candidate for inspection.
-            is_valid = False
-        final_report.is_valid = is_valid
-        final_report.candidate = parsed_candidate
-        if is_valid:
-            assert parsed_candidate is not None
-            final_report = self.decide(parsed_candidate, final_report)
-        else:
-            final_report.final_decision = "INVALID"
-        # save the final report to a json file
-        report_file_path = self.reports_dir / "decision_report.json"
-        final_report.save_json(report_file_path)
-        return final_report
+        # logger.info(f"Decision procedure report")
+        # for key, value in report.to_dict().items():
+        #     print(f"{key}: {value}")
+        print(f"runlim correctness output: {invariant_correctness_report.runlim}")
+        print(f"runlim usefulness output: {invariant_usefulness_report.runlim}")
+        return report

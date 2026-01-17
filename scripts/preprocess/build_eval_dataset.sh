@@ -4,16 +4,15 @@
 #SBATCH --error=slurm/build_eval_dataset_%j.err
 #SBATCH --time=72:00:00
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
-#SBATCH --gres=gpu:h200:1
-#SBATCH --killable
+#SBATCH --mem=256G
+#SBATCH --gres=gpu:l40s:1
 
 # Script to build baseline evaluation dataset using AST-based program processing
 # Usage: sbatch scripts/preprocess/build_eval_dataset.sh [HYDRA_OVERRIDES]
 #
 # This script runs UAutomizer verification on evaluation programs sequentially
 # to ensure accurate timing measurements for speedup calculations.
-# Runs on H200 to match the compute node used for LLM evaluation.
+# Runs on l40s to match the compute node used for LLM evaluation.
 #
 # Hydra config overrides (pass as arguments):
 #   dataset.limit=N                      Limit number of files to process, -1 for all (default: -1)

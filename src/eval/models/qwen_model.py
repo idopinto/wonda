@@ -167,7 +167,7 @@ class InvariantGeneratorQwenModel(weave.Model):
         """Return the display name for this model configuration."""
         model_id = self.ft_model_id if self.eval_ft_model else self.base_model_id
         base_name = model_id.split("/")[-1]
-        suffix = "thinking" if self.enable_thinking else "no-thinking"
+        suffix = "t" if self.enable_thinking else "nt"
         return f"{base_name}-{suffix}"
 
     def get_run_name(self) -> str:

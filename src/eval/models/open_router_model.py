@@ -50,7 +50,7 @@ class InvariantGeneratorOpenRouterModel(weave.Model):
             user_prompt = self.user_prompt_template.content.format(program=program.llm_code)
         
         messages = [
-            {"role": "developer", "content": self.system_prompt.content},
+            {"role": "system", "content": self.system_prompt.content},
             {"role": "user", "content": user_prompt},
         ]
 

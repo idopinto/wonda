@@ -27,3 +27,4 @@ sv-benchmarks
 .pytest_cache/
 Ultimate.log
 a.out
+llm_response_cache

@@ -17,7 +17,7 @@ from pycparser import c_parser
 from tqdm import tqdm
 
 from configs import global_config as GC
-from src.verifiers.uautomizer import UAutomizerVerifier
+from src.verifiers.uautomizer_runlim import UAutomizerVerifier
 from src.preprocess.program import Program as AstProgram
 
 # logging configuration
@@ -236,13 +236,14 @@ def process_program(
         "file": program_path.name,
         "original_program": ast_program.code,
         "program_for_baseline": program_for_baseline,
+        "program_for_llm": ast_program.llm_code,
         "baseline_decision": "UNKNOWN",
         "optional_details": [],
         "timings": {
             "all": [],
             "median": 0.0,
         },  # Store all timings as list to handle duplicates
-        "program_for_llm": ast_program.llm_code,
+        "runlim": [],
         # "program_with_all_markers": ast_program.marked_code_from_ast,
         # "markers": ast_program.get_available_markers(),
     }
@@ -271,6 +272,7 @@ def process_program(
                 f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds"
             )
             result["timings"]["all"].append(report.time_taken)
+            result["runlim"].append(report.to_dict().get("runlim", {}))
 
         # Calculate median from all timing values (including duplicates)
         all_timings = result["timings"]["all"]

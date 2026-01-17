@@ -1,0 +1,25 @@
+[runlim] version:		2.0.0rc12
+[runlim] host:			firefoot-11
+[runlim] time limit:		30 seconds
+[runlim] real time limit:	311040000 seconds
+[runlim] space limit:		8000 MB
+[runlim] argv[0]:		uv
+[runlim] argv[1]:		run
+[runlim] argv[2]:		-m
+[runlim] argv[3]:		src.verifiers.uautomizer
+[runlim] argv[4]:		--program_name
+[runlim] argv[5]:		benchmark24_conjunctive_1.c
+[runlim] argv[6]:		--timeout_seconds
+[runlim] argv[7]:		60
+[runlim] start:			Wed Jan 14 15:52:14 2026
+[runlim] child:			234031
+[runlim] end:			Wed Jan 14 15:52:14 2026
+[runlim] status:		ok
+[runlim] result:		0
+[runlim] children:		2
+[runlim] processes:		3
+[runlim] real:			0.60 seconds
+[runlim] time:			0.05 seconds
+[runlim] space:			64 MB
+[runlim] load:			7.35 maximum
+[runlim] samples:		6

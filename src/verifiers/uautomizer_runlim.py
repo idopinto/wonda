@@ -6,11 +6,18 @@ import os
 import subprocess
 import shutil
 import tempfile
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from configs import global_config as GC
 
+# Semaphore to limit concurrent verification calls.
+# This allows WEAVE_PARALLELISM > 1 for model inference while preventing
+# resource contention and SIGTERM issues from too many concurrent verifiers.
+# Default: 1 (sequential verification). Set via VERIFIER_MAX_CONCURRENT env var.
+_MAX_CONCURRENT_VERIFIERS = int(os.environ.get("VERIFIER_MAX_CONCURRENT", "1"))
+_verifier_semaphore = threading.Semaphore(_MAX_CONCURRENT_VERIFIERS)
 
 @dataclass
 class VerifierCallReport:
@@ -21,22 +28,35 @@ class VerifierCallReport:
         Possible values: "TRUE", "FALSE", "UNKNOWN", "ERROR", "TIMEOUT".
         decision_reason (str): for ERROR / UNKNOWN cases.
         time_taken (float): The total execution time for the verifier call, in seconds.
+        runlim (dict): Runlim output.
         reports_dir (str): Path to directory where verification outputs such as logs, error files,
             witness files (e.g., .yml, .graphml) are saved.
     """
 
     decision: str = "UNKNOWN"
-    decision_reason: str = "default"
+    decision_reason: str = ""
     time_taken: float = 0.0
+
+    runlim: dict = field(default_factory=lambda: {
+        "host": "",
+        "status": "",
+        "cpu_time_limit": 0,
+        "real_time_limit": 0,
+        "space_limit": 0,
+        "cpu_time": 0.0,
+        "real_time": 0.0,
+        "space": 0,
+    })
     reports_dir: str = ""
 
     def to_dict(self) -> dict:
         """Convert report to dictionary for JSON serialization."""
         return {
             "decision": self.decision,
-            "time_taken": self.time_taken,
-            "reports_dir": self.reports_dir,
             "decision_reason": self.decision_reason,
+            "time_taken": self.time_taken,
+            "runlim": self.runlim,
+            "reports_dir": self.reports_dir, # path to directory where verification outputs such as logs, error files, witness files (e.g., .yml, .graphml) are saved.
         }
 
     def save_json(self, file_path: Path) -> None:
@@ -51,9 +71,10 @@ class VerifierCallReport:
             data = json.load(f)
         return cls(
             decision=data["decision"],
-            time_taken=data["time_taken"],
-            reports_dir=data["reports_dir"],
             decision_reason=data["decision_reason"],
+            time_taken=data["time_taken"],
+            runlim=data["runlim"],
+            reports_dir=data["reports_dir"],
         )
 
 
@@ -63,7 +84,6 @@ def write_file(file_path: Path, content: str) -> None:
     with open(file_path, "w") as f:
         f.write(content)
 
-
 class UAutomizerVerifier:
     def __init__(
         self,
@@ -72,12 +92,14 @@ class UAutomizerVerifier:
         arch: str = "32bit",
         timeout_seconds: float = 600.0,
         version: str = "25",
+        memory_limit_mb: int = GC.MEMORY_LIMIT_MB,
     ):
         self.uautomizer_path = uautomizer_path
         self.property_file_path = property_file_path
         self.arch = arch
         self.timeout_seconds = timeout_seconds
         self.version = version
+        self.memory_limit_mb = memory_limit_mb
 
     def verify(
         self, program_path: Path, reports_dir: Path, timeout_seconds: float = None
@@ -97,8 +119,10 @@ class UAutomizerVerifier:
             VerifierCallReport with verification results and metadata.
         """
         reports_dir.mkdir(parents=True, exist_ok=True)
+        runlim_path = GC.TOOLS_DIR / "runlim" / "runlim"
         log_file_path = reports_dir / f"{program_path.stem}.log"
         err_file_path = reports_dir / f"{program_path.stem}.err"
+        runlim_output_file = reports_dir / f"{program_path.stem}.runlim"
 
         # Validate required files exist
         for path in [self.uautomizer_path, program_path, self.property_file_path]:
@@ -111,8 +135,18 @@ class UAutomizerVerifier:
                 )
 
         # Build command
+        # TODO: add memory limitation constraint 16gb
+        # https://github.com/arminbiere/runlim
     
+        runlim_command = [
+            runlim_path,
+            # "-t", str(int(self.timeout_seconds)),      # CPU time limit
+            "-r", str(int(self.timeout_seconds)),      # Wall time limit
+            "-s", str(self.memory_limit_mb),      # Memory limit in MB  
+            "-o", str(runlim_output_file),   # Runlim output file
+        ]
         command = [
+            *runlim_command,
             "python3",
             str(self.uautomizer_path),
             "--spec",
@@ -137,44 +171,75 @@ class UAutomizerVerifier:
         report = VerifierCallReport(reports_dir=str(reports_dir))
         temp_work_dir = Path(tempfile.mkdtemp(prefix="uautomizer_"))
         try:
-            start_time = time.perf_counter()
-            completed_process = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds
-                if timeout_seconds is None
-                else timeout_seconds,
-                check=False,
-                env=env,
-                cwd=temp_work_dir,
-            )
-            report.time_taken = time.perf_counter() - start_time
+            # Acquire semaphore to limit concurrent verifications.
+            # This prevents resource contention and SIGTERM issues when WEAVE_PARALLELISM > 1.
+            _verifier_semaphore.acquire()
+            try:
+                completed_process = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    env=env,
+                    cwd=temp_work_dir,
+                )
+            finally:
+                _verifier_semaphore.release()
 
             write_file(log_file_path, completed_process.stdout)
             write_file(err_file_path, completed_process.stderr)
 
-            report.decision, report.decision_reason = self._parse_uautomizer_output(
-                completed_process.stdout
-            )
-
-        except subprocess.TimeoutExpired as e:
-            report.decision = "TIMEOUT"
-            report.time_taken = (
-                self.timeout_seconds if timeout_seconds is None else timeout_seconds
-            )
-            stdout_content = (
-                e.stdout.decode("utf-8", errors="ignore")
-                if isinstance(e.stdout, bytes)
-                else (e.stdout or "")
-            )
-            stderr_content = (
-                e.stderr.decode("utf-8", errors="ignore")
-                if isinstance(e.stderr, bytes)
-                else (e.stderr or "")
-            )
-            write_file(log_file_path, stdout_content)
-            write_file(err_file_path, stderr_content)
+            # Wait for runlim output file to be fully written (contains status line)
+            # Under heavy parallelism, file I/O may lag behind subprocess completion
+            runlim_text = ""
+            max_wait_seconds = 5.0
+            poll_interval = 0.1
+            waited = 0.0
+            while waited < max_wait_seconds:
+                if runlim_output_file.exists():
+                    runlim_text = runlim_output_file.read_text()
+                    # Check if runlim has finished writing (status line present)
+                    if "[runlim] status:" in runlim_text:
+                        break
+                time.sleep(poll_interval)
+                waited += poll_interval
+            
+            # Final read after waiting
+            if runlim_output_file.exists():
+                runlim_text = runlim_output_file.read_text()
+            
+            if waited > 0 and "[runlim] status:" not in runlim_text:
+                print(f"WARNING: Runlim output incomplete after {waited:.1f}s wait. "
+                      f"Return code: {completed_process.returncode}, "
+                      f"Stderr (last 200): {(completed_process.stderr or '')[-200:]!r}")
+            report.runlim = self._parse_runlim_output(runlim_text)
+            print(f"runlim output: {report.runlim}")
+            
+            # Handle different runlim statuses
+            if report.runlim["status"] == "ok":
+                report.decision, report.decision_reason = self._parse_uautomizer_output(completed_process.stdout)
+            elif report.runlim["status"] == "out of memory":
+                report.decision = "ERROR"
+                report.decision_reason = "Out of memory"
+            elif report.runlim["status"] == "out of time":
+                report.decision = "TIMEOUT"
+                report.decision_reason = "Out of time"
+            elif report.runlim["status"] is None:
+                # Runlim didn't finish writing - child likely crashed immediately
+                # Fall back to subprocess info for diagnosis
+                report.decision = "ERROR"
+                stderr_snippet = (completed_process.stderr or "")[:500]
+                stdout_snippet = (completed_process.stdout or "")[:500]
+                report.decision_reason = (
+                    f"Runlim incomplete (child crashed?). "
+                    f"returncode={completed_process.returncode}, "
+                    f"stderr={stderr_snippet!r}, stdout_tail={stdout_snippet[-200:]!r}"
+                )
+            else:
+                report.decision = "ERROR"
+                report.decision_reason = f"Unknown runlim status: {report.runlim['status']}"
+            
+            report.time_taken = report.runlim.get("real_time") or 0.0
 
         except Exception as e:
             import traceback
@@ -187,9 +252,59 @@ class UAutomizerVerifier:
             shutil.rmtree(temp_work_dir)
         return report
 
-    def _parse_uautomizer_output(self, output: str) -> str:
+    def _parse_runlim_output(self, output: str) -> str:
         import re
 
+        def get_value(pattern, output, cast=str, default=None):
+            match = re.search(pattern, output, re.MULTILINE)
+            if match:
+                val = match.group(1)
+                try:
+                    return cast(val)
+                except Exception:
+                    return val if cast is str else default
+            return default
+
+        parsed = {}
+
+        # Host
+        parsed["host"] = get_value(r"\[runlim\] host:\s+([^\n]+)", output, str)
+
+        # Time limit (seconds, int)
+        parsed["cpu_time_limit"] = get_value(r"\[runlim\] time limit:\s+([0-9]+) seconds", output, int)
+
+        # Real time limit (seconds, int)
+        parsed["real_time_limit"] = get_value(r"\[runlim\] real time limit:\s+([0-9]+) seconds", output, int)
+
+        # Space limit (MB, int)
+        parsed["space_limit"] = get_value(r"\[runlim\] space limit:\s+([0-9]+) MB", output, int)
+
+        # Status
+        parsed["status"] = get_value(r"\[runlim\] status:\s+([^\n]+)", output, str)
+
+        # Real time (seconds, float)
+        parsed["real"] = get_value(r"\[runlim\] real:\s+([0-9.]+) seconds", output, float)
+
+        # CPU time (seconds, float)
+        parsed["time"] = get_value(r"\[runlim\] time:\s+([0-9.]+) seconds", output, float)
+
+        # Space (MB, int)
+        parsed["space"] = get_value(r"\[runlim\] space:\s+([0-9]+) MB", output, int)
+
+        return {
+            "host": parsed["host"],
+            "status": parsed["status"],
+            "cpu_time_limit": parsed["cpu_time_limit"],
+            "real_time_limit": parsed["real_time_limit"],
+            "space_limit": parsed["space_limit"],
+            "cpu_time": parsed["time"],
+            "real_time": parsed["real"],
+            "space": parsed["space"],
+        }
+
+    def _parse_uautomizer_output(self, output: str) -> str:
+        import re
+        # print(f"UAutomizer output: {output}")
         result_pattern = r"Result:\s*\n(ERROR|TRUE|FALSE|UNKNOWN)(?::\s*(.+))?"
         match = re.search(result_pattern, output, re.MULTILINE)
 
@@ -226,6 +341,7 @@ if __name__ == "__main__":
     verifier = UAutomizerVerifier(
         uautomizer_path=uautomizer_path,
         property_file_path=property_file_path,
+        memory_limit_mb=GC.MEMORY_LIMIT_MB,
         arch=args.arch,
         timeout_seconds=args.timeout_seconds,
         version=args.uautomizer_version,
@@ -236,10 +352,11 @@ if __name__ == "__main__":
         reports_dir=reports_dir,
         timeout_seconds=args.timeout_seconds,
     )
-    print("\n --- Running UAutomizer Verification ---")
-    print(f"  UAutomizer: {uautomizer_path}")
+    print("\n --- Running UAutomizer Verification with Runlim ---")
     print(f"  Program: {program_path}")
     print(f"  Timeout: {args.timeout_seconds}s")
+    print(f"  Memory limit: {GC.MEMORY_LIMIT_MB}MB")
+    print(f"  Runlim path: {GC.TOOLS_DIR / 'runlim' / 'runlim'}")
 
     print("\n--- Verification Complete ---")
     result_dict = result.to_dict()
@@ -252,6 +369,7 @@ if __name__ == "__main__":
     print(f"Witness YAML file: {reports_dir / f'{program_name}_witness.yml'}")
     print(f"Error file: {reports_dir / f'{program_name}.err'}")
     print(f"Log file: {reports_dir / f'{program_name}.log'}")
+    print(f"Runlim file: {reports_dir / f'{program_name}.runlim'}")
     print("--------------------------------")
 
 

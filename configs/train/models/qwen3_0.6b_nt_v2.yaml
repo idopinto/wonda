@@ -1,12 +1,16 @@
 test_mode: false
+
 wandb:
   use_wandb: true
   entity: "ip-ai"
-  project: train-qwen-for-inv-gen
-  name: qwen3-0.6b-sft-gen-inv-v0
+  project: train-qwen-for-inv-gen-latest
+  name: qwen3-0.6b-gen-inv-sft-v2-latest
+
 model:
-  base_model_name: "Qwen/Qwen3-0.6B"  
+  base_model_name: "Qwen/Qwen3-0.6B"
+  
   enable_thinking: false
+  
   init_kwargs_train:
     attn_implementation: "eager" # use flash_attention_2 when running on Ampere or newer PGU
     use_cache: False
@@ -14,7 +18,7 @@ model:
 
   inference:
     sampling_params:
-      max_new_tokens: 1024
+      max_new_tokens: 32768
       temperature: 0.7
       top_p: 0.8
       top_k: 20
@@ -22,13 +26,15 @@ model:
 
 dataset:
   repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
+  json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
   limit: -1 # (3513 -> 4000)
   split: "full" # "full" or "easy" or "hard"
   split_ratio: 0.8
-  inv_mode: "raw" # "raw" or "pretty" or "simplified"
+  inv_mode: "simplified" # "raw" or "pretty" or "simplified"
+  min_grade: 2
 
 sft:
-  output_dir: "trained_models/qwen3-0.6b-gen-inv-sft-v0"
+  output_dir: "trained_models/qwen3-0.6b-gen-inv-sft-v2-latest"
   num_train_epochs: 2 # saw that 3 epochs caused overfitting
   per_device_train_batch_size: 16
   gradient_accumulation_steps: 2
@@ -39,17 +45,18 @@ sft:
   save_only_model: true
   learning_rate: 1e-4
   max_length: 1024
+  # assistant_only_loss: True
   max_grad_norm: 0.3
   warmup_ratio: 0.03
   lr_scheduler_type: "cosine_with_min_lr"
   lr_scheduler_kwargs: {"min_lr_rate": 0.1}
   dataset_text_field: "text"
   eval_strategy: "steps"
-  eval_steps: 20
+  eval_steps: 5
   report_to: "wandb"
   push_to_hub: True
 
-use_peft: false 
+use_peft: false
 
 lora:
   lora_alpha: 16

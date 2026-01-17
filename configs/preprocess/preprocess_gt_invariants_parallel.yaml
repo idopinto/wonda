@@ -8,12 +8,12 @@ verifier:
   arch: "32bit"
   property: "unreach-call.prp"
   timeout: 600.0
-  max_parallel_workers: 5  # Should equal model.n (N candidates verified in parallel)
+  max_parallel_workers: 4  # Should equal model.n (N candidates verified in parallel)
 
 model:
   name: "moonshotai/Kimi-K2-Thinking"
   temperature: 1.0
-  max_tokens: 32768 
+  max_tokens: 16384 
   # n: 5  # Number of candidates to generate per verbose invariant
   
 pipeline:
@@ -109,10 +109,10 @@ prompts:
 
 # Filtering criteria for identifying verbose invariants that need generalization
 filtering:
-  min_disjuncts: 3          # Minimum || clauses to consider for generalization
-  max_disjuncts: 500        # Skip if too many (likely pathological)
-  min_char_length: 100      # Minimum length to consider verbose
-  max_char_length: 30000    # Skip extremely long ones
+  # min_disjuncts: 0          # Minimum || clauses to consider for generalization
+  # max_disjuncts: 500        # Skip if too many (likely pathological)
+  min_char_length: 20      # Minimum length to consider verbose
+  # max_char_length: 30000    # Skip extremely long ones
 
 # Example usage:
 # uv run -m src.preprocess.preprocess_gt_invariants_parallel dataset.limit=1

@@ -13,7 +13,7 @@ import weave  # type: ignore[import-not-found]
 
 from src.eval.decision_procedure import DecisionProcedure
 from src.preprocess.program import Program
-from src.verifiers.uautomizer import UAutomizerVerifier
+from src.verifiers.uautomizer_runlim import UAutomizerVerifier
 
 
 class ResultCollector:
@@ -40,7 +40,7 @@ class ResultCollector:
         return self.results.copy()
 
 
-class InvariantScorer(weave.Scorer):
+class InvGenScorer(weave.Scorer):
     """
     Weave Scorer for evaluating model-generated loop invariants.
 
@@ -53,17 +53,15 @@ class InvariantScorer(weave.Scorer):
         - t_c: Time taken to verify the correctness of the invariant
         - t_u: Time taken to verify the target property assuming the invariant is true
         - t_b: Baseline verification time (median timing across k=3 runs, statically computed)
-    5. vbs_e2e (min((max(t_c, t_u) + t_m), t_b))
+    5. vbs_e2e: min((max(t_c, t_u) + t_m), t_b)
         - t_m: Model latency (time taken to generate the invariant)
-    6. speedup (t_b / max(t_c, t_u))
-    7. speedup_e2e(t_b / (max(t_c, t_u )+ t_m))
+    6. speedup: t_b / max(t_c, t_u)
+    7. speedup_e2e: t_b / (max(t_c, t_u )+ t_m)
     Attributes:
         config: Evaluation configuration.
-        collector: Optional ResultCollector to accumulate results for plotting.
     """
 
     verifier: Optional[UAutomizerVerifier] = None
-    collector: Optional[ResultCollector] = None
     baseline_is_timeout: bool
 
     @weave.op()
@@ -111,8 +109,8 @@ class InvariantScorer(weave.Scorer):
                 )
                 decision_procedure_report = decision_procedure.decide(candidate_invariant=parsed_model_answer)
             
-            verification_time = decision_procedure_report.verification_time
-            verification_time_e2e = verification_time + model_latency
+            verification_time = decision_procedure_report.verification_time # t_v
+            verification_time_e2e = verification_time + model_latency # t_v + t_m
             correctness_score = decision_procedure_report.correctness_report and decision_procedure_report.correctness_report.decision == "TRUE"
             usefulness_score = correctness_score and decision_procedure_report.usefulness_report and decision_procedure_report.final_decision in {"TRUE", "FALSE"}
             # Calculate vbs and speedup (only meaningful if we have a correct invariant and conclusive final decision)
@@ -122,11 +120,10 @@ class InvariantScorer(weave.Scorer):
             speedup_e2e = median_timing / verification_time_e2e if verification_time_e2e > 0 and usefulness_score else 0.0
         
         result = {
-            # Core scores (will be summarized)
             "validation_score": validation_score,
-            "valid_json_format": is_valid_dict["valid_json_format"],
-            "valid_content": is_valid_dict["valid_content"],
-            "valid_marker": is_valid_dict["valid_marker"],
+            "json_valid": is_valid_dict["valid_json_format"],
+            "content_valid": is_valid_dict["valid_content"],
+            "marker_valid": is_valid_dict["valid_marker"],
             "correctness_score": correctness_score,
             "usefulness_score": usefulness_score,
             "has_speedup": bool(speedup > 1),
@@ -138,35 +135,7 @@ class InvariantScorer(weave.Scorer):
             "verification_time": verification_time,
             "verification_time_e2e": verification_time_e2e,
             "median_timing": median_timing,
-
-            # Include parsed fields for plotting
-            "final_decision": decision_procedure_report.final_decision if decision_procedure_report else "INVALID",
-            "decision_rule": decision_procedure_report.decision_rule if decision_procedure_report else "",
-            "candidate_content": decision_procedure_report.candidate_invariant.content
-            if decision_procedure_report and decision_procedure_report.candidate_invariant is not None
-            else (parsed_model_answer.content if parsed_model_answer else raw_model_answer),
-            "candidate_marker_name": decision_procedure_report.candidate_invariant.marker_name
-            if decision_procedure_report and decision_procedure_report.candidate_invariant is not None
-            else (parsed_model_answer.marker_name if parsed_model_answer else None),
-            
-            # Code for click-to-view in plot
-            "program_for_usefulness": getattr(
-                decision_procedure_report, "program_for_usefulness", ""
-            ) if decision_procedure_report else "",
-            "usefulness_report": decision_procedure_report.usefulness_report.to_dict()
-            if decision_procedure_report and decision_procedure_report.usefulness_report
-            else None,
-            "program_for_correctness": getattr(
-                decision_procedure_report, "program_for_correctness", ""
-            ) if decision_procedure_report else "",
-            "correctness_report": decision_procedure_report.correctness_report.to_dict()
-            if decision_procedure_report and decision_procedure_report.correctness_report
-            else None,
         }
-
-        # Collect result for plotting if collector is provided
-        if self.collector is not None:
-            self.collector.collect(result)
 
         return result
 
@@ -203,8 +172,8 @@ class InvariantScorer(weave.Scorer):
         speedup_e2e_rate = speedup_e2e_count / n
 
         # Calculate Speedup>1: average speedup only from examples with speedup > 1, correct invariants with conclusive final decision
-        speedups_gt1 = [r["speedup"]for r in valid_rows if r.get("has_speedup", False)]
-        speedups_gt1_e2e = [r["speedup_e2e"] for r in valid_rows if r.get("has_speedup_e2e", False)]
+        speedups_gt1 = [r.get("speedup", 0.0) for r in valid_rows if r.get("has_speedup", False)]
+        speedups_gt1_e2e = [r.get("speedup_e2e", 0.0) for r in valid_rows if r.get("has_speedup_e2e", False)]
 
         speedup_gt1 = sum(speedups_gt1) / len(speedups_gt1) if speedups_gt1 else 1.0
         speedup_gt1_e2e = sum(speedups_gt1_e2e) / len(speedups_gt1_e2e) if speedups_gt1_e2e else 1.0
@@ -232,9 +201,10 @@ class InvariantScorer(weave.Scorer):
         speedup_all_e2e = sum(get_speedup_or_one(r, True) for r in valid_rows) / n
 
         # Virtual best performance (average of virtual best solver)
-        vbp = sum(r["vbs"] for r in valid_rows) / n
-        vbp_e2e = sum(r["vbs_e2e"] for r in valid_rows) / n
-        avg_median_timing = sum(r["median_timing"] for r in valid_rows) / n
+        # Use .get() with defaults in case some rows are missing keys due to errors
+        vbp = sum(r.get("vbs", r.get("median_timing", 0.0)) for r in valid_rows) / n
+        vbp_e2e = sum(r.get("vbs_e2e", r.get("median_timing", 0.0)) for r in valid_rows) / n
+        avg_median_timing = sum(r.get("median_timing", 0.0) for r in valid_rows) / n
         return {
             # Counts
             "validation_count": validation_count,

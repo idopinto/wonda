@@ -1,6 +1,6 @@
 # Configuration for baseline evaluation dataset creation (AST-based)
 # Used by: src/preprocess/build_baseline_eval_dataset.py
-
+compute_node_type: "l40s" # "h200" or "l40s" or "cpu"
 # Dataset configuration
 dataset:
   type: "eval"  # Fixed to "eval" for this script
@@ -14,7 +14,7 @@ verifier:
   property: "unreach-call.prp"  # Path to the property file (relative to PROPERTIES_DIR)
   timeout: 600.0  # Timeout threshold for UAutomizer in seconds
   k: 3  # Number of times to run UAutomizer for each file (to avoid outliers)
-
+  use_runlim: true        # Enable fair benchmarking with runlim (https://github.com/arminbiere/runlim)
 # Processing configuration
 processing:
   ignore_invariants: true  # Do not extract invariants from log/witness files (default: extract invariants)

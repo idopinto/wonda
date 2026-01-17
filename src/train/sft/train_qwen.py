@@ -81,16 +81,18 @@ def train(model: AutoModelForCausalLM, tokenizer: AutoTokenizer, training_args: 
 
 """
 configs:
-- qwen_0_6b_v0.yaml - raw ground truth invariants for each location
- - uv run -m src.train.sft.train_qwen --config-name=qwen_0_6b_v0 test_mode=true
-- qwen_0_6b_v1.yaml - pretty ground truth invariants for each location (no casting and minimal parenthesization)
- - uv run -m src.train.sft.train_qwen --config-name=qwen_0_6b_v1    
-- qwen_1_7b_v0.yaml - raw ground truth invariants for each location
- - uv run -m src.train.sft.train_qwen --config-name=qwen_1_7b_v0
-- qwen_1_7b_v1.yaml - pretty ground truth invariants for each location (no casting and minimal parenthesization)
- - uv run -m src.train.sft.train_qwen --config-name=qwen_1_7b_v1
+- qwen3_0.6b_nt_v0.yaml - raw ground truth invariants for each marker   
+ - uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v0 test_mode=true
+- qwen3_0.6b_nt_v1.yaml - pretty ground truth invariants for each location (no casting and minimal parenthesization)
+ - uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v1    
+- qwen3_0.6b_nt_v2.yaml - simplified ground truth invariants for each marker
+ - uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v2 test_mode=true wandb.use_wandb=false
+- qwen3_8b_nt_v0.yaml - raw ground truth invariants for each marker
+ - uv run -m src.train.sft.train_qwen --config-name=qwen3_8b_nt_v0 test_mode=true
+- qwen3_8b_nt_v1.yaml - pretty ground truth invariants for each marker (no casting and minimal parenthesization)
+ - uv run -m src.train.sft.train_qwen --config-name=qwen3_8b_nt_v1
 """
-@hydra.main(version_base=None, config_path="../../../configs/train/qwen", config_name="qwen_0_6b_v0")
+@hydra.main(version_base=None, config_path="../../../configs/train/models", config_name="qwen3_0.6b_nt_v0")
 def main(cfg: DictConfig):
     print("="*50)
     print(OmegaConf.to_yaml(cfg))
@@ -106,13 +108,16 @@ def main(cfg: DictConfig):
     else:
         logger.info("Wandb is disabled. Skipping wandb initialization...")
 
-    # Extract top-level config
-    tokenizer = init_tokenizer(cfg.model.base_model_name)
-    logger.info(f"model_name: { cfg.model.base_model_name} | repo_name: { cfg.dataset.repo_name} | output_dir: {cfg.sft.output_dir}")
+    model_name = cfg.model.base_model_name
+    model_init_kwargs = cfg.model.init_kwargs_train
+    repo_name = cfg.dataset.repo_name
+    output_dir = cfg.sft.output_dir
+    tokenizer = init_tokenizer(model_name)
+    logger.info(f"model_name: {model_name} | repo_name: {repo_name} | output_dir: {output_dir}")
 
     # Build SFT training args from YAML
     training_args = SFTConfig(
-        output_dir=cfg.sft.output_dir,
+        output_dir=output_dir,
         num_train_epochs=cfg.sft.num_train_epochs,
         per_device_train_batch_size=cfg.sft.per_device_train_batch_size,
         gradient_accumulation_steps=cfg.sft.gradient_accumulation_steps,
@@ -148,29 +153,36 @@ def main(cfg: DictConfig):
                         limit=cfg.dataset.limit,
                         inv_mode=cfg.dataset.inv_mode, 
                         split=cfg.dataset.split,
-                        max_length=cfg.sft.max_length)
+                        max_length=cfg.sft.max_length,
+                        json_path=cfg.dataset.json_path if cfg.dataset.json_path else None,
+                        min_grade=cfg.dataset.min_grade if cfg.dataset.min_grade else 1,
+                        output_dir=cfg.sft.output_dir)
     train_dataset, validation_dataset = split_dataset(full_dataset, split_ratio=cfg.dataset.split_ratio)
-    model = load_model(cfg.model.base_model_name, model_init_kwargs)
+
+    logger.info(f"Train dataset size: {len(train_dataset)}")
+    logger.info(f"Validation dataset size: {len(validation_dataset)}")
+    logger.info(f"Train dataset sample: {train_dataset[0]}")
+    logger.info(f"Validation dataset sample: {validation_dataset[0]}")
+    logger.info("="*50)
+    model = load_model(model_name, model_init_kwargs)
 
     if cfg.use_peft:
-        lora_config = LoraConfig(
-            r=cfg.lora.r,
-            lora_alpha=cfg.lora.lora_alpha,
-            target_modules=cfg.lora.target_modules,
-            target_parameters=list(cfg.lora.target_parameters),
-            lora_dropout=cfg.lora.lora_dropout,
-            bias=cfg.lora.bias,
-            task_type=cfg.lora.task_type,
-        )
-        # logger.info(f"LoRA config: {lora_config}")
+        # Convert OmegaConf ListConfig to regular Python list for JSON serialization
+        target_modules = list(cfg.lora.target_modules) if cfg.lora.target_modules else None
+        lora_kwargs = {
+            "r": cfg.lora.r,
+            "lora_alpha": cfg.lora.lora_alpha,
+            "target_modules": target_modules,
+            "lora_dropout": cfg.lora.lora_dropout,
+            "bias": cfg.lora.bias,
+            "task_type": cfg.lora.task_type,
+        }
+        if hasattr(cfg.lora, "target_parameters") and cfg.lora.target_parameters:
+            lora_kwargs["target_parameters"] = list(cfg.lora.target_parameters)
+        lora_config = LoraConfig(**lora_kwargs)
         model = get_peft_model(model, lora_config)
     print_trainable_parameters(model)
-    # raw_dataset = load_dataset(cfg.dataset.repo_name, split=cfg.dataset.split)
-    # random_index = random.randint(0, len(raw_dataset)-1)
-    # sample = raw_dataset[random_index]
-    # run_inference(sample, tokenizer, model, model_kwargs=cfg.model, prompts=cfg.prompts)
     train(model, tokenizer, training_args, train_dataset, validation_dataset)
-    # run_inference(sample, tokenizer, model, model_kwargs=cfg.model, prompts=cfg.prompts)
     
     wandb.finish()
     logger.info("DONE.")
