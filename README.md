@@ -40,7 +40,7 @@ uv sync --extra dev
 
 ### UAutomizer Setup
 
-Download and extract [UAutomizer v25](https://github.com/ultimate-pa/ultimate/releases) to `tools/UAutomizer25/`. The framework expects the following structure:
+Download and extract [UAutomizer (0.3.0-dev-d790fec)](https://zenodo.org/records/14209043) to `tools/UAutomizer25/`. The framework expects the following structure:
 
 ```
 tools/
@@ -66,8 +66,10 @@ uv run -m src.eval.evaluate dataset.limit=5 models.eval_ft_model=true
 
 The preprocessed datasets are available on HuggingFace:
 
-- **Evaluation**: [`idopinto/invbench-eval-uautomizer25-k3-full`](https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-full)
+- **Evaluation**: [`idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim`](https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim)
 - **Training**: [`idopinto/invbench-train-uautomizer25-k1-perloc-full-cleaned`](https://huggingface.co/datasets/idopinto/invbench-train-uautomizer25-k1-perloc-full-cleaned)
+
+> **Note:** The evaluation dataset above was built on an NVIDIA L40S GPU to match the hardware used for local model evaluation. For your own evaluation, we recommend rebuilding the dataset from scratch on your hardware infrastructure, as baseline timings and easy/hard splits may differ across machines.
 
 To rebuild the datasets from scratch:
 
