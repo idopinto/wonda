@@ -180,11 +180,11 @@ def run_single_evaluation(run_id: int, experiment_dir: Path, hydra_args: list[st
         Path to the saved summary JSON file.
     """
     summary_path = experiment_dir / f"summary_run_{run_id}.json"
-    # Save the fully-resolved evaluate2 Hydra config alongside the experiment
-    config_path = experiment_dir / "evaluate2_config.yaml"
+    # Save the fully-resolved evaluate Hydra config alongside the experiment
+    config_path = experiment_dir / "evaluate_config.yaml"
     
     cmd = [
-        "uv", "run", "-m", "src.eval.evaluate2",
+        "uv", "run", "-m", "src.eval.evaluate",
         f"+run_id={run_id}",
         f"+summary_output_path={summary_path}",
         f"+config_output_path={config_path}",
@@ -340,11 +340,11 @@ def main():
     parser.add_argument("--experiment_name", type=str, default=None, help="Name for experiment folder")
     parser.add_argument("--confidence_level", type=float, default=0.95, help="Confidence level for CI")
     
-    # Parse known args, pass the rest through to Hydra *inside* evaluate2
+    # Parse known args, pass the rest through to Hydra *inside* evaluate
     args, hydra_args = parser.parse_known_args()
 
     # Ensure a stable default for reproducibility/metadata and propagate into subprocesses.
-    # (evaluate2.py also sets a default, but that happens in the child process.)
+    # (evaluate.py also sets a default, but that happens in the child process.)
     # Model inference can run in parallel; verifier calls are serialized via semaphore
     # in uautomizer_runlim.py (VERIFIER_MAX_CONCURRENT env var, default=1).
     os.environ.setdefault("WEAVE_PARALLELISM", GC.WEAVE_PARALLELISM)

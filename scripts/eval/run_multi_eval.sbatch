@@ -56,14 +56,16 @@
 #   sbatch --job-name=qwen3_80b  scripts/eval/run_multi_eval.sbatch --num_runs=3 dataset.limit=-1 models=qwen3_80b_nt_config
 
 # Notes:
-# - You can control Weave concurrency with WEAVE_PARALLELISM (default is set inside run_multi_eval/evaluate2).
+# - You can control Weave concurrency with WEAVE_PARALLELISM (default is set inside run_multi_eval/evaluate).
 # - CUDA_VISIBLE_DEVICES is set by SLURM on GPU nodes; no need to set it manually.
 
 echo "Starting multi-run evaluation..."
 set -e
 
-# Set working directory
-cd /cs/labs/guykatz/idopinto12/projects/inv-gen
+# Project root - defaults to the directory from which sbatch was submitted
+# Override by setting PROJECT_ROOT before calling sbatch
+PROJECT_ROOT="${PROJECT_ROOT:-${SLURM_SUBMIT_DIR}}"
+cd "$PROJECT_ROOT"
 
 # Activate virtual environment if it exists
 if [ -d ".venv" ]; then
@@ -86,7 +88,7 @@ echo "  Time limit: $SLURM_TIMELIMIT"
 echo "=========================================="
 echo ""
 
-# Run multi-eval; remaining args are forwarded as Hydra overrides to evaluate2
+# Run multi-eval; remaining args are forwarded as Hydra overrides to evaluate
 uv run -m src.eval.run_multi_eval "$@"
 
 echo ""

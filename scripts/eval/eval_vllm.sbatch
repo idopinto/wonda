@@ -46,8 +46,12 @@ echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader)"
 echo "Hydra overrides: $@"
 echo "=========================================="
 
+# Project root - defaults to the directory from which sbatch was submitted
+# Override by setting PROJECT_ROOT before calling sbatch
+PROJECT_ROOT="${PROJECT_ROOT:-${SLURM_SUBMIT_DIR}}"
+cd "$PROJECT_ROOT"
+
 # Activate virtual environment
-cd /cs/labs/guykatz/idopinto12/projects/inv-gen
 source .venv/bin/activate
 
 # ============================================

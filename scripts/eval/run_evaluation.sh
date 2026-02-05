@@ -26,8 +26,10 @@
 echo "Starting HF evaluation..."
 set -e
 
-# Set working directory
-cd /cs/labs/guykatz/idopinto12/projects/inv-gen 
+# Project root - defaults to the directory from which the script was run
+# Override by setting PROJECT_ROOT before calling the script
+PROJECT_ROOT="${PROJECT_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
+cd "$PROJECT_ROOT"
 
 # Activate virtual environment if it exists
 if [ -d ".venv" ]; then

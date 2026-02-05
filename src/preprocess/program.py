@@ -572,11 +572,11 @@ def nondet_type(type_str: str) -> str:
 if __name__ == "__main__":
     import sys
 
-    # if len(sys.argv) < 2:
-    #     print("Usage: python -m src.preprocess.program <file.c>")
-    #     raise SystemExit(2)
+    if len(sys.argv) < 2:
+        print("Usage: python -m src.preprocess.program <file.c>")
+        raise SystemExit(2)
 
-    path = "/cs/labs/guykatz/idopinto12/projects/inv-gen/examples/test5.c"
+    path = sys.argv[1]
     p = Program().from_file_path(Path(path))
     pp, llm = p.process(print_ast=True)
     print("----- PP (no patch) -----")

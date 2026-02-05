@@ -1,193 +1,194 @@
-# Loop Invariant Generation
+# Not All Invariants Are Equal
 
-A framework for generating loop invariants using LLMs to accelerate traditional program verifiers.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+
+Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** (ICML 2026).
 
 ## Overview
 
-This project fine-tunes LLMs (GPT-OSS) to generate candidate loop invariants for C programs. The generated invariants help traditional verifiers like UAutomizer prove or disprove program correctness faster.
+This framework fine-tunes small language models (SLMs) to generate loop invariants for C programs, accelerating traditional program verifiers like UAutomizer. The key insight is that **data quality matters more than model size** -- careful curation of training data enables small models (0.6B-8B parameters) to outperform much larger models.
+
+```mermaid
+flowchart LR
+    A[C Program] --> B[Fine-tuned SLM]
+    B --> C[Candidate Invariant]
+    C --> D{Decision Procedure}
+    D -->|Correct & Useful| E[Accelerated Verification]
+    D -->|Invalid| F[Fallback to Baseline]
+```
+
+## Installation
+
+### Prerequisites
+
+- Python 3.13+
+- CUDA-compatible GPU (L40S or H200 recommended)
+- [uv](https://github.com/astral-sh/uv) package manager
+- UAutomizer v25 (for verification)
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/idopinto/inv-gen.git
+cd inv-gen
+
+# Install dependencies
+uv sync
+
+# Install dev dependencies (optional)
+uv sync --extra dev
+```
+
+### UAutomizer Setup
+
+Download and extract [UAutomizer v25](https://github.com/ultimate-pa/ultimate/releases) to `tools/UAutomizer25/`. The framework expects the following structure:
+
+```
+tools/
+└── UAutomizer25/
+    └── Ultimate.py
+```
+
+## Quick Start
+
+Run a quick evaluation with a small sample:
+
+```bash
+# Evaluate base model on 5 samples
+uv run -m src.eval.evaluate dataset.limit=5
+
+# Evaluate fine-tuned model
+uv run -m src.eval.evaluate dataset.limit=5 models.eval_ft_model=true
+```
+
+## Reproducing Paper Results
+
+### 1. Data Preparation
+
+The preprocessed datasets are available on HuggingFace:
+
+- **Evaluation**: [`idopinto/invbench-eval-uautomizer25-k3-full`](https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-full)
+- **Training**: [`idopinto/invbench-train-uautomizer25-k1-perloc-full-cleaned`](https://huggingface.co/datasets/idopinto/invbench-train-uautomizer25-k1-perloc-full-cleaned)
+
+To rebuild the datasets from scratch:
+
+```bash
+# Build evaluation dataset (requires UAutomizer)
+sbatch scripts/preprocess/build_eval_dataset.sh
+
+# Build training dataset
+sbatch scripts/preprocess/build_train_dataset.sh
+
+# Clean and grade training data
+sbatch scripts/preprocess/build_v1_train_dataset.sbatch
+```
+
+### 2. Training
+
+Fine-tune a Qwen3 model with LoRA:
+
+```bash
+# Train Qwen3-0.6B
+sbatch scripts/train/train_qwen3_0.6b.sbatch
+
+# Train larger models
+sbatch scripts/train/train_qwen3_4b.sbatch
+sbatch scripts/train/train_qwen3_8b.sbatch
+```
+
+Training configuration is in `configs/train/`. Key parameters:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `sft.num_train_epochs` | 3 | Number of training epochs |
+| `sft.learning_rate` | 0.0002 | Learning rate |
+| `lora.r` | 8 | LoRA rank |
+| `lora.lora_alpha` | 16 | LoRA alpha |
+
+### 3. Evaluation
+
+Run multi-trial evaluation with confidence intervals:
+
+```bash
+# Run 3 trials with statistical aggregation
+sbatch scripts/eval/run_multi_eval.sbatch --num_runs=3 models=qwen3_0.6b_nt_config
+
+# Evaluate specific fine-tuned model
+sbatch scripts/eval/run_multi_eval.sbatch --num_runs=3 \
+    models=qwen3_0.6b_nt_config \
+    models.eval_ft_model=true \
+    models.ft_model.sft_version="v2.3"
+```
+
+Results are saved to `experiments/` with aggregated statistics.
 
 ## Project Structure
 
 ```
 inv-gen/
 ├── configs/
-│   ├── eval/config.yaml      # Evaluation configuration
-│   ├── train/config.yaml     # Training configuration
-│   └── global_config.py      # Global paths and settings
+│   ├── eval/           # Evaluation configs (Hydra)
+│   ├── train/          # Training configs
+│   └── preprocess/     # Data preprocessing configs
 ├── scripts/
-│   └── eval/
-│       ├── eval_hf.sbatch    # Evaluation with HuggingFace client
-│       └── eval_vllm.sbatch  # Evaluation with vLLM server
+│   ├── eval/           # SLURM evaluation scripts
+│   ├── train/          # SLURM training scripts
+│   └── preprocess/     # SLURM preprocessing scripts
 ├── src/
-│   ├── eval/                 # Evaluation pipeline
-│   ├── train/sft/            # SFT training scripts
-│   ├── preprocess/           # Data preprocessing
-│   ├── utils/                # Utility classes (Program, Predicate)
-│   └── verifiers/            # UAutomizer wrapper
-└── nbs/                      # Jupyter notebooks for analysis
-```
-
-## Setup
-
-### Prerequisites
-
-- Python 3.11+
-- CUDA-compatible GPU (H200 recommended for vLLM, 2x L40S for HF)
-- Access to SLURM cluster
-
-### Installation
-
-```bash
-# Clone the repository
-cd /cs/labs/guykatz/idopinto12/projects/inv-gen
-
-# Install dependencies with uv
-uv sync
-```
-
-## Evaluation
-
-### Option 1: vLLM Server (Recommended for H200)
-
-Uses vLLM with LoRA adapters for fast inference via OpenAI-compatible API.
-
-```bash
-# Basic usage
-sbatch scripts/eval/eval_vllm.sbatch
-
-# With Hydra overrides
-sbatch scripts/eval/eval_vllm.sbatch dataset.split=easy dataset.limit=5
-sbatch scripts/eval/eval_vllm.sbatch dataset.split=hard
-```
-
-### Option 2: HuggingFace Direct (For L40S or when H200 unavailable)
-
-Loads the model directly using HuggingFace Transformers.
-
-```bash
-# Basic usage
-sbatch scripts/eval/eval_hf.sbatch
-
-# With Hydra overrides
-sbatch scripts/eval/eval_hf.sbatch dataset.split=easy dataset.limit=5
-sbatch scripts/eval/eval_hf.sbatch model.eval_finetuned_model=true
-```
-
-### Local Testing
-
-```bash
-# Run evaluation locally (requires GPU)
-uv run -m src.eval.evaluate model.client=hf dataset.limit=1
-
-# With vLLM (start server first)
-vllm serve openai/gpt-oss-20b --enable-lora \
-    --lora-modules gen_inv_adapter=idopinto/gpt-oss-20b-rlinv-sft-sep \
-    --max-lora-rank 8
-
-# Then run evaluation
-uv run -m src.eval.evaluate model.client=vllm dataset.limit=1
+│   ├── eval/           # Evaluation pipeline
+│   │   ├── evaluate.py         # Main evaluation entry point
+│   │   ├── run_multi_eval.py   # Multi-trial evaluation
+│   │   ├── decision_procedure.py
+│   │   └── models/             # Model implementations
+│   ├── preprocess/     # Data preprocessing
+│   │   ├── build_eval_dataset.py
+│   │   ├── build_v1_train_dataset.py
+│   │   └── clean_invariants.py
+│   ├── train/          # Training code
+│   │   └── sft/        # Supervised fine-tuning
+│   ├── utils/          # Utilities
+│   └── verifiers/      # UAutomizer wrapper
+├── tests/              # Test suite
+└── docs/               # Documentation
 ```
 
 ## Configuration
 
-Configuration is managed via Hydra. Override any config value from command line:
-
-### Common Overrides
-
-| Override | Description | Example |
-|----------|-------------|---------|
-| `model.client` | Inference backend | `hf` or `vllm` |
-| `dataset.split` | Data split | `easy` or `hard` |
-| `dataset.limit` | Number of samples | `5` or `-1` (all) |
-| `dataset.prefix` | Filter by prefix | `loop_` |
-| `model.reasoning_effort` | GPT-OSS reasoning | `low`, `medium`, `high` |
-| `weave.skip_wandb` | Skip W&B upload | `true` |
-
-### Full Config Reference
-
-See `configs/eval/config.yaml` for all options:
-
-```yaml
-model:
-  client: vllm              # or hf
-  base_model_name: "openai/gpt-oss-20b"
-  reasoning_effort: "medium"
-  vllm_base_url: "http://localhost:8000/v1"
-  vllm_model: "gen_inv_adapter"
-
-dataset:
-  name: "idopinto/invbench-evaluation-uautomizer25-k3"
-  split: "hard"
-  limit: -1
-
-scorer:
-  verifier:
-    version: "25"
-    timeout_seconds: 600.0
-```
-
-## Training
-
-### SFT Training
+Configuration uses [Hydra](https://hydra.cc/). Override any parameter from the command line:
 
 ```bash
-# Run training
-uv run -m src.train.sft.train_sft
-
-# Or with Unsloth (faster)
-uv run -m src.train.sft.train_unsloth
+# Common overrides
+uv run -m src.eval.evaluate \
+    dataset.split=easy \
+    dataset.limit=10 \
+    models=qwen3_0.6b_nt_config \
+    scorer.verifier.timeout_seconds=300
 ```
 
-Training config: `configs/train/config.yaml`
+See `configs/eval/config.yaml` for all available options.
 
-## Models
+## Datasets
 
-| Model | Description | HuggingFace |
-|-------|-------------|-------------|
-| Base | GPT-OSS-20B | `openai/gpt-oss-20b` |
-| Fine-tuned | LoRA adapter | `idopinto/gpt-oss-20b-rlinv-sft-sep` |
+| Dataset | Description | Size |
+|---------|-------------|------|
+| `invbench-eval-*` | Evaluation benchmark | 178 programs |
+| `invbench-train-*` | Training data (cleaned) | ~3,900 samples |
 
-## Monitoring
+All datasets are available on [HuggingFace](https://huggingface.co/idopinto).
 
-- **Weave**: Experiment tracking at [wandb.ai/ip-ai/eval-inv-gen](https://wandb.ai/ip-ai/eval-inv-gen)
-- **SLURM logs**: `slurm/eval_*.out` and `slurm/eval_*.err`
+## Citation
 
-```bash
-# Check job status
-squeue -u $USER
-
-# View logs
-tail -f slurm/eval_vllm_<job_id>.out
-```
-
-## Architecture
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  C Program      │────►│  LLM (GPT-OSS)   │────►│  Candidate      │
-│  with loops     │     │  + LoRA adapter  │     │  Invariant      │
-└─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                          │
-                        ┌──────────────────┐              │
-                        │  Decision        │◄─────────────┘
-                        │  Procedure       │
-                        └────────┬─────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-          ┌─────────────────┐       ┌─────────────────┐
-          │  Correctness    │       │  Usefulness     │
-          │  Check (V₁)     │       │  Check (V₂)     │
-          └────────┬────────┘       └────────┬────────┘
-                   │                         │
-                   └──────────┬──────────────┘
-                              ▼
-                    ┌─────────────────┐
-                    │  Final Decision │
-                    │  TRUE/FALSE/UNK │
-                    └─────────────────┘
+```bibtex
+@inproceedings{pinto2026invariants,
+  title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
+  author={Pinto, Ido},
+  booktitle={International Conference on Machine Learning (ICML)},
+  year={2026}
+}
 ```
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

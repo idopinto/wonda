@@ -148,7 +148,7 @@ if False:
     model.push_to_hub_merged(
         "idopinto/gpt-oss-20b-rl-finetune",
         tokenizer,
-        token="hf...",
+        token=os.getenv("HF_TOKEN"),
         save_method="mxfp4",
     )
 

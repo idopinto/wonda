@@ -5,26 +5,39 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
 
 # Virtual environments
 .venv
-data
-tools
+
+# Environment and secrets
 .env
-.venv
 
-.git
-experiments
-examples
-wandb
-unsloth_compiled_cache
-slurm
-tests/timing_test_reports
-outputs
-trained_models
-sv-benchmarks
+# Data directories (large/generated)
+data/
+tools/
+experiments/
+examples/
+trained_models/
+sv-benchmarks/
 
-.pytest_cache/
-Ultimate.log
+# Generated outputs
+outputs/
+plots/
+wandb/
+slurm/
+*.log
+*.runlim
 a.out
-llm_response_cache
+Ultimate.log
+
+# Caches
+unsloth_compiled_cache/
+llm_response_cache/
+
+# Test artifacts
+tests/timing_test_reports/
+tests/results/
+
+# Jupyter notebooks (archived locally, not in public release)
+nbs/

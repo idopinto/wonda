@@ -29,8 +29,10 @@
 echo "Starting train dataset build..."
 set -e
 
-# Set working directory
-cd /cs/labs/guykatz/idopinto12/projects/inv-gen
+# Project root - defaults to the directory from which sbatch was submitted
+# Override by setting PROJECT_ROOT before calling sbatch
+PROJECT_ROOT="${PROJECT_ROOT:-${SLURM_SUBMIT_DIR}}"
+cd "$PROJECT_ROOT"
 
 # Activate virtual environment if it exists
 if [ -d ".venv" ]; then
