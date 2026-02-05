@@ -16,7 +16,7 @@ base_model:
 
 ft_model:
   sft_version: "v0"
-  id: "idopinto/qwen3-0.6b-gen-inv-sft-${.sft_version}-latest"
+  id: "idopinto/qwen3-0.6b-nt-gen-inv-sft-${.sft_version}-latest"
   is_lora: false
 
 # https://huggingface.co/collections/Qwen/qwen3

@@ -4,7 +4,7 @@ wandb:
   use_wandb: true
   entity: "ip-ai"
   project: train-qwen-for-inv-gen-latest
-  name: qwen3-0.6b-gen-inv-sft-v2-latest
+  name: qwen3-0.6b-nt-gen-inv-sft-v2  # will be concatentaed with .min_grade
 
 model:
   base_model_name: "Qwen/Qwen3-0.6B"
@@ -25,16 +25,19 @@ model:
       min_p: 0
 
 dataset:
-  repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
-  json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
+  repo_name: "idopinto/invbench-train-uautomizer25-k1-full-parallel-latest"
+  json_path: null
+  # json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
   limit: -1 # (3513 -> 4000)
-  split: "full" # "full" or "easy" or "hard"
+  split: "train" # "full" or "easy" or "hard"
   split_ratio: 0.8
   inv_mode: "simplified" # "raw" or "pretty" or "simplified"
-  min_grade: 2
+  min_grade: 3
+  hf_upload_repo: "idopinto/invbench-train-uautomizer25-k1-v2"  # will be concatentaed with .min_grade
+  force_reprocess: false  # Set to true to skip loading from HF and reprocess raw data
 
 sft:
-  output_dir: "trained_models/qwen3-0.6b-gen-inv-sft-v2-latest"
+  output_dir: "trained_models/qwen3-0.6b-nt-gen-inv-sft-v2"  # will be concatentaed with .min_grade
   num_train_epochs: 2 # saw that 3 epochs caused overfitting
   per_device_train_batch_size: 16
   gradient_accumulation_steps: 2

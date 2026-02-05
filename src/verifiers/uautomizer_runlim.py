@@ -102,7 +102,8 @@ class UAutomizerVerifier:
         self.memory_limit_mb = memory_limit_mb
 
     def verify(
-        self, program_path: Path, reports_dir: Path, timeout_seconds: float = None
+        self, program_path: Path, reports_dir: Path, timeout_seconds: float = None,
+        label: str = None,
     ) -> VerifierCallReport:
         """
         Run UAutomizer verifier on a C file.
@@ -114,6 +115,7 @@ class UAutomizerVerifier:
             arch: Architecture ('32bit' or '64bit').
             timeout_seconds: Maximum execution time in seconds.
             uautomizer_path: Path to UAutomizer executable. If None, uses default.
+            label: Optional label for logging (e.g., "inv_123/correctness").
 
         Returns:
             VerifierCallReport with verification results and metadata.
@@ -213,7 +215,8 @@ class UAutomizerVerifier:
                       f"Return code: {completed_process.returncode}, "
                       f"Stderr (last 200): {(completed_process.stderr or '')[-200:]!r}")
             report.runlim = self._parse_runlim_output(runlim_text)
-            print(f"runlim output: {report.runlim}")
+            label_prefix = f"[{label}] " if label else ""
+            print(f"{label_prefix}runlim output: {report.runlim}")
             
             # Handle different runlim statuses
             if report.runlim["status"] == "ok":
@@ -319,7 +322,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run UAutomizer verifier")
     parser.add_argument("--program_dir", type=str, default="examples")
     parser.add_argument(
-        "--program_name", type=str, default="benchmark24_conjunctive_1.c"
+        "--program_name", type=str, default="4261_2_t.c"
     )
     # parser.add_argument("--property_name", type=str, default='unreach-call.prp')
     parser.add_argument("--arch", type=str, default="32bit", choices=["32bit", "64bit"])

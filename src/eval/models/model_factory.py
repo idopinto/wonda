@@ -2,6 +2,7 @@ from src.eval.models.open_router_model import InvariantGeneratorOpenRouterModel
 from src.eval.models.oss_model import InvariantGeneratorOssModel
 from src.eval.models.qwen_model import InvariantGeneratorQwenModel
 from src.eval.models.vllm_model import InvariantGeneratorVllmModel
+from src.eval.models.together_model import InvariantGeneratorTogetherModel
 from src.eval.models.base_model import InvariantGeneratorModelInterface
 from omegaconf import DictConfig
 from src.preprocess import program
@@ -13,6 +14,12 @@ class ModelFactory:
     def create(cfg: DictConfig, system_prompt: weave.StringPrompt, user_prompt_template: weave.StringPrompt) -> InvariantGeneratorModelInterface:
         """Create a model instance based on configuration."""
         # Get model name from either id or base_model_name field
+        if cfg.client == "together":
+            return InvariantGeneratorTogetherModel(
+                model_cfg=cfg,
+                system_prompt=system_prompt,
+                user_prompt_template=user_prompt_template,
+            )
         if cfg.client == "openrouter":
             return InvariantGeneratorOpenRouterModel(
                 model_cfg=cfg,

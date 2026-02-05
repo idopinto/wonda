@@ -1,0 +1,22 @@
+client: hf # or hf / vllm / openrouter
+eval_ft_model: false
+
+base_model: 
+  id: "Qwen/Qwen3-0.6B"
+  sampling_params:
+    max_new_tokens: 32768
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    min_p: 0
+    repetition_penalty: 1.1
+  extra_body: 
+    enable_thinking: true
+    
+
+ft_model:
+  sft_version: "v0"
+  id: "idopinto/qwen3-0.6b-t-gen-inv-sft-${.sft_version}-latest"
+  is_lora: false
+
+# https://huggingface.co/collections/Qwen/qwen3

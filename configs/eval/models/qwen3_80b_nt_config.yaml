@@ -1,0 +1,11 @@
+client: together
+base_model:
+  # id: "Qwen/Qwen3-Next-80B-A3B-Instruct"
+  id: "Qwen/Qwen3-Next-80B-A3B-Instruct"
+  sampling_params:
+    temperature: 1.0
+  # extra_body: 
+    # include_reasoning: True
+    # reasoning_effort: "medium"
+
+# https://huggingface.co/collections/openai/gpt-oss

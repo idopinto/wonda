@@ -5,6 +5,7 @@ Contains the InvariantGeneratorModel class and model loading utilities.
 """
 
 # import gc
+import json
 import logging
 import re
 import time
@@ -121,6 +122,15 @@ class InvariantGeneratorQwenModel(weave.Model):
         answer_pattern = r"</think>\s*(.*?)(?:<\|im_end\|>|$)"
         answer_match = re.search(answer_pattern, raw_output, re.DOTALL)
         answer = answer_match.group(1).strip() if answer_match else ""
+        
+        # Fallback: if no answer found, try parsing <|im_start|>assistant format (for qwen)
+        if not answer:
+            reasoning = ""
+            assistant_pattern = r"<\|im_start\|>assistant\s*(.*?)(?:<\|im_end\|>|$)"
+            assistant_match = re.search(assistant_pattern, raw_output, re.DOTALL)
+            if assistant_match:
+                answer = assistant_match.group(1).strip()
+        
         return {"reasoning": reasoning, "answer": answer}
  
 
@@ -138,28 +148,33 @@ class InvariantGeneratorQwenModel(weave.Model):
             self.base_model_id, token=True
         )
         model_kwargs = dict(
-            attn_implementation="eager",
+            attn_implementation=self.model_cfg["base_model"].get("attn_implementation", "eager"),
             dtype=torch.bfloat16,
             use_cache=True,
             device_map="auto",
         )
-        if self.eval_ft_model and not self.model_cfg["ft_model"]["is_lora"]:
-            print(f"Loading non-LoRA-finetuned model from {self.ft_model_id}")
-            model = AutoModelForCausalLM.from_pretrained(
-            self.ft_model_id, **model_kwargs, token=True
-            )
+        
+        if self.eval_ft_model:
+            if not self.model_cfg["ft_model"]["is_lora"]:
+                print(f"Loading non-LoRA-finetuned model from {self.ft_model_id}")
+                model = AutoModelForCausalLM.from_pretrained(
+                self.ft_model_id, **model_kwargs, token=True
+                )
+            else:
+                print(f"Loading base model from {self.base_model_id}")
+                model = AutoModelForCausalLM.from_pretrained(
+                    self.base_model_id, **model_kwargs, token=True
+                )
+                print(f"Loading LoRA-finetuned model from {self.ft_model_id}")
+                model = PeftModel.from_pretrained(model, self.ft_model_id, token=True)
+                model = model.merge_and_unload()
+                print("Merged and unloaded")
         else:
             print(f"Loading base model from {self.base_model_id}")
             model = AutoModelForCausalLM.from_pretrained(
                 self.base_model_id, **model_kwargs, token=True
             )
-            if self.model_cfg["ft_model"]["is_lora"]:
-                print(f"Loading LoRA-finetuned model from {self.ft_model_id}")
-                model = PeftModel.from_pretrained(
-                    model, self.ft_model_id, token=True
-                )
-                model = model.merge_and_unload()
-                print("Merged and unloaded")
+
         model.eval()
         return tokenizer, model
 

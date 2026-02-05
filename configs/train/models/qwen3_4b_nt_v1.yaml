@@ -1,0 +1,113 @@
+test_mode: false
+
+wandb:
+  use_wandb: true
+  entity: "ip-ai"
+  project: train-qwen-for-inv-gen-latest
+  name: qwen3-4b-instruct-2507-nt-gen-inv-sft-v1  # will be concatentaed with .min_grade
+
+model:
+  base_model_name: "Qwen/Qwen3-4B-Instruct-2507"
+  
+  enable_thinking: false
+  
+  init_kwargs_train:
+    attn_implementation: "flash_attention_2" # use flash_attention_2 when running on Ampere or newer PGU
+    use_cache: False
+    device_map: "auto"
+
+  inference:
+    sampling_params:
+      max_new_tokens: 32768
+      temperature: 0.7
+      top_p: 0.8
+      top_k: 20
+      min_p: 0
+
+dataset:
+  repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
+  json_path: null
+  # json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
+  limit: -1 # (3513 -> 4000)
+  split: "full" # "full" or "easy" or "hard"
+  split_ratio: 0.8
+  inv_mode: "pretty" # "raw" or "pretty" or "simplified"
+  min_grade: null
+  hf_upload_repo: null  # will be concatentaed with .min_grade
+  force_reprocess: false  # Set to true to skip loading from HF and reprocess raw data
+
+sft:
+  output_dir: "trained_models/qwen3-4b-instruct-2507-nt-gen-inv-sft-v1"  # will be concatentaed with .min_grade
+  num_train_epochs: 2 # saw that 3 epochs caused overfitting
+  per_device_train_batch_size: 16
+  gradient_accumulation_steps: 2
+  gradient_checkpointing: True
+  optimizer: "adamw_torch_fused"
+  logging_steps: 1
+  save_strategy: "epoch"
+  save_only_model: true
+  learning_rate: 1e-4
+  max_length: 1024
+  # assistant_only_loss: True
+  max_grad_norm: 0.3
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine_with_min_lr"
+  lr_scheduler_kwargs: {"min_lr_rate": 0.1}
+  dataset_text_field: "text"
+  eval_strategy: "steps"
+  eval_steps: 5
+  report_to: "wandb"
+  push_to_hub: True
+
+use_peft: false
+
+lora:
+  lora_alpha: 16
+  lora_dropout: 0.05
+  r: 16
+  bias: "none"
+  target_modules: "all-linear"
+  task_type: "CAUSAL_LM"
+  modules_to_save: ["lm_head", "embed_tokens"] # make sure to save the lm_head and the embed_tokens as you train the special tokens (?)
+
+prompts:
+  per_marker_system_prompt: |
+      You are an expert C programmer and highly proficient in generating strong loop invariants for C programs that accelerate traditional verifiers' verification process.
+
+      ## Input format
+      - A C program instrumented with loop markers of the form: 
+        ```c
+        INVARIANT_MARKER_k();  // appears at the *start of each loop body*
+        ```
+        - The program contains a single target property as an assertion of the form:
+        ```c
+        assert(<target_property>);
+        ```
+      - A target loop marker (e.g., "INVARIANT_MARKER_1")
+
+      ## Task
+      - Propose ONE loop invariant that is intended to hold specifically at the target loop marker.
+      - The invariant should help prove the target property and be inductive if possible.
+
+      ## Output format
+      - Output MUST be a single JSON object on one line wrapped in ```json``` tags and nothing else.
+      - The JSON MUST have exactly these keys:
+        - "marker": MUST be exactly the target loop marker (e.g., "INVARIANT_MARKER_1")
+        - "content": ONLY a valid C boolean expression for the invariant. 
+
+      ## Output format example
+      ```json
+      {"marker":"<target_marker>","content":"<content>"}
+      ```
+
+
+
+  per_marker_user_prompt_template: |
+      ## User Input
+      ### C Program
+      ```c
+      {program}
+      ```
+
+      ### Target Loop Marker
+      {target_marker}

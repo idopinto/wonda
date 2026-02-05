@@ -4,7 +4,7 @@ wandb:
   use_wandb: true
   entity: "ip-ai"
   project: train-qwen-for-inv-gen-latest
-  name: qwen3-8b-sft-gen-inv-v2-latest
+  name: qwen3-8b-nt-gen-inv-sft-v2  # will be concatentaed with .min_grade    
 
 model:
   base_model_name: "Qwen/Qwen3-8B"
@@ -26,16 +26,19 @@ model:
 
 dataset:
   repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
-  json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
+  json_path: null
+  # json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
   limit: -1 # (3513 -> 4000)
-  split: "full" # "full" or "easy" or "hard"
+  split: "train" # "full" or "easy" or "hard"
   split_ratio: 0.8
   inv_mode: "simplified" # "raw" or "pretty" or "simplified"
   min_grade: 2
+  hf_upload_repo: "idopinto/invbench-train-uautomizer25-k1-v2"  # will be concatentaed with .min_grade
+  force_reprocess: false  # Set to true to skip loading from HF and reprocess raw data
 
 sft:
-  output_dir: "trained_models/qwen3-8b-gen-inv-sft-v2-latest"
-  num_train_epochs: 3
+  output_dir: "trained_models/qwen3-8b-nt-gen-inv-sft-v2"  # will be concatentaed with .min_grade
+  num_train_epochs: 2
   per_device_train_batch_size: 16
   gradient_accumulation_steps: 2
   gradient_checkpointing: True
@@ -77,7 +80,7 @@ lora:
   
   modules_to_save: ["lm_head", "embed_tokens"] # make sure to save the lm_head and the embed_tokens as you train the special tokens (?)
 
-  prompts:
+prompts:
   per_marker_system_prompt: |
       You are an expert C programmer and highly proficient in generating strong loop invariants for C programs that accelerate traditional verifiers' verification process.
 

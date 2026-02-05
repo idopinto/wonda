@@ -13,7 +13,7 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
 
-from src.train.sft.data_utils import load_training_data, split_dataset
+from src.train.sft.data_utils import load_training_data, split_dataset, log_dataset_stats
 from src.preprocess.program import Program as AstProgram
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -97,23 +97,30 @@ def main(cfg: DictConfig):
     print("="*50)
     print(OmegaConf.to_yaml(cfg))
     print("="*50)
+
+    min_grade_str = "."+str(cfg.dataset.min_grade) if cfg.dataset.min_grade else ""
+    wandb_name = cfg.wandb.name + min_grade_str
+    output_dir = cfg.sft.output_dir + min_grade_str
+    hf_upload_repo = (cfg.dataset.hf_upload_repo + min_grade_str) if cfg.dataset.hf_upload_repo else None
     if cfg.test_mode:
         logger.info("Training in test mode...")
-        cfg.wandb.name = cfg.wandb.name + "-test"
-        cfg.sft.output_dir = cfg.sft.output_dir + "-test"
+        wandb_name  = wandb_name + "-test"
+        hf_upload_repo = (hf_upload_repo + "-test") if hf_upload_repo else None
+        output_dir = output_dir + "-test"
         cfg.dataset.limit = 100
-
     if cfg.wandb.use_wandb:
-        wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, name=cfg.wandb.name)
+        wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, name=wandb_name)
     else:
         logger.info("Wandb is disabled. Skipping wandb initialization...")
 
     model_name = cfg.model.base_model_name
     model_init_kwargs = cfg.model.init_kwargs_train
-    repo_name = cfg.dataset.repo_name
-    output_dir = cfg.sft.output_dir
+    
+    raw_repo_name = cfg.dataset.repo_name
     tokenizer = init_tokenizer(model_name)
-    logger.info(f"model_name: {model_name} | repo_name: {repo_name} | output_dir: {output_dir}")
+    logger.info(f"model_name: {model_name} | raw_repo_name: {raw_repo_name} | hf_upload_repo: {hf_upload_repo} | output_dir: {output_dir}")
+    force_reprocess = cfg.dataset.force_reprocess
+    logger.info(f"force_reprocess training data: {force_reprocess}")
 
     # Build SFT training args from YAML
     training_args = SFTConfig(
@@ -146,7 +153,7 @@ def main(cfg: DictConfig):
         device_map=cfg.model.init_kwargs_train.device_map,
     )
     # logger.info(f"Model init kwargs: {model_init_kwargs}")
-    full_dataset = load_training_data(dataset_name=cfg.dataset.repo_name,
+    full_dataset = load_training_data(dataset_name=raw_repo_name,
                         tokenizer=tokenizer,
                         system_prompt=cfg.prompts.per_marker_system_prompt,
                         user_prompt_template=cfg.prompts.per_marker_user_prompt_template,
@@ -156,14 +163,27 @@ def main(cfg: DictConfig):
                         max_length=cfg.sft.max_length,
                         json_path=cfg.dataset.json_path if cfg.dataset.json_path else None,
                         min_grade=cfg.dataset.min_grade if cfg.dataset.min_grade else 1,
-                        output_dir=cfg.sft.output_dir)
+                        output_dir=cfg.sft.output_dir,
+                        hf_upload_repo=hf_upload_repo,
+                        force_reprocess=force_reprocess)
+    # Log stats for full dataset before split
+    # log_dataset_stats(full_dataset, tokenizer, name="Full")
+    
     train_dataset, validation_dataset = split_dataset(full_dataset, split_ratio=cfg.dataset.split_ratio)
 
-    logger.info(f"Train dataset size: {len(train_dataset)}")
-    logger.info(f"Validation dataset size: {len(validation_dataset)}")
-    logger.info(f"Train dataset sample: {train_dataset[0]}")
-    logger.info(f"Validation dataset sample: {validation_dataset[0]}")
-    logger.info("="*50)
+    # Log stats for each split
+    # log_dataset_stats(train_dataset, tokenizer, name="Train")
+    # log_dataset_stats(validation_dataset, tokenizer, name="Validation")
+
+    print("="*50)
+    print("Train dataset sample:")
+    for key, value in train_dataset[0].items():
+        logger.info(f"{key}: {value}")
+    print("="*50)
+    print("Validation dataset sample:")
+    for key, value in validation_dataset[0].items():
+        logger.info(f"{key}: {value}")
+    print("="*50)
     model = load_model(model_name, model_init_kwargs)
 
     if cfg.use_peft:
