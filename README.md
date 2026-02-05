@@ -3,19 +3,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 
-Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** (ICML 2026).
+Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** ([arXiv preprint](https://arxiv.org/abs/XXXX.XXXXX)).
 
 ## Overview
 
 This framework fine-tunes small language models (SLMs) to generate loop invariants for C programs, accelerating traditional program verifiers like UAutomizer. The key insight is that **data quality matters more than model size** -- careful curation of training data enables small models (0.6B-8B parameters) to outperform much larger models.
 
-```mermaid
-flowchart LR
-    A[C Program] --> B[Fine-tuned SLM]
-    B --> C[Candidate Invariant]
-    C --> D{Decision Procedure}
-    D -->|Correct & Useful| E[Accelerated Verification]
-    D -->|Invalid| F[Fallback to Baseline]
+```
+C Program → Fine-tuned SLM → Candidate Invariant → Decision Procedure
+                                                        ├── Correct & Useful → Accelerated Verification
+                                                        └── Invalid → Fallback to Baseline
 ```
 
 ## Installation
@@ -181,10 +178,10 @@ All datasets are available on [HuggingFace](https://huggingface.co/idopinto).
 ## Citation
 
 ```bibtex
-@inproceedings{pinto2026invariants,
+@article{pinto2026invariants,
   title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
   author={Pinto, Ido},
-  booktitle={International Conference on Machine Learning (ICML)},
+  journal={arXiv preprint arXiv:XXXX.XXXXX},
   year={2026}
 }
 ```
