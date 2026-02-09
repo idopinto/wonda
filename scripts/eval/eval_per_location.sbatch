@@ -55,7 +55,7 @@ echo "=========================================="
 echo ""
 
 # Run per-location evaluation with HF client
-uv run -m src.eval.evaluate_per_location model.client=hf "$@"
+uv run -m wonda.eval.evaluate_per_location model.client=hf "$@"
 
 echo ""
 echo "=========================================="

@@ -76,7 +76,7 @@ echo "=========================================="
 echo ""
 
 # Run v1 training dataset builder
-uv run -m src.preprocess.build_v1_train_dataset "$@"
+uv run -m wonda.data_pipeline.build_v1_train_dataset "$@"
 
 echo ""
 echo "=========================================="

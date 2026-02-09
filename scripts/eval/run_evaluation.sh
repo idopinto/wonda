@@ -53,7 +53,7 @@ echo "=========================================="
 echo ""
 
 # Run evaluation with HF client (override client=hf via Hydra)
-uv run -m src.eval.evaluate model.client=hf "$@"
+uv run -m wonda.eval.evaluate model.client=hf "$@"
 
 echo ""
 echo "=========================================="

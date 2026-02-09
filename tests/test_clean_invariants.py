@@ -1,5 +1,5 @@
 """
-Comprehensive pytest test suite for src/preprocess/clean_invariants.py
+Comprehensive pytest test suite for wonda/data_pipeline/clean_invariants.py
 
 Tests are organized from easy to hard:
 1. Basic parsing tests
@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pycparser import c_ast, c_parser
 
-from src.preprocess.clean_invariants import (
+from wonda.data_pipeline.clean_invariants import (
     _extract_identifier_type_names,
     _is_integral_typename,
     _set_child,

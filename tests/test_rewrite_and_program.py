@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 
 
-from src.utils.program import Program, AssertionPointAttributes
-from src.utils.rewriter import Rewriter
+from wonda.utils.program import Program, AssertionPointAttributes
+from wonda.utils.rewriter import Rewriter
 
 
 @pytest.mark.parametrize(

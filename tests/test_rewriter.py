@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from src.utils.rewriter import Rewriter
+from wonda.utils.rewriter import Rewriter
 
 def run_rewriter_on_c_file(c_file_path):
     """Run the Rewriter on a given C file and print the transformed code."""

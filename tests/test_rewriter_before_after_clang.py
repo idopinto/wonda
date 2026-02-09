@@ -6,8 +6,8 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from src.utils.rewriter import Rewriter
-from src.utils.program import Program
+from wonda.utils.rewriter import Rewriter
+from wonda.utils.program import Program
 
 # Test file that had the issue
 test_file_path = "dataset/old/hard/c/interleave_bits_1.c"
@@ -82,7 +82,7 @@ print("-" * 70)
 
 # Temporarily modify the Rewriter to test before clang_format
 # We'll need to manually test this by reading the file and applying the logic
-from src.utils.rewriter import Rewriter
+from wonda.utils.rewriter import Rewriter
 
 # Create a test version that does join_multiline_assertions before clang_format
 class TestRewriter(Rewriter):

@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.equivalence import check_syntactic_equivalence
+from wonda.utils.equivalence import check_syntactic_equivalence
 print("pwd:", os.getcwd())
 def test_check_equivalence():
     s1 = "x == SIZE - i"

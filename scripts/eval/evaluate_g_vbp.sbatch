@@ -57,9 +57,9 @@ echo "=========================================="
 echo ""
 
 # Run evaluation locally (override client=hf via Hydra)
-uv run -m src.eval.evaluate_vbs "$@"
-# uv run -m src.eval.evaluate_vbs "$@"
-# uv run -m src.eval.evaluate_vbs "$@"
+uv run -m wonda.eval.evaluate_vbs "$@"
+# uv run -m wonda.eval.evaluate_vbs "$@"
+# uv run -m wonda.eval.evaluate_vbs "$@"
 
 
 echo ""

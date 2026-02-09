@@ -61,7 +61,7 @@ echo "=========================================="
 echo ""
 
 # Run parallel ground truth invariants preprocessor
-uv run -m src.preprocess.preprocess_gt_invariants_parallel "$@"
+uv run -m wonda.data_pipeline.preprocess_gt_invariants_parallel "$@"
 
 echo ""
 echo "=========================================="

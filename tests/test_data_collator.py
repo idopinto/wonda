@@ -1,6 +1,6 @@
 # test_data_collator.py
 from transformers import AutoTokenizer
-from src.train.data_collator_assistant_only import DataCollatorForAssistantOnlyLM
+from wonda.train.data_collator_assistant_only import DataCollatorForAssistantOnlyLM
 
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained("openai/gpt-oss-20b")

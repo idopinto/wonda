@@ -10,10 +10,10 @@ project_root = Path(__file__).parent.parent  # Go from tests/ to RLInv/
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.utils.rewriter import Rewriter
-from src.utils.program import Program
-from src.core.property import Property
-from src.eval.model import Model
+from wonda.utils.rewriter import Rewriter
+from wonda.utils.program import Program
+from wonda.core.property import Property
+from wonda.eval.model import Model
 import os
 
 def main():

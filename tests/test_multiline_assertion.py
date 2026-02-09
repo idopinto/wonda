@@ -6,7 +6,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from src.utils.rewriter import Rewriter
+from wonda.utils.rewriter import Rewriter
 
 # Test with the dijkstra file
 test_file = Path("dataset/evaluation/full/25/hard/c/dijkstra-u_valuebound2_4.c")

@@ -58,10 +58,10 @@ Run a quick evaluation with a small sample:
 
 ```bash
 # Evaluate base model on 5 samples
-uv run -m src.eval.evaluate dataset.limit=5
+uv run -m wonda.eval.evaluate dataset.limit=5
 
 # Evaluate fine-tuned model
-uv run -m src.eval.evaluate dataset.limit=5 models.eval_ft_model=true
+uv run -m wonda.eval.evaluate dataset.limit=5 models.eval_ft_model=true
 ```
 
 ## Reproducing Paper Results
@@ -165,7 +165,7 @@ Configuration uses [Hydra](https://hydra.cc/). Override any parameter from the c
 
 ```bash
 # Common overrides
-uv run -m src.eval.evaluate \
+uv run -m wonda.eval.evaluate \
     dataset.split=easy \
     dataset.limit=10 \
     models=qwen3_0.6b_nt_config \

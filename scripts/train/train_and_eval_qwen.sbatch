@@ -85,7 +85,7 @@ echo "Starting training at $(date)"
 
 # Run training and capture output to extract model path
 TRAIN_OUTPUT=$(mktemp)
-if uv run -m src.train.train_qwen "${TRAIN_ARGS[@]}" 2>&1 | tee "$TRAIN_OUTPUT"; then
+if uv run -m wonda.train.train_qwen "${TRAIN_ARGS[@]}" 2>&1 | tee "$TRAIN_OUTPUT"; then
     echo "Training completed successfully at $(date)"
 else
     echo "ERROR: Training failed!"
@@ -137,7 +137,7 @@ EVAL_MODEL_CONFIG=$(echo "${EVAL_ARGS[@]}" | grep -oP 'models=\K[^\s]+' || echo 
 
 # Run evaluation with the trained model
 # Set eval_ft_model=true and update ft_model.id to point to the trained model
-EVAL_CMD="uv run -m src.eval.evaluate models=${EVAL_MODEL_CONFIG} models.eval_ft_model=true models.ft_model.id=${MODEL_OUTPUT_DIR}"
+EVAL_CMD="uv run -m wonda.eval.evaluate models=${EVAL_MODEL_CONFIG} models.eval_ft_model=true models.ft_model.id=${MODEL_OUTPUT_DIR}"
 
 # Add other evaluation args
 if [ ${#EVAL_ARGS[@]} -gt 0 ]; then

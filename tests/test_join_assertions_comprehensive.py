@@ -5,8 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from src.utils.rewriter import Rewriter
-from src.utils.program import Program
+from wonda.utils.rewriter import Rewriter
+from wonda.utils.program import Program
 
 print("=" * 70)
 print("Comprehensive Test: Simplified join_multiline_assertions")

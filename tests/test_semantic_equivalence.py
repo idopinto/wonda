@@ -4,7 +4,7 @@ import pytest
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.equivalence import check_semantic_equivalence
+from wonda.utils.equivalence import check_semantic_equivalence
 
 
 class TestSemanticEquivalence:

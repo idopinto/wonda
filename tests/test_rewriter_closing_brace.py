@@ -6,8 +6,8 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from src.utils.rewriter import Rewriter
-from src.utils.program import Program
+from wonda.utils.rewriter import Rewriter
+from wonda.utils.program import Program
 
 # Test files that had the issue
 test_files = [

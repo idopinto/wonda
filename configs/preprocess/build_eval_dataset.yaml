@@ -1,5 +1,5 @@
 # Configuration for baseline evaluation dataset creation (AST-based)
-# Used by: src/preprocess/build_baseline_eval_dataset.py
+# Used by: wonda/data_pipeline/build_baseline_eval_dataset.py
 compute_node_type: "l40s" # "h200" or "l40s" or "cpu"
 # Dataset configuration
 dataset:
@@ -26,6 +26,6 @@ output:
   test_mode: false  # Run the script in test mode (affects output directory naming)
 
 # Example usage:
-# uv run -m src.preprocess.build_baseline_eval_dataset output.test_mode=true dataset.limit=1 verifier.k=3 processing.ignore_invariants=true output.push_to_hub=true
+# uv run -m wonda.data_pipeline.build_baseline_eval_dataset output.test_mode=true dataset.limit=1 verifier.k=3 processing.ignore_invariants=true output.push_to_hub=true
 # sbatch command:
 # sbatch scripts/preprocess/build_eval_dataset.sh output.test_mode=true dataset.limit=1  

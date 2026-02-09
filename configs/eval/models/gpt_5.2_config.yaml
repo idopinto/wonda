@@ -6,5 +6,5 @@ base_model:
   sampling_params:
     temperature: 1.0
 
-# uv run -m src.eval.evaluate models=openai_config dataset.limit=1
+# uv run -m wonda.eval.evaluate models=openai_config dataset.limit=1
 # sbatch --job-name=eval_gpt5 scripts/eval/evaluate_c.sbatch models=openai_config dataset.limit=-1 

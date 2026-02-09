@@ -48,7 +48,7 @@ echo "=========================================="
 echo ""
 
 # Run evaluation with OpenRouter client (override client=openrouter via Hydra)
-uv run -m src.eval.evaluate "$@"
+uv run -m wonda.eval.evaluate "$@"
 
 echo ""
 echo "=========================================="

@@ -106,7 +106,7 @@ curl -s http://localhost:${VLLM_PORT}/v1/models | python -m json.tool
 echo "Starting evaluation at $(date)"
 
 # Pass model.client=vllm and vLLM config, plus any additional Hydra overrides from args
-uv run -m src.eval.evaluate \
+uv run -m wonda.eval.evaluate \
     model.client=vllm \
     model.vllm_base_url=http://localhost:${VLLM_PORT}/v1 \
     model.vllm_model=${ADAPTER_NAME} \

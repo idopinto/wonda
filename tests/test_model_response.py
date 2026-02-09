@@ -1,5 +1,5 @@
-from src.eval.model import InvariantGeneratorModel
-from src.utils.program import Program
+from wonda.eval.model import InvariantGeneratorModel
+from wonda.utils.program import Program
 
 
 def test_model_response():

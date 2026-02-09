@@ -89,7 +89,7 @@ echo "=========================================="
 echo ""
 
 # Run multi-eval; remaining args are forwarded as Hydra overrides to evaluate
-uv run -m src.eval.run_multi_eval "$@"
+uv run -m wonda.eval.run_multi_eval "$@"
 
 echo ""
 echo "=========================================="

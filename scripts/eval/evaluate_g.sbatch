@@ -54,7 +54,7 @@ echo "=========================================="
 echo ""
 
 # Run evaluation locally (override client=hf via Hydra)
-uv run -m src.eval.evaluate "$@"
+uv run -m wonda.eval.evaluate "$@"
 
 echo ""
 echo "=========================================="

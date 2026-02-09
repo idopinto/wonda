@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 import torch
 from transformers import AutoTokenizer
 from datasets import load_dataset
-from src.train.sft.data_collator_assistant_only import DataCollatorForAssistantOnlyLM
+from wonda.train.sft.data_collator_assistant_only import DataCollatorForAssistantOnlyLM
 
 
 def clean_messages(messages):
