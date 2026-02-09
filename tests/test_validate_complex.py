@@ -7,7 +7,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
-from src.utils.validate import syntactic_validation
+from src.eval.validate import syntactic_validation
 
 
 @pytest.mark.parametrize(

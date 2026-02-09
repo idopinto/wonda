@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from src.utils.validate import validate_model_answer
+from src.eval.validate import validate_model_answer
 import weave  # type: ignore[import-not-found]
 
 from src.eval.decision_procedure import DecisionProcedure

@@ -43,7 +43,7 @@ T = TypeVar("T")
 from configs import global_config as GC
 from src.preprocess.clean_invariants import clean_invariant
 from src.preprocess.program import Predicate, Program
-from src.utils.validate import syntactic_validation
+from src.eval.validate import syntactic_validation
 from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 
 load_dotenv()

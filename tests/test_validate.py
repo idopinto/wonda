@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.utils.validate import syntactic_validation
+from src.eval.validate import syntactic_validation
 
 print("pwd:", os.getcwd())
 
