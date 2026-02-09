@@ -1,3 +1,24 @@
+"""Decision procedure for invariant-based program verification.
+
+Implements the decision calculus from:
+
+    Quokka: Accelerating Program Verification with LLMs via Invariant Synthesis
+    Anjiang Wei, Tarun Suresh, Tianran Sun, Haoze Wu, Ke Wang, Alex Aiken
+    arXiv:2509.21629  —  https://arxiv.org/abs/2509.21629
+
+Given a candidate invariant *q* and a target assertion *p**, the procedure
+issues two parallel verifier queries:
+
+    da = V(P, ∅, q)      — correctness: is q an invariant of program P?
+    db = V(P, {q}, p*)    — usefulness:  does the target hold assuming q?
+
+and combines the outcomes via three decision rules:
+
+    DEC-FALSE  —  if db = F, decide FALSE  (short-circuit refutation)
+    DEC-PROP   —  if da = T and db ∈ {T, U}, decide db
+    DEC-U      —  if da ≠ T and db ≠ F, decide UNKNOWN
+"""
+
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
