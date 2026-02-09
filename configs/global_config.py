@@ -12,7 +12,7 @@ PROPERTIES_DIR = DATASET_DIR / "properties"
 TOOLS_DIR = ROOT_DIR / "tools"
 # EXPERIMENTS_DIR = DATASET_DIR / "eval" / "experiments"
 EXPERIMENTS_DIR = ROOT_DIR / "experiments"
-PATH_TO_CLANG_FORMAT = ROOT_DIR / "configs" / "clang_format"
+# PATH_TO_CLANG_FORMAT = ROOT_DIR / "configs" / "clang_format"
 
 # UAutomizer paths
 UAUTOMIZER_PATHS = {

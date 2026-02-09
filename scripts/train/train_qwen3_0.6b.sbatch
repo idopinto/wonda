@@ -52,11 +52,11 @@ echo "=========================================="
 echo ""
 
 # Run training with config
-# uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v0 "$@"
-# uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v1 "$@"
-# uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v2 dataset.min_grade=1 "$@"
-# uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v2 dataset.min_grade=2 "$@"
-uv run -m src.train.sft.train_qwen --config-name=qwen3_0.6b_nt_v2 dataset.min_grade=3 "$@"
+# uv run -m src.train.train_qwen --config-name=qwen3_0.6b_nt_v0 "$@"
+# uv run -m src.train.train_qwen --config-name=qwen3_0.6b_nt_v1 "$@"
+# uv run -m src.train.train_qwen --config-name=qwen3_0.6b_nt_v2 dataset.min_grade=1 "$@"
+# uv run -m src.train.train_qwen --config-name=qwen3_0.6b_nt_v2 dataset.min_grade=2 "$@"
+uv run -m src.train.train_qwen --config-name=qwen3_0.6b_nt_v2 dataset.min_grade=3 "$@"
 
 echo ""
 echo "=========================================="

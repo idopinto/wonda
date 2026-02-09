@@ -85,7 +85,7 @@ echo "Starting training at $(date)"
 
 # Run training and capture output to extract model path
 TRAIN_OUTPUT=$(mktemp)
-if uv run -m src.train.sft.train_qwen "${TRAIN_ARGS[@]}" 2>&1 | tee "$TRAIN_OUTPUT"; then
+if uv run -m src.train.train_qwen "${TRAIN_ARGS[@]}" 2>&1 | tee "$TRAIN_OUTPUT"; then
     echo "Training completed successfully at $(date)"
 else
     echo "ERROR: Training failed!"
