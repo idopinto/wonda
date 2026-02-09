@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime
 from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport, write_file
-from src.preprocess.ast_program import AstProgram
-from src.preprocess.property import Property
+from src.core.ast_program import AstProgram
+from src.core.property import Property
 import tempfile
 from configs import global_config as GC
 from logging import getLogger

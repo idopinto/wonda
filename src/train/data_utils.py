@@ -7,7 +7,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 from src.preprocess.clean_invariants import clean_invariant
-from src.preprocess.ast_program import AstProgram
+from src.core.ast_program import AstProgram
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

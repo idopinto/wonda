@@ -14,7 +14,7 @@ import weave
 from openai.types.chat import ChatCompletion
 from transformers import AutoTokenizer
 
-from src.preprocess.ast_program import AstProgram
+from src.core.ast_program import AstProgram
 
 logger = logging.getLogger(__name__)
 

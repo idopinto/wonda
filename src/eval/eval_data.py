@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from datasets import load_dataset
 
-from src.preprocess.ast_program import AstProgram
+from src.core.ast_program import AstProgram
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

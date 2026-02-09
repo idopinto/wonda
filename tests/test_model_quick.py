@@ -12,7 +12,7 @@ if str(project_root) not in sys.path:
 
 from src.utils.rewriter import Rewriter
 from src.utils.program import Program
-from src.preprocess.property import Property
+from src.core.property import Property
 from src.eval.model import Model
 import os
 

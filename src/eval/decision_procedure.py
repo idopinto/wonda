@@ -7,8 +7,8 @@ from typing import Optional
 
 import weave  # type: ignore[import-not-found]
 
-from src.preprocess.property import Property
-from src.preprocess.ast_program import AstProgram
+from src.core.property import Property
+from src.core.ast_program import AstProgram
 from src.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
 
 logger = logging.getLogger(__name__)

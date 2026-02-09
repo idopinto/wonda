@@ -42,8 +42,8 @@ T = TypeVar("T")
 
 from configs import global_config as GC
 from src.preprocess.clean_invariants import clean_invariant
-from src.preprocess.ast_program import AstProgram
-from src.preprocess.property import Property
+from src.core.ast_program import AstProgram
+from src.core.property import Property
 from src.eval.validate import syntactic_validation
 from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 

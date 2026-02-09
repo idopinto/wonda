@@ -14,7 +14,7 @@ import torch
 import weave
 
 from src.eval.models.model_utils import load_hf_model
-from src.preprocess.ast_program import AstProgram
+from src.core.ast_program import AstProgram
 
 logger = logging.getLogger(__name__)
 

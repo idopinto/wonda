@@ -13,7 +13,7 @@ import weave
 from dotenv import load_dotenv
 from together import Together
 
-from src.preprocess.ast_program import AstProgram
+from src.core.ast_program import AstProgram
 
 load_dotenv()
 logger = logging.getLogger(__name__)

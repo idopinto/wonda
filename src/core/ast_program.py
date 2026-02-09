@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pycparser import c_ast, c_generator, c_parser
 
-from src.preprocess.property import Property
+from src.core.property import Property
 
 PATCH = (
     "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n"
@@ -578,7 +578,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python -m src.preprocess.ast_program <file.c>")
+        print("Usage: python -m src.core.ast_program <file.c>")
         raise SystemExit(2)
 
     path = sys.argv[1]

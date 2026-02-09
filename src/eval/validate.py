@@ -11,7 +11,7 @@ import json
 import re
 from typing import Optional
 
-from src.preprocess.property import Property
+from src.core.property import Property
 
 def parse_model_answer(raw_model_answer: str) -> Property:
     """
