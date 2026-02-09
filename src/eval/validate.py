@@ -1,6 +1,15 @@
+"""Validation utilities for model-generated loop invariants.
+
+Provides JSON parsing of model answers, syntactic validation of C boolean
+expressions (rejecting assignments and mutations), and a combined validation
+entry point used by the evaluation scorer.
+
+Also used in the preprocessing step to filter ground-truth invariants
+by syntactic correctness before building training datasets.
+"""
 import json
-from typing import Optional
 import re
+from typing import Optional
 
 from src.preprocess.predicate import Predicate
 
