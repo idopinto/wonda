@@ -1,17 +1,17 @@
 import json
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-import logging
 from typing import Optional
 
 import weave  # type: ignore[import-not-found]
 
-logger = logging.getLogger(__name__)
-
-from src.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
 from src.preprocess.predicate import Predicate
 from src.preprocess.program import Program
+from src.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class DecisionProcedureReport:
@@ -92,7 +92,7 @@ class DecisionProcedure:
 
     @weave.op()
     def decide(
-        self, candidate_invariant: Predicate   
+        self, candidate_invariant: Predicate
     ) -> DecisionProcedureReport:
 
         program_for_correctness = self.program.get_program_with_assertion(
@@ -227,7 +227,6 @@ class DecisionProcedure:
         )
         verification_time = max(correctness_time, usefulness_time)
 
-
         report = DecisionProcedureReport(
             final_decision=final_decision,
             decision_rule=decision_rule,
@@ -239,9 +238,7 @@ class DecisionProcedure:
             program_for_usefulness=program_for_usefulness,
             verification_time=verification_time,
         )
-        # logger.info(f"Decision procedure report")
-        # for key, value in report.to_dict().items():
-        #     print(f"{key}: {value}")
-        print(f"runlim correctness output: {invariant_correctness_report.runlim}")
-        print(f"runlim usefulness output: {invariant_usefulness_report.runlim}")
+
+        logger.info(f"runlim correctness output: {invariant_correctness_report.runlim}")
+        logger.info(f"runlim usefulness output: {invariant_usefulness_report.runlim}")
         return report

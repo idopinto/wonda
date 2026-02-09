@@ -1,11 +1,10 @@
 """
-Model module for invariant generation.
+Qwen-based invariant generator model.
 
-Contains the InvariantGeneratorModel class and model loading utilities.
+Implements local HuggingFace inference for Qwen models (base and LoRA fine-tuned),
+with support for thinking/non-thinking modes.
 """
 
-# import gc
-import json
 import logging
 import re
 import time
@@ -24,7 +23,8 @@ from transformers import (
 from src.preprocess.program import Program
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+
 class InvariantGeneratorQwenModel(weave.Model):
     """
     Weave Model for generating loop invariants.
@@ -45,7 +45,6 @@ class InvariantGeneratorQwenModel(weave.Model):
     # Optional: only needed for local huggingface loading (use Any to avoid Pydantic validation issues)
     model: Optional[Any] = None
     tokenizer: Optional[Any] = None
-    model_version: Optional[str] = None
 
     def model_post_init(self, __context):
         """Initialize model after Pydantic model creation."""
@@ -74,11 +73,11 @@ class InvariantGeneratorQwenModel(weave.Model):
         ]
         inference_start_time = time.perf_counter()
         input_ids = self.tokenizer.apply_chat_template(
-                messages,
-                add_generation_prompt=True,
-                return_tensors="pt",
-                enable_thinking=self.enable_thinking,
-            ).to(self.model.device)
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt",
+            enable_thinking=self.enable_thinking,
+        ).to(self.model.device)
         with torch.inference_mode():
             output_ids = self.model.generate(input_ids, **self.sampling_params)
         model_latency = time.perf_counter() - inference_start_time
@@ -97,13 +96,7 @@ class InvariantGeneratorQwenModel(weave.Model):
             "total_tokens": output_ids.shape[1],
         }
 
-        # Cleanup GPU memory to prevent accumulation issues
-        # del input_ids, output_ids
-        # torch.cuda.empty_cache()
-        # gc.collect()
-
         return {
-            # "prompt": "\n".join([message["content"] for message in messages]),
             "raw_output": raw_output,
             "reasoning": reasoning,
             "answer": answer,
@@ -111,37 +104,29 @@ class InvariantGeneratorQwenModel(weave.Model):
             "usage": usage,
         }
 
-    @weave.op
     def _parse_qwen_output(self, raw_output: str) -> Dict[str, Optional[str]]:
-        """
-        Parse Qwen format output.
-        """
+        """Parse Qwen format output, extracting reasoning and answer."""
         think_pattern = r"<think>(.*?)</think>"
         think_match = re.search(think_pattern, raw_output, re.DOTALL)
         reasoning = think_match.group(1).strip() if think_match else ""
         answer_pattern = r"</think>\s*(.*?)(?:<\|im_end\|>|$)"
         answer_match = re.search(answer_pattern, raw_output, re.DOTALL)
         answer = answer_match.group(1).strip() if answer_match else ""
-        
-        # Fallback: if no answer found, try parsing <|im_start|>assistant format (for qwen)
+
+        # Fallback: if no answer found, try parsing <|im_start|>assistant format (for qwen instruct models)
         if not answer:
             reasoning = ""
             assistant_pattern = r"<\|im_start\|>assistant\s*(.*?)(?:<\|im_end\|>|$)"
             assistant_match = re.search(assistant_pattern, raw_output, re.DOTALL)
             if assistant_match:
                 answer = assistant_match.group(1).strip()
-        
+
         return {"reasoning": reasoning, "answer": answer}
- 
 
-    def _load_hf_model(
-        self
-    ) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
-        """
-        Load a trained model and tokenizer based on configuration.
+    def _load_hf_model(self) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
+        """Load a trained model and tokenizer based on configuration.
 
-        Args:
-            Returns:
+        Returns:
             Tuple of (tokenizer, model) ready for inference.
         """
         tokenizer = AutoTokenizer.from_pretrained(
@@ -153,24 +138,24 @@ class InvariantGeneratorQwenModel(weave.Model):
             use_cache=True,
             device_map="auto",
         )
-        
+
         if self.eval_ft_model:
             if not self.model_cfg["ft_model"]["is_lora"]:
-                print(f"Loading non-LoRA-finetuned model from {self.ft_model_id}")
+                logger.info(f"Loading non-LoRA-finetuned model from {self.ft_model_id}")
                 model = AutoModelForCausalLM.from_pretrained(
-                self.ft_model_id, **model_kwargs, token=True
+                    self.ft_model_id, **model_kwargs, token=True
                 )
             else:
-                print(f"Loading base model from {self.base_model_id}")
+                logger.info(f"Loading base model from {self.base_model_id}")
                 model = AutoModelForCausalLM.from_pretrained(
                     self.base_model_id, **model_kwargs, token=True
                 )
-                print(f"Loading LoRA-finetuned model from {self.ft_model_id}")
+                logger.info(f"Loading LoRA-finetuned model from {self.ft_model_id}")
                 model = PeftModel.from_pretrained(model, self.ft_model_id, token=True)
                 model = model.merge_and_unload()
-                print("Merged and unloaded")
+                logger.info("Merged and unloaded")
         else:
-            print(f"Loading base model from {self.base_model_id}")
+            logger.info(f"Loading base model from {self.base_model_id}")
             model = AutoModelForCausalLM.from_pretrained(
                 self.base_model_id, **model_kwargs, token=True
             )
@@ -182,7 +167,7 @@ class InvariantGeneratorQwenModel(weave.Model):
         """Return the display name for this model configuration."""
         model_id = self.ft_model_id if self.eval_ft_model else self.base_model_id
         base_name = model_id.split("/")[-1]
-        suffix = "t" if self.enable_thinking else "nt"
+        suffix = "t" if self.enable_thinking else "nt" # t: thinking, nt: non-thinking
         return f"{base_name}-{suffix}"
 
     def get_run_name(self) -> str:

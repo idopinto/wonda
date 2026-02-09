@@ -1,12 +1,12 @@
+import weave
+from omegaconf import DictConfig
+
+from src.eval.models.base_model import InvariantGeneratorModelInterface
 from src.eval.models.open_router_model import InvariantGeneratorOpenRouterModel
 from src.eval.models.oss_model import InvariantGeneratorOssModel
 from src.eval.models.qwen_model import InvariantGeneratorQwenModel
-from src.eval.models.vllm_model import InvariantGeneratorVllmModel
 from src.eval.models.together_model import InvariantGeneratorTogetherModel
-from src.eval.models.base_model import InvariantGeneratorModelInterface
-from omegaconf import DictConfig
-from src.preprocess import program
-import weave
+from src.eval.models.vllm_model import InvariantGeneratorVllmModel
 
 
 class ModelFactory:
@@ -57,17 +57,17 @@ class ModelFactory:
             raise ValueError(f"Invalid client: {cfg.client}")
 
 
-if __name__ == "__main__":
-    # print("Hello, World!")
-    from openai import OpenAI
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# if __name__ == "__main__":
+#     # print("Hello, World!")
+#     from openai import OpenAI
+#     import os
+#     from dotenv import load_dotenv
+#     load_dotenv()
+#     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    response = client.responses.create(
-    model="gpt-4.1",
-    input="Tell me a three sentence bedtime story about a unicorn."
-    )
+#     response = client.responses.create(
+#     model="gpt-4.1",
+#     input="Tell me a three sentence bedtime story about a unicorn."
+#     )
 
-    print(response)
+#     print(response)
