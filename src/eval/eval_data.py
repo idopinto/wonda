@@ -4,28 +4,26 @@ Data loading and preprocessing module for evaluation.
 Handles dataset loading from HuggingFace and example preprocessing.
 """
 
-from pathlib import Path
+import copy as py_copy
+import logging
 from typing import List, Optional
 
 from datasets import load_dataset
 
-from src.utils.program import Program
-from src.utils.program_normalizer import ProgramNormalizer
-
-# New AST-based pipeline (used by src/new_eval/*)
 from src.preprocess.program import Program as AstProgram
-import copy as py_copy
 
-import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def expand_dataset_per_marker(dataset: list[dict]) -> list[dict]:
+    """
+    Expand the dataset into one example per loop marker (INVARIANT_MARKER_k).
+    """
     logger.info(f"Expanding dataset to per-marker examples. Original size: {len(dataset)}")
     expanded = []
     for ex in dataset:
         prog = preprocess_example(ex)["program"]
-        k_max = _get_num_loops(prog)
+        k_max = prog.num_loops
         if k_max == 0:
             continue
         for k in range(1, k_max + 1):
@@ -36,17 +34,14 @@ def expand_dataset_per_marker(dataset: list[dict]) -> list[dict]:
     logger.info(f"Expanded {len(dataset)} examples to {len(expanded)} per-marker examples")
     return expanded
 
-def _get_num_loops(program: Program) -> int:
-    return program.num_loops
-
 def get_evaluation_dataset(
     dataset_name: str,
     limit: int = -1,
     prefix: Optional[str] = None,
     split: str = "test",
-    re_split: bool = False,
+    re_split: bool = True,
     difficulty_threshold: int = 15,
-    eval_per_marker: bool = False,   # If True, expand the dataset into one example per loop marker (INVARIANT_MARKER_k).
+    eval_per_marker: bool = True,   # If True, expand the dataset into one example per loop marker (INVARIANT_MARKER_k).
 ) -> List[dict]:
     """
     Load and filter evaluation dataset from HuggingFace.
@@ -80,7 +75,7 @@ def get_evaluation_dataset(
     if eval_per_marker and dataset and "target_marker" not in dataset[0]:
         dataset = expand_dataset_per_marker(dataset)
     else:
-        logger.info(f"Dataset is already per-marker")
+        logger.info(f"Dataset is already expanded into one example per loop marker (INVARIANT_MARKER_k) (per-marker mode)")
     # Apply limit if specified
     if limit > 0:
         dataset = dataset[:limit]

@@ -35,8 +35,8 @@ from weave import Evaluation
 
 import configs.global_config as GC
 from src.eval.models.model_factory import ModelFactory
-from src.eval.preprocess_eval_data import (get_evaluation_dataset,
-                                           preprocess_for_model)
+from src.eval.eval_data import (get_evaluation_dataset,
+                                preprocess_for_model)
 from src.eval.inv_gen_scorer import InvGenScorer
 from src.verifiers.uautomizer_runlim import UAutomizerVerifier
 
@@ -217,6 +217,7 @@ if __name__ == "__main__":
     main()
 
 # Example usage:
+# uv run -m src.eval.evaluate models=qwen3_0.6b_nt_config dataset.limit=16 weave.test_mode=true
 # uv run -m src.eval.evaluate models=qwen3_0.6b_nt_config
 # uv run -m src.eval.evaluate_vbs models=qwen_config dataset.limit=1
 # uv run -m src.eval.evaluate_vbs models=qwen_no_think_config dataset.limit=1
