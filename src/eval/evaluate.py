@@ -154,8 +154,6 @@ def main(cfg: DictConfig):
     invariant_generator = ModelFactory.create(
         cfg.models, system_prompt, user_prompt_template
     )
-    logger.info(f"Run name: {invariant_generator.get_run_name()}")
-    logger.info(f"Display name: {invariant_generator.get_display_name()}")
     logger.info(f"Evaluating per marker: {cfg.eval_per_marker}")
 
     # Make Weave UI names unique per trial when running multiple evaluations

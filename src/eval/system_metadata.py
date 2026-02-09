@@ -95,7 +95,7 @@ def _nvidia_smi_gpus() -> list[dict]:
     return gpus
 
 
-def _extract_override_value(overrides: list[str], key: str) -> str | None:
+def extract_override_value(overrides: list[str], key: str) -> str | None:
     """Extract 'key=value' from Hydra override strings (best-effort)."""
     prefix = f"{key}="
     for o in overrides:

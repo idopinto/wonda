@@ -25,7 +25,7 @@ from datetime import datetime
 from pathlib import Path
 
 import configs.global_config as GC
-from src.eval.system_metadata import collect_system_metadata
+from src.eval.system_metadata import collect_system_metadata, extract_override_value
 from src.eval.aggregate_results import load_summaries, aggregate_summaries, format_results
 
 
@@ -83,7 +83,8 @@ def main():
     
     # Create experiment directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    exp_name = args.experiment_name or f"multi_eval_{args.num_runs}_{timestamp}"
+    model_name = extract_override_value(hydra_args, "models") or "unknown_model"
+    exp_name = args.experiment_name or f"multi_eval_{model_name}_{args.num_runs}_runs_{timestamp}"
     experiment_dir = GC.EXPERIMENTS_DIR / exp_name
     experiment_dir.mkdir(parents=True, exist_ok=True)
     
