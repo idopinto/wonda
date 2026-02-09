@@ -2,18 +2,15 @@ eval_per_marker: true
 # Weave configuration
 weave:
   entity: "ip-ai"
-  project_name: "eval-inv-gen-new-latest-trails"
-  skip_wandb: false
-
-# Statistics configuration
-statistics:
-  num_trials: 2 # number of trials to run
-  confidence_level: 0.95 # confidence level for the confidence interval
+  project_name: "eval-inv-gen-new-latest-trails-runlim"
+  test_mode: false
+  skip_weave: false
+  run_id: null # optional run ID for unique Weave UI display name
 
 # Evaluation configuration
 dataset:
   # https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-full
-  name: "idopinto/invbench-eval-uautomizer25-k3-full" 
+  name: "idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim" 
   limit: -1 # number of samples to evaluate -1 for all
   prefix: "" # prefix to filter files by (useful for testing also)
   split: "hard" # split to evaluate on
@@ -28,6 +25,7 @@ scorer:
     property: "unreach-call.prp"
     arch: "32bit"
     timeout_seconds: 600.0
+    use_runlim: true
   baseline_is_timeout: false # when true, the verifier timeout is always set to baseline timeout (useful to accelerate evaluation)
 
 # Prompt templates 
@@ -79,9 +77,4 @@ prompts:
 # Model and task configuration
 defaults:
    - _self_ # load the default configuration
-   - models: oss_config # oss or qwen_config
-
-# Examples:
-#  uv run -m src.eval.evaluate models=openai_config dataset.limit=1
-#  uv run -m src.eval.evaluate models=qwen_config dataset.limit=1
-#  uv run -m src.eval.evaluate models=oss_config dataset.limit=1
+   - models: qwen3_0.6b_nt_config # oss or qwen_config

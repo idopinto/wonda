@@ -41,3 +41,4 @@ tests/results/
 
 # Jupyter notebooks (archived locally, not in public release)
 nbs/
+backup/

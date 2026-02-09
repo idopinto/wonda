@@ -1,22 +1,22 @@
 """
-Evaluation script for loop invariant generation with VBS (Virtual Best Solver) metrics.
+Evaluation script for loop invariant generation with VBS (Virtual Best Solver) and VBP (Virtual Best Performance) metrics.
 
-This module orchestrates the evaluation pipeline with focus on VBS metrics:
+This module orchestrates the evaluation pipeline with focus on VBS and VBP metrics:
 1. Load configuration via Hydra (../../configs/eval/config.yaml)
 2. Initialize Weave for experiment tracking
 3. Load and preprocess the evaluation dataset
-4. Load the model (base or fine-tuned with LoRA)
+4. Load the model (base or fine-tuned with or without LoRA)
 5. Setup prompts and create the InvariantGeneratorModel
 6. Run evaluation using Weave's Evaluation framework with UAutomizer verification
 7. Collect results and generate visualization plots
-8. Compute VBS/VBP metrics (Virtual Best Solver / Virtual Best Performance)
+8. Compute all metrics (validation, correctness, usefulness (suffciency), VBS, VBS_e2e, VBP, VBP_e2e, Speedup, Speedup_e2e, Speedup>1, Speedup>1_e2e, Speedup_all, Speedup_all_e2e)
 
 Key Metrics:
-- vbs: min(verification_time, baseline) when useful, else baseline
-- vbs_e2e: min(verification_time + model_latency, baseline) when useful, else baseline
+- vbs: min(verification_time, baseline) when sufficient (correct invariant and conclusive final decision), else baseline
+- vbs_e2e: min(verification_time + model_latency, baseline) when sufficient (correct invariant and conclusive final decision), else baseline
 - vbp: average of vbs across all examples (Virtual Best Performance)
-- speedup: baseline / verification_time (when useful)
-- speedup_e2e: baseline / (verification_time + model_latency) (when useful)
+- speedup: baseline / verification_time (when sufficient (correct invariant and conclusive final decision))
+- speedup_e2e: baseline / (verification_time + model_latency) (when sufficient (correct invariant and conclusive final decision))
 """
 
 import asyncio
@@ -64,21 +64,16 @@ if "WEAVE_PARALLELISM" not in os.environ:
 else:
     logger.info(f"✓ Verified WEAVE_PARALLELISM={os.environ['WEAVE_PARALLELISM']} is set")
 
-# To verify parallelism is actually working:
-# 1. Check logs for concurrent execution (multiple items processing simultaneously)
-# 2. Compare timing: parallel should be ~N times faster than sequential for I/O-bound tasks
-# 3. Run: uv run -m src.eval.verify_parallelism (test script)
-# 4. Monitor CPU usage: should see multiple processes/threads active
 
 def setup_prompts(
-    eval_per_marker: bool,
     prompts_config: dict,
+    eval_per_marker: bool = True,
 ) -> tuple[weave.StringPrompt, weave.StringPrompt]:
     """
     Setup prompts based on configuration.
 
     Args:
-        eval_per_marker: Whether to evaluate per marker.
+        eval_per_marker: Whether to evaluate instances where the invariant is generated for each loop marker separately. Default is True.
         prompts_config: Dictionary containing prompts settings.
     
     Returns:
@@ -98,9 +93,9 @@ def setup_prompts(
         prompts_config[system_key]
     ), weave.StringPrompt(prompts_config[user_key])
 
-@hydra.main(version_base=None, config_path="../../configs/eval", config_name="config_pm")
+@hydra.main(version_base=None, config_path="../../configs/eval", config_name="config")
 def main(cfg: DictConfig):
-    """Main evaluation entry point with VBS metrics."""
+    """Main evaluation entry point."""
     print("=" * 100)
     print(OmegaConf.to_yaml(cfg))
     print("=" * 100)
@@ -131,18 +126,20 @@ def main(cfg: DictConfig):
         logger.info(f"Saved resolved config to: {out_path}")
     
     # Initialize Weave only if not skipped and if connection is available
-    skip_wandb = cfg.weave.get("skip_wandb", False)
-    if not skip_wandb:
+    skip_weave = cfg.weave.get("skip_weave", False)
+    if not skip_weave:
         try:
-            client = weave.init(f"{cfg.weave.entity}/{cfg.weave.project_name}")
+            if cfg.weave.test_mode:
+                client = weave.init(f"{cfg.weave.entity}/{cfg.weave.project_name}-test")
+            else:
+                client = weave.init(f"{cfg.weave.entity}/{cfg.weave.project_name}")
         except Exception as e:
             logger.warning(f"Failed to initialize Weave (connection timeout or other error): {e}")
-            logger.warning("Continuing without Weave logging...")
-            skip_wandb = True
+            logger.warning("Continuing without Weave tracking...")
+            skip_weave = True
     else:
-        logger.info("Weave/W&B logging is disabled (skip_wandb=true)")
+        logger.info("Weave tracking is disabled (skip_weave=true)")
 
-    eval_per_marker = cfg.eval_per_marker
     dataset = get_evaluation_dataset(
         dataset_name=cfg.dataset.name,
         limit=cfg.dataset.limit,
@@ -150,16 +147,16 @@ def main(cfg: DictConfig):
         split=cfg.dataset.split,
         re_split=cfg.dataset.re_split,
         difficulty_threshold=cfg.dataset.difficulty_threshold,
-        eval_per_marker=eval_per_marker,
+        eval_per_marker=cfg.eval_per_marker,
     )
     
-    system_prompt, user_prompt_template = setup_prompts(eval_per_marker, cfg.prompts)
+    system_prompt, user_prompt_template = setup_prompts(cfg.prompts, cfg.eval_per_marker)
     invariant_generator = ModelFactory.create(
         cfg.models, system_prompt, user_prompt_template
     )
     logger.info(f"Run name: {invariant_generator.get_run_name()}")
     logger.info(f"Display name: {invariant_generator.get_display_name()}")
-    logger.info(f"Evaluating per marker: {eval_per_marker}")
+    logger.info(f"Evaluating per marker: {cfg.eval_per_marker}")
 
     # Make Weave UI names unique per trial when running multiple evaluations
     weave_display_name = invariant_generator.get_run_name()
@@ -181,7 +178,7 @@ def main(cfg: DictConfig):
     )
 
     preprocess_hook = functools.partial(
-        preprocess_for_model, eval_per_marker=eval_per_marker
+        preprocess_for_model, eval_per_marker=cfg.eval_per_marker
     )
     
     evaluation = Evaluation(
@@ -216,7 +213,7 @@ def main(cfg: DictConfig):
         logger.info(f"Summary saved to: {output_path}")
    
 if __name__ == "__main__":
-    logger.info("Starting VBS evaluation...")
+    logger.info("Starting evaluation...")
     main()
 
 # Example usage:
