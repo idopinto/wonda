@@ -11,9 +11,9 @@ import json
 import re
 from typing import Optional
 
-from src.preprocess.predicate import Predicate
+from src.preprocess.property import Property
 
-def parse_model_answer(raw_model_answer: str) -> Predicate:
+def parse_model_answer(raw_model_answer: str) -> Property:
     """
     Parse model answer string to json and extract marker and content.
     
@@ -37,7 +37,7 @@ def parse_model_answer(raw_model_answer: str) -> Predicate:
     if "marker" in json_candidate and "content" in json_candidate:
         marker = json_candidate["marker"]
         content = json_candidate["content"]
-        return Predicate(content=content, marker_name=marker)
+        return Property(content=content, marker_name=marker)
     else:
         raise ValueError(f"Failed to parse model answer: {json_str}. model answer must contain 'marker' and 'content' fields")
 
@@ -92,8 +92,8 @@ def syntactic_validation(content: str) -> bool:
         print(f"Warning: Failed to parse predicate '{content}': {e}")
         return False
 
-def validate_model_answer(raw_model_answer: str, target_marker: Optional[str] = None) -> tuple[Predicate, dict]:
-    parsed_model_answer: Optional[Predicate] = None
+def validate_model_answer(raw_model_answer: str, target_marker: Optional[str] = None) -> tuple[Property, dict]:
+    parsed_model_answer: Optional[Property] = None
     is_valid_dict = {
         "valid_json_format": True,
         "valid_content": False,

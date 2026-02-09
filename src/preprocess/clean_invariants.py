@@ -30,7 +30,7 @@ def parse_invariant_expr(
     Notes:
     - This is **syntactic** parsing only; identifiers don't need to be declared.
     - We parse by wrapping the expression inside a dummy function, similar to
-      `Program._parse_expr` in `src/preprocess/program.py`.
+      `AstProgram._parse_expr` in `src/preprocess/ast_program.py`.
     - If parsing fails, returns `None` (callers should fall back to the original string).
     """
     expr_src = (expr_src or "").strip()

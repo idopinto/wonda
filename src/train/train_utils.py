@@ -5,7 +5,7 @@ import torch
 from datasets import Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.preprocess.program import Program as AstProgram
+from src.preprocess.ast_program import AstProgram
 
 logger = logging.getLogger(__name__)
 

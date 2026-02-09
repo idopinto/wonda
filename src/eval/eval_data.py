@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from datasets import load_dataset
 
-from src.preprocess.program import Program as AstProgram
+from src.preprocess.ast_program import AstProgram
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ def preprocess_example(example: dict) -> dict:
 
     Returns an AST-based Program that already ran .process(), so it has:
     - llm_code containing INVARIANT_MARKER_k and the target assert at its original location
-    - target assertion stored as Predicate(marker_name=TARGET_ASSERT_MARKER)
+    - target assertion stored as Property(marker_name=TARGET_ASSERT_MARKER)
     """
     code = str(example["original_program"])
     program = AstProgram().from_code(code)

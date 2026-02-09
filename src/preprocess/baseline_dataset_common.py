@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from configs import global_config as GC
 from src.verifiers.uautomizer_runlim import UAutomizerVerifier
-from src.preprocess.program import Program as AstProgram
+from src.preprocess.ast_program import AstProgram
 
 # logging configuration
 logging.basicConfig(

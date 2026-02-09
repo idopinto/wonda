@@ -1,3 +1,9 @@
+"""AST-based C program preprocessor and marker-based instrumentation.
+
+Parses SV-COMP style C programs, inserts INVARIANT_MARKER_k() calls at loop
+heads, replaces the target assertion with TARGET_ASSERT_MARKER(), and emits
+both verifier-facing and LLM-facing code variants.
+"""
 from __future__ import annotations
 
 import copy
@@ -10,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pycparser import c_ast, c_generator, c_parser
 
-from src.preprocess.predicate import Predicate
+from src.preprocess.property import Property
 
 PATCH = (
     "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n"
@@ -137,7 +143,7 @@ class _DeclarationPruner(c_ast.NodeVisitor):
         return False
 
 
-class Program:
+class AstProgram:
     """
     AST-based preprocessor + marker-based instrumentation.
 
@@ -164,18 +170,18 @@ class Program:
         self.available_markers: List[str] = []
 
         # Public API compatibility: one "target" assertion stored here
-        self.assertions: List[Predicate] = []
-        self.lemmas: List[Predicate] = []  # reserved (not used in this AST pipeline)
+        self.assertions: List[Property] = []
+        self.lemmas: List[Property] = []  # reserved (not used in this AST pipeline)
 
         self.parser = c_parser.CParser()
         self.generator = c_generator.CGenerator()
 
-    def from_file_path(self, input_path: Path) -> "Program":
+    def from_file_path(self, input_path: Path) -> "AstProgram":
         self.input_path = input_path
         self.code = input_path.read_text().strip()
         return self
 
-    def from_code(self, code: str) -> "Program":
+    def from_code(self, code: str) -> "AstProgram":
         self.code = code.strip()
         return self
 
@@ -213,7 +219,6 @@ class Program:
         assert self.pp_code is not None
 
         # Parse and prune declarations
-        # print("PP CODE:", self.pp_code)
         self.ast = self.parser.parse(self.pp_code)
         _DeclarationPruner(
             functions_to_remove=functions_to_remove, remove_externs=True
@@ -259,7 +264,7 @@ class Program:
 
         return self.pp_code, self.llm_code
 
-    def get_target_assert(self) -> Predicate:
+    def get_target_assert(self) -> Property:
         return self.assertions[0]
 
     def get_available_markers(self) -> List[str]:
@@ -295,7 +300,7 @@ class Program:
                     return stmt
                 if _is_call_named(stmt, "assert"):
                     program_self.assertions.append(
-                        Predicate(
+                        Property(
                             content=program_self._extract_first_arg_as_text(stmt),
                             marker_name=TARGET_ASSERT_MARKER,
                         )
@@ -464,8 +469,8 @@ class Program:
 
     def get_program_with_assertion(
         self,
-        predicate: Optional[Predicate],
-        assumptions: List[Predicate],
+        predicate: Optional[Property],
+        assumptions: List[Property],
         for_llm: bool,
         preserve_predicate_format: bool = True,
     ) -> str:
@@ -573,32 +578,32 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python -m src.preprocess.program <file.c>")
+        print("Usage: python -m src.preprocess.ast_program <file.c>")
         raise SystemExit(2)
 
     path = sys.argv[1]
-    p = Program().from_file_path(Path(path))
+    p = AstProgram().from_file_path(Path(path))
     pp, llm = p.process(print_ast=True)
     print("----- PP (no patch) -----")
     print(pp)
-    # print("----- LLM (nondet->rand) -----")
-    # print(llm)
+    print("----- LLM (nondet->rand) -----")
+    print(llm)
 
-    # predicate = Predicate(content="x > 0", marker_name="INVARIANT_MARKER_1")
-    # assumptions = []
-    # program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
-    # print("----- Program -----")
-    # print(program)
+    predicate = Property(content="x > 0", marker_name="INVARIANT_MARKER_1")
+    assumptions = []
+    program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
+    print("----- Program -----")
+    print(program)
 
-    # predicate = p.get_target_assert()
-    # print("----- Target Assert -----")
-    # print(predicate)
-    # assumptions = [
-    #     # Predicate(content="y > 0", marker_name="INVARIANT_MARKER_2"),
-    #     # Predicate(content="z > 0", marker_name="INVARIANT_MARKER_3"),
-    # ]
-    # program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
-    # print("----- Program -----")
-    # print(program)
-    # print("----- Available Markers -----")
+    predicate = p.get_target_assert()
+    print("----- Target Assert -----")
+    print(predicate)
+    assumptions = [
+        # Property(content="y > 0", marker_name="INVARIANT_MARKER_2"),
+        # Property(content="z > 0", marker_name="INVARIANT_MARKER_3"),
+    ]
+    program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
+    print("----- Program -----")
+    print(program)
+    print("----- Available Markers -----")
     print(p.get_available_markers())

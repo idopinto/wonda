@@ -14,7 +14,7 @@ import torch
 import weave
 
 from src.eval.models.model_utils import load_hf_model
-from src.preprocess.program import Program
+from src.preprocess.ast_program import AstProgram
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class InvariantGeneratorOssModel(weave.Model):
 
     @weave.op
     def predict(
-        self, program: Program, target_marker: Optional[str] = None, **_: Any
+        self, program: AstProgram, target_marker: Optional[str] = None, **_: Any
     ) -> Dict:
         """
         Generate a candidate invariant for a given program.

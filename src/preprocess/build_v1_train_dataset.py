@@ -44,7 +44,8 @@ from tqdm import tqdm
 
 from configs import global_config as GC
 from src.preprocess.clean_invariants import clean_invariant
-from src.preprocess.program import Predicate, Program
+from src.preprocess.ast_program import AstProgram
+from src.preprocess.property import Property
 from src.eval.validate import syntactic_validation
 from src.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
 
@@ -87,7 +88,7 @@ class InvariantContext:
     inv_mode: str  # "raw" or "cleaned"
     baseline_decision: str
     baseline_timing: float
-    program: Program
+    program: AstProgram
     original_program: str
 
 
@@ -142,7 +143,7 @@ def is_trivial_invariant(inv: str) -> bool:
 def verify_invariant(
     verifier: UAutomizerVerifier,
     cleaned_invariant: str,
-    program: Program,
+    program: AstProgram,
     marker: str,
     baseline_decision: str,
     baseline_timing: float,
@@ -150,7 +151,7 @@ def verify_invariant(
 ) -> QualityGrade:
     """Verify a cleaned invariant (correctness + usefulness in parallel)."""
     result = QualityGrade()
-    predicate = Predicate(content=cleaned_invariant, marker_name=marker)
+    predicate = Property(content=cleaned_invariant, marker_name=marker)
 
     # Syntactic validation
     result.is_valid = syntactic_validation(predicate.content)
@@ -458,7 +459,7 @@ def build_v1_train_dataset(
             continue
 
         # Parse program once per entry
-        program = Program().from_code(original_program)
+        program = AstProgram().from_code(original_program)
         program.process(print_ast=False)
 
         for j, inv in enumerate(entry["invariants"]):

@@ -12,7 +12,7 @@ from src.eval.validate import validate_model_answer
 import weave  # type: ignore[import-not-found]
 
 from src.eval.decision_procedure import DecisionProcedure
-from src.preprocess.program import Program
+from src.preprocess.ast_program import AstProgram
 from src.verifiers.uautomizer_runlim import UAutomizerVerifier
 
 
@@ -77,8 +77,8 @@ class InvGenScorer(weave.Scorer):
         Returns:
             Dict containing all evaluation metrics and artifacts.
         """
-        # Create Program object from raw code
-        program = Program().from_code(original_program)
+        # Create AstProgram object from raw code
+        program = AstProgram().from_code(original_program)
         program.process(print_ast=False)
 
         raw_model_answer = output.get("answer", "")

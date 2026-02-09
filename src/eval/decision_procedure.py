@@ -7,8 +7,8 @@ from typing import Optional
 
 import weave  # type: ignore[import-not-found]
 
-from src.preprocess.predicate import Predicate
-from src.preprocess.program import Program
+from src.preprocess.property import Property
+from src.preprocess.ast_program import AstProgram
 from src.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
 
 logger = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class DecisionProcedureReport:
     final_decision: str = "UNKNOWN"
     decision_rule: str = ""
-    target_assert: Optional[Predicate] = None
-    candidate_invariant: Optional[Predicate] = None
+    target_assert: Optional[Property] = None
+    candidate_invariant: Optional[Property] = None
     correctness_report: Optional[VerifierCallReport] = None
     usefulness_report: Optional[VerifierCallReport] = None
     verification_time: float = 0.0  # Only verification time (without model latency)
@@ -58,7 +58,7 @@ class DecisionProcedure:
     def __init__(
         self,
         verifier: UAutomizerVerifier,
-        program: Program,
+        program: AstProgram,
         code_dir: Path,
         timeout: float,
     ):
@@ -92,7 +92,7 @@ class DecisionProcedure:
 
     @weave.op()
     def decide(
-        self, candidate_invariant: Predicate
+        self, candidate_invariant: Property
     ) -> DecisionProcedureReport:
 
         program_for_correctness = self.program.get_program_with_assertion(

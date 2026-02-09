@@ -14,7 +14,7 @@ import weave
 from openai.types.chat import ChatCompletion
 from transformers import AutoTokenizer
 
-from src.preprocess.program import Program
+from src.preprocess.ast_program import AstProgram
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class InvariantGeneratorVllmModel(weave.Model):
 
     @weave.op
     def predict(
-        self, program: Program, target_marker: Optional[str] = None, **_: Any
+        self, program: AstProgram, target_marker: Optional[str] = None, **_: Any
     ) -> Dict:
         """
         Generate a candidate invariant for a given program.

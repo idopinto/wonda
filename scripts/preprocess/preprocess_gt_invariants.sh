@@ -56,7 +56,7 @@ echo "=========================================="
 echo ""
 
 # Run ground truth invariants preprocessor
-uv run -m src.preprocess.preprocess_gt_invariants "$@"
+uv run -m src.preprocess.preprocess_gt_invariants_parallel "$@"
 
 echo ""
 echo "=========================================="

@@ -12,7 +12,7 @@ if str(project_root) not in sys.path:
 
 from src.utils.rewriter import Rewriter
 from src.utils.program import Program
-from src.utils.predicate import Predicate
+from src.preprocess.property import Property
 from src.eval.model import Model
 import os
 
@@ -73,7 +73,7 @@ def main():
         print("="*80)
         print("RESULT:")
         print("="*80)
-        print(f"✓ Generated Predicate:")
+        print(f"✓ Generated Property:")
         print(f"  Content: {result.content}")
         print(f"  Line number: {result.line_number}")
         

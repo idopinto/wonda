@@ -42,7 +42,8 @@ T = TypeVar("T")
 
 from configs import global_config as GC
 from src.preprocess.clean_invariants import clean_invariant
-from src.preprocess.program import Predicate, Program
+from src.preprocess.ast_program import AstProgram
+from src.preprocess.property import Property
 from src.eval.validate import syntactic_validation
 from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 
@@ -128,7 +129,7 @@ class InvariantContext:
     invariant_to_process: str
     baseline_decision: str
     baseline_timing: float
-    program: Program
+    program: AstProgram
     original_program: str
 
 # =============================================================================
@@ -294,7 +295,7 @@ def generate_candidates(
     cfg: DictConfig,
 ) -> list[CandidateInvariant]:
     """Generate N simplified invariant candidates using LLM."""
-    program = Program().from_code(ctx.original_program)
+    program = AstProgram().from_code(ctx.original_program)
     program.process(print_ast=False)
     
     user_prompt = cfg.prompts.simplify_invariant_user_prompt.format(
@@ -340,14 +341,14 @@ def generate_candidates(
 def verify_candidate(
     verifier: UAutomizerVerifier,
     candidate: CandidateInvariant,
-    program: Program,
+    program: AstProgram,
     marker: str,
     baseline_decision: str,
     baseline_timing: float,
 ) -> CandidateQualityGrade:
     """Verify a single candidate (correctness + usefulness in parallel)."""
     result = CandidateQualityGrade()
-    predicate = Predicate(content=candidate.content, marker_name=marker)
+    predicate = Property(content=candidate.content, marker_name=marker)
     
     # Syntactic validation
     result.is_valid = syntactic_validation(predicate.content)
@@ -413,7 +414,7 @@ def deduplicate_candidates(candidates: list[CandidateInvariant]) -> list[Candida
 def verify_candidates_parallel(
     verifier: UAutomizerVerifier,
     candidates: list[CandidateInvariant],
-    program: Program,
+    program: AstProgram,
     marker: str,
     baseline_decision: str,
     baseline_timing: float,
@@ -622,7 +623,7 @@ def preprocess_gt_invariants_parallel(
             continue
         
         # Parse program once per entry
-        program = Program().from_code(original_program)
+        program = AstProgram().from_code(original_program)
         program.process(print_ast=False)
         
         for j, inv in enumerate(entry["invariants"]):

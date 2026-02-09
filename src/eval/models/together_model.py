@@ -13,7 +13,7 @@ import weave
 from dotenv import load_dotenv
 from together import Together
 
-from src.preprocess.program import Program
+from src.preprocess.ast_program import AstProgram
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class InvariantGeneratorTogetherModel(weave.Model):
 
     @weave.op
     def predict(
-        self, program: Program, target_marker: Optional[str] = None, **_: Any
+        self, program: AstProgram, target_marker: Optional[str] = None, **_: Any
     ) -> Dict:
         """
         Generate a candidate invariant for a given program.
