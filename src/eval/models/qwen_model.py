@@ -27,10 +27,11 @@ logger = logging.getLogger(__name__)
 
 class InvariantGeneratorQwenModel(weave.Model):
     """
-    Weave Model for generating loop invariants.
+    Local HuggingFace Qwen model for loop invariant generation.
 
-    This model takes a C program with marked assertion points and generates
-    candidate invariants that can accelerate traditional verifiers.
+    Given a C program with INVARIANT_MARKER annotations, generates candidate
+    loop invariants. Supports base and LoRA fine-tuned checkpoints, with
+    optional chain-of-thought reasoning (thinking mode).
     """
 
     model_cfg: dict
