@@ -12,14 +12,8 @@ from typing import Any, Dict, Optional
 
 import torch
 import weave
-from peft import PeftModel
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    PreTrainedModel,
-    PreTrainedTokenizerBase,
-)
 
+from src.eval.models.model_utils import load_hf_model
 from src.preprocess.program import Program
 
 logger = logging.getLogger(__name__)
@@ -51,7 +45,9 @@ class InvariantGeneratorQwenModel(weave.Model):
         """Initialize model after Pydantic model creation."""
         self.base_model_id = self.model_cfg["base_model"]["id"]
         self.ft_model_id = self.model_cfg["ft_model"]["id"]
-        self.tokenizer, self.model = self._load_hf_model()
+        self.tokenizer, self.model = load_hf_model(
+            self.base_model_id, self.ft_model_id, self.eval_ft_model, self.model_cfg
+        )
 
     @weave.op
     def predict(
@@ -123,46 +119,6 @@ class InvariantGeneratorQwenModel(weave.Model):
                 answer = assistant_match.group(1).strip()
 
         return {"reasoning": reasoning, "answer": answer}
-
-    def _load_hf_model(self) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
-        """Load a trained model and tokenizer based on configuration.
-
-        Returns:
-            Tuple of (tokenizer, model) ready for inference.
-        """
-        tokenizer = AutoTokenizer.from_pretrained(
-            self.base_model_id, token=True
-        )
-        model_kwargs = dict(
-            attn_implementation=self.model_cfg["base_model"].get("attn_implementation", "eager"),
-            dtype=torch.bfloat16,
-            use_cache=True,
-            device_map="auto",
-        )
-
-        if self.eval_ft_model:
-            if not self.model_cfg["ft_model"]["is_lora"]:
-                logger.info(f"Loading non-LoRA-finetuned model from {self.ft_model_id}")
-                model = AutoModelForCausalLM.from_pretrained(
-                    self.ft_model_id, **model_kwargs, token=True
-                )
-            else:
-                logger.info(f"Loading base model from {self.base_model_id}")
-                model = AutoModelForCausalLM.from_pretrained(
-                    self.base_model_id, **model_kwargs, token=True
-                )
-                logger.info(f"Loading LoRA-finetuned model from {self.ft_model_id}")
-                model = PeftModel.from_pretrained(model, self.ft_model_id, token=True)
-                model = model.merge_and_unload()
-                logger.info("Merged and unloaded")
-        else:
-            logger.info(f"Loading base model from {self.base_model_id}")
-            model = AutoModelForCausalLM.from_pretrained(
-                self.base_model_id, **model_kwargs, token=True
-            )
-
-        model.eval()
-        return tokenizer, model
 
     def get_display_name(self) -> str:
         """Return the display name for this model configuration."""
