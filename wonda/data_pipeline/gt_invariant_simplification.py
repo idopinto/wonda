@@ -564,6 +564,18 @@ def process_non_verbose(
     return []
 
 
+def is_degenerate_invariant(inv: str) -> bool:
+    """Check if an invariant is degenerate (0, 1, true, false).
+
+    These are UAutomizer artifacts that carry no useful information and
+    should be skipped before spending LLM / verifier budget on them.
+    """
+    if not inv:
+        return True
+    normalized = inv.strip().lower().replace("(", "").replace(")", "").replace(" ", "").replace("!", "")
+    return normalized in {"0", "1", "true", "false", ""}
+
+
 def process_invariant(
     ctx: InvariantContext,
     client: Together,
@@ -573,18 +585,32 @@ def process_invariant(
     """Process a single invariant (verbose or non-verbose)."""
     if not cfg.pipeline.simplify:
         return []
-    
+
     if is_verbose_invariant(ctx.invariant_to_process, cfg):
-        return process_verbose(ctx, client, verifier, cfg)
+        results = process_verbose(ctx, client, verifier, cfg)
     else:
-        return process_non_verbose(ctx, verifier)
+        results = process_non_verbose(ctx, verifier)
+
+    # Filter out entries where the final invariant is degenerate (0, 1, true, false).
+    # The LLM may simplify a verbose invariant down to a trivial constant.
+    filtered = []
+    for entry in results:
+        inv = entry.get("gt_invariant", {}).get("target_invariant", "")
+        if is_degenerate_invariant(inv):
+            logger.info(
+                f"Entry {ctx.entry_idx}, Inv {ctx.inv_idx}: "
+                f"dropping degenerate result '{inv}'"
+            )
+        else:
+            filtered.append(entry)
+    return filtered
 
 
 # =============================================================================
 # Main Pipeline
 # =============================================================================
 
-def preprocess_gt_invariants_parallel(
+def run_wonda(
     data: list[dict[str, Any]],
     client: Together,
     cfg: DictConfig,
@@ -789,45 +815,11 @@ def load_existing_progress(output_path: Path) -> list[dict[str, Any]]:
     return []
 
 
-# =============================================================================
-# Entry Point
-# =============================================================================
-
 def load_data(path: Path, limit: int = -1) -> list[dict[str, Any]]:
-    """Load JSON data with optional limit."""
+    """Load training data JSON, optionally capped to *limit* entries."""
     with open(path) as f:
         data = json.load(f)
     if limit > 0:
         data = data[:limit]
     logger.info(f"Loaded {len(data)} entries from {path}")
     return data
-
-
-@hydra.main(
-    version_base=None,
-    config_path="../../configs/preprocess",
-    config_name="preprocess_gt_invariants_parallel",
-)
-def main(cfg: DictConfig) -> None:
-    """Main entry point."""
-    logger.info(f"Configuration:\n{OmegaConf.to_yaml(cfg)}")
-    
-    verifier = UAutomizerVerifier(
-        uautomizer_path=GC.UAUTOMIZER_PATHS[cfg.verifier.version],
-        property_file_path=GC.PROPERTIES_DIR / cfg.verifier.property,
-        arch=cfg.verifier.arch,
-        timeout_seconds=cfg.verifier.timeout,
-        version=cfg.verifier.version,
-    )
-    
-    data = load_data(Path(cfg.dataset.name), cfg.dataset.limit)
-    
-    if cfg.weave.get("use_weave", False):
-        weave.init(f"{cfg.weave.entity}/{cfg.weave.project_name}")
-    
-    client = Together()
-    preprocess_gt_invariants_parallel(data, client, cfg, verifier)
-
-
-if __name__ == "__main__":
-    main()

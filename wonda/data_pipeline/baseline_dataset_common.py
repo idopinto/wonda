@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Common functions for building baseline datasets (both train and eval)."""
+"""Shared utilities for building baseline datasets (train and eval).
+
+Runs UAutomizer on each program in a benchmark suite, collects timing and
+invariant data, and packages the results into a HuggingFace DatasetDict
+split by difficulty (easy / hard).
+"""
 
 import json
 import logging
@@ -8,197 +13,148 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import yaml
 from datasets import Dataset, DatasetDict
 from omegaconf import DictConfig
-from pycparser import c_parser
 from tqdm import tqdm
 
 from configs import global_config as GC
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
 from wonda.core.ast_program import AstProgram
+from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
 
-# logging configuration
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-parser = c_parser.CParser()
 
+
+# ---------------------------------------------------------------------------
+# Program discovery
+# ---------------------------------------------------------------------------
 
 def fetch_original_programs(
     original_programs_dir: Path, prefix: str = "", limit: int = -1
-) -> List[Path]:
-    """
-    Get all C files in the original programs directory.
-    Args:
-        original_programs_dir: Path to the original programs directory.
-        prefix: Prefix to filter files by (used for testing specific files).
-        limit: Limit the number of files to process. (limit for testing)
-    Returns:
-        List[Path]: List of C files.
-    """
+) -> list[Path]:
+    """Return ``*.c`` files from *original_programs_dir*, optionally filtered."""
     c_files = list(original_programs_dir.glob(f"{prefix}*.c"))
     if not c_files:
-        logger.error(f"Error: No C files found in {original_programs_dir}")
+        logger.error(f"No C files found in {original_programs_dir}")
         sys.exit(1)
-    total_files = len(c_files)
 
-    logger.info(f"Found {total_files} C files in {original_programs_dir}")
+    logger.info(f"Found {len(c_files)} C files in {original_programs_dir}")
     if limit >= 0:
         c_files = c_files[:limit]
-        logger.info(f"Processing first {len(c_files)} files (--limit={limit})")
+        logger.info(f"Processing first {len(c_files)} files (limit={limit})")
     return c_files
 
 
-def extract_invariants_from_log(log_file: Path) -> List[Dict[str, Any]]:
-    """
-    Extract invariants from UAutomizer log file. (2023 version, doesn't have witness file)
-    Args:
-        log_file: Path to the UAutomizer log file.
-    Returns:
-        List[Dict[str, Any]]: List of invariants.
-    """
+# ---------------------------------------------------------------------------
+# Invariant extraction (version-dependent)
+# ---------------------------------------------------------------------------
+
+def extract_invariants_from_log(log_file: Path) -> list[dict[str, Any]]:
+    """Extract invariants from a UAutomizer v23 log file."""
     try:
-        invariants = []
+        invariants: list[dict[str, Any]] = []
         with open(log_file, "r", encoding="utf-8", errors="ignore") as logf:
             for line in logf:
-                if "InvariantResult [Line:" in line:
-                    idx1 = line.find("InvariantResult [Line:")
-                    idx2 = line.find("]:", idx1)
-                    if idx1 != -1 and idx2 != -1:
-                        try:
-                            line_num_str = line[
-                                idx1 + len("InvariantResult [Line:") : idx2
-                            ]
-                            line_num = int(line_num_str.strip())
-                        except Exception:
-                            continue
-                        next_line = next(logf, None)
-                        if next_line is not None:
-                            invariant_tag = "Derived loop invariant:"
-                            inv_idx = next_line.find(invariant_tag)
-                            if inv_idx != -1:
-                                inv_val = next_line[
-                                    inv_idx + len(invariant_tag) :
-                                ].strip()
-                                if inv_val:
-                                    invariants.append(
-                                        {"line": line_num, "invariant": inv_val}
-                                    )
+                if "InvariantResult [Line:" not in line:
+                    continue
+                idx1 = line.find("InvariantResult [Line:")
+                idx2 = line.find("]:", idx1)
+                if idx1 == -1 or idx2 == -1:
+                    continue
+                try:
+                    line_num = int(
+                        line[idx1 + len("InvariantResult [Line:") : idx2].strip()
+                    )
+                except ValueError:
+                    continue
+                next_line = next(logf, None)
+                if next_line is None:
+                    continue
+                tag = "Derived loop invariant:"
+                inv_idx = next_line.find(tag)
+                if inv_idx != -1:
+                    inv_val = next_line[inv_idx + len(tag) :].strip()
+                    if inv_val:
+                        invariants.append({"line": line_num, "invariant": inv_val})
         return invariants
     except Exception as e:
         logger.warning(f"Could not extract invariants from {log_file}: {e}")
         return []
 
 
-def extract_invariants_from_witness(witness_yml: Path) -> List[Dict[str, Any]]:
-    """
-    Extract invariants from UAutomizer witness.yml file. (2024+ version, has witness files)
-    Pattern to match in the witness file:
-      - InvariantResult [Line: X]: Loop Invariant
-        Derived loop invariant: <invariant_text>
-    Args:
-        witness_yml: Path to the UAutomizer witness.yml file.
-    Returns:
-        List[Dict[str, Any]]: List of invariants.
-
-    """
+def extract_invariants_from_witness(witness_yml: Path) -> list[dict[str, Any]]:
+    """Extract invariants from a UAutomizer v24+ witness YAML file."""
     try:
-        invariants = []
+        invariants: list[dict[str, Any]] = []
         with open(witness_yml, "r", encoding="utf-8", errors="ignore") as f:
             yml_data = yaml.safe_load(f)
 
-        content = yml_data[0]["content"]
-        for invariant_dict in content:
-            invariant = invariant_dict["invariant"]
-            if invariant.get("type") == "loop_invariant":
-                location = invariant.get("location")
-                line = location.get("line")
-                value = invariant.get("value")
-                if line is not None and value is not None:
-                    invariants.append({"line": line, "invariant": value})
+        for invariant_dict in yml_data[0]["content"]:
+            inv = invariant_dict["invariant"]
+            if inv.get("type") != "loop_invariant":
+                continue
+            location = inv.get("location")
+            line = location.get("line")
+            value = inv.get("value")
+            if line is not None and value is not None:
+                invariants.append({"line": line, "invariant": value})
         return invariants
     except Exception as e:
         logger.warning(f"Could not extract invariants from {witness_yml}: {e}")
         return []
 
 
+# ---------------------------------------------------------------------------
+# AST helpers
+# ---------------------------------------------------------------------------
+
 def get_ast_program(program_path: Path) -> AstProgram:
+    """Parse and process a C program into an ``AstProgram``."""
     ast_program = AstProgram().from_file_path(program_path)
     ast_program.process(print_ast=False)
     return ast_program
 
 
 def map_invariant_line_to_marker(
-    invariant_line: int, program_code: str, available_markers: List[str]
+    invariant_line: int, program_code: str, available_markers: list[str]
 ) -> Optional[str]:
+    """Map a UAutomizer invariant line number to the nearest loop marker.
+
+    Markers are inserted at the start of loop bodies.  Returns the marker
+    whose line is closest to (and ``<=``) *invariant_line*, or ``None`` if
+    no markers exist.
     """
-    Map a UAutomizer invariant line number to the corresponding loop marker.
-
-    UAutomizer reports invariants with line numbers from the original program.
-    Markers are inserted at the start of loop bodies. This function finds which
-    marker is closest to (or at) the given line number.
-
-    Args:
-        invariant_line: Line number from UAutomizer invariant (1-indexed)
-        program_code: The program code with markers (e.g., program_for_llm or marked_code_from_ast)
-        available_markers: List of available marker names (e.g., ["INVARIANT_MARKER_1", "INVARIANT_MARKER_2"])
-
-    Returns:
-        Marker name if found, None otherwise
-    """
-
-    # Find all markers and their line numbers in the program
-    marker_positions = {}
+    marker_positions: dict[str, int] = {}
     lines = program_code.split("\n")
 
     for marker in available_markers:
         if marker == "TARGET_ASSERT_MARKER":
-            continue  # Skip target marker
-        # Find all occurrences of this marker
+            continue
         for line_idx, line in enumerate(lines, start=1):
-            if marker in line:
-                # Use the first occurrence (markers are at loop starts)
-                if marker not in marker_positions:
-                    marker_positions[marker] = line_idx
+            if marker in line and marker not in marker_positions:
+                marker_positions[marker] = line_idx
 
     if not marker_positions:
         return None
 
-    # Find the marker that is closest to (and <=) the invariant line
-    # Markers are inserted at loop starts, so invariant should be >= marker line
+    # Prefer the marker closest to (and <=) the invariant line.
     candidates = {
-        marker: line_num
-        for marker, line_num in marker_positions.items()
-        if line_num <= invariant_line
+        m: pos for m, pos in marker_positions.items() if pos <= invariant_line
     }
-
     if not candidates:
-        # If no marker is before the invariant line, use the first marker
-        # (invariant might be at the very start)
         return min(marker_positions.items(), key=lambda x: x[1])[0]
-
-    # Return the marker with the highest line number that's still <= invariant_line
     return max(candidates.items(), key=lambda x: x[1])[0]
 
 
 def get_invariant_with_marker(
-    invariant: Dict[str, Any], program_code: str, available_markers: List[str]
-) -> Dict[str, Any]:
-    """
-    Add marker information to a UAutomizer invariant.
-
-    Args:
-        invariant: Dict with "line" and "invariant" keys
-        program_code: Program code with markers
-        available_markers: List of available marker names
-
-    Returns:
-        Dict with added "marker" key, or original dict if no match found
-    """
+    invariant: dict[str, Any], program_code: str, available_markers: list[str]
+) -> dict[str, Any]:
+    """Return a copy of *invariant* with an added ``marker`` key."""
     marker = map_invariant_line_to_marker(
         invariant["line"], program_code, available_markers
     )
@@ -208,91 +164,90 @@ def get_invariant_with_marker(
     return result
 
 
+# ---------------------------------------------------------------------------
+# Single-program verification
+# ---------------------------------------------------------------------------
+
 def process_program(
     cfg: DictConfig, program_path: Path, verifier: UAutomizerVerifier
-) -> Dict[str, Any]:
-    """
-    Process a single C program with UAutomizer.
+) -> dict[str, Any]:
+    """Run UAutomizer on a single C program and collect results.
 
-    Returns:
-        Dictionary with timing and invariant information
+    Returns a dict with timing, decision, and (optionally) extracted
+    invariant information, or ``{}`` on failure.
     """
     try:
         ast_program = get_ast_program(program_path)
     except Exception as e:
         logger.error(f"Error getting AST program: {e}")
         return {}
+
     if len(ast_program.assertions) == 0:
         logger.error("No target assertion found in the program")
         return {}
-    elif len(ast_program.assertions) > 1:
+    if len(ast_program.assertions) > 1:
         logger.error("Multiple target assertions found in the program")
         return {}
+
     target_assert = ast_program.get_target_assert()
     program_for_baseline = ast_program.get_program_with_assertion(
         predicate=target_assert, assumptions=[], for_llm=False
     )
-    result = {
+
+    result: dict[str, Any] = {
         "file": program_path.name,
         "original_program": ast_program.code,
         "program_for_baseline": program_for_baseline,
         "program_for_llm": ast_program.llm_code,
         "baseline_decision": "UNKNOWN",
         "optional_details": [],
-        "timings": {
-            "all": [],
-            "median": 0.0,
-        },  # Store all timings as list to handle duplicates
+        "timings": {"all": [], "median": 0.0},
         "runlim": [],
-        # "program_with_all_markers": ast_program.marked_code_from_ast,
-        # "markers": ast_program.get_available_markers(),
     }
-    timing_decision_pairs = []  # List of (time, decision) tuples
+
+    timing_decision_pairs: list[tuple[float, str]] = []
+
     with tempfile.TemporaryDirectory(
         prefix=f"baseline_{program_path.stem}_"
     ) as temp_reports_dir:
         temp_reports_path = Path(temp_reports_dir)
-        program_for_baseline_path = temp_reports_path / f"base_{program_path.stem}.c"
-        program_for_baseline_path.write_text(program_for_baseline)
-        # print("program_for_baseline")
-        # print(program_for_baseline)
-        for i in tqdm(
+        baseline_path = temp_reports_path / f"base_{program_path.stem}.c"
+        baseline_path.write_text(program_for_baseline)
+
+        for _ in tqdm(
             range(cfg.verifier.k),
             desc=f"Running UAutomizer {verifier.version}",
             leave=False,
         ):
-            logger.info(f"Verifying the program: {program_for_baseline_path.name}")
+            logger.info(f"Verifying: {baseline_path.name}")
             report = verifier.verify(
-                program_path=program_for_baseline_path,
+                program_path=baseline_path,
                 reports_dir=temp_reports_path,
                 timeout_seconds=cfg.verifier.timeout,
             )
             timing_decision_pairs.append((report.time_taken, report.decision))
             logger.info(
-                f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds"
+                f"Report: {report.decision} ({report.decision_reason}) "
+                f"in {report.time_taken}s"
             )
             result["timings"]["all"].append(report.time_taken)
             result["runlim"].append(report.to_dict().get("runlim", {}))
 
-        # Calculate median from all timing values (including duplicates)
+        # Determine median timing and corresponding decision.
         all_timings = result["timings"]["all"]
-        result["timings"]["median"] = statistics.median(all_timings)
+        median_time = statistics.median(all_timings)
+        result["timings"]["median"] = median_time
 
-        # Find the decision corresponding to the median time
-        # If median time appears multiple times, use the most common decision at that time
-        median_time = result["timings"]["median"]
         decisions_at_median = [
-            decision for time, decision in timing_decision_pairs if time == median_time
+            d for t, d in timing_decision_pairs if t == median_time
         ]
         if decisions_at_median:
-            # Use the most common decision at median time, or first if all same
             result["baseline_decision"] = max(
                 set(decisions_at_median), key=decisions_at_median.count
             )
         elif median_time >= cfg.verifier.timeout:
             result["baseline_decision"] = "TIMEOUT"
         else:
-            # Fallback: use decision from closest timing
             closest_pair = min(
                 timing_decision_pairs, key=lambda x: abs(x[0] - median_time)
             )
@@ -300,9 +255,8 @@ def process_program(
 
         result["optional_details"].append(report.decision_reason)
 
+        # Extract invariants from the last verifier run.
         if not cfg.processing.ignore_invariants:
-            # Extracting the invariant only from the last verifier run.
-            # prefix = "orig" if cfg.processing.verify_original_programs else "normalized"
             if verifier.version == "23":
                 log_file = temp_reports_path / f"base_{program_path.stem}.log"
                 invariants = extract_invariants_from_log(log_file)
@@ -312,42 +266,35 @@ def process_program(
                 )
                 invariants = extract_invariants_from_witness(witness_yml)
 
-            # Map invariants to markers
             available_markers = ast_program.get_available_markers()
-            # PATCH = (
-            # "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n"
-            # "void assume(int cond) { if (!cond) { abort(); } }\n"
-            # )
             program_with_markers = ast_program.marked_code_from_ast
-            # print(program_with_markers)
-            invariants_with_markers = [
+            result["invariants"] = [
                 get_invariant_with_marker(inv, program_with_markers, available_markers)
                 for inv in invariants
             ]
-            result["invariants"] = invariants_with_markers
 
     return result
 
 
+# ---------------------------------------------------------------------------
+# Full-suite baseline run
+# ---------------------------------------------------------------------------
+
 def run_uautomizer_as_baseline(
     cfg: DictConfig, verifier: UAutomizerVerifier, results_path: Path
-) -> List[Dict[str, Any]]:
-    """
-    Run UAutomizer as a baseline for the given configuration.
-    Args:
-        verifier: UAutomizerVerifier instance.
-        cfg: Hydra configuration.
-        results_path: Path to the results file.
-    Returns:
-        List[Dict[str, Any]]: List of results.
+) -> list[dict[str, Any]]:
+    """Run UAutomizer on every program in the configured dataset.
+
+    Results are incrementally written to *results_path* after each program.
     """
     original_programs_dir = GC.DATASET_DIR / cfg.dataset.type / "orig_programs"
     programs = fetch_original_programs(
         original_programs_dir, cfg.dataset.prefix, cfg.dataset.limit
     )
-    results = []
+    results: list[dict[str, Any]] = []
     start_time = time.time()
-    for i, program_path in enumerate(tqdm(programs, desc="Processing C programs")):
+
+    for program_path in tqdm(programs, desc="Processing C programs"):
         result = process_program(cfg=cfg, program_path=program_path, verifier=verifier)
         if result:
             median_time = result["timings"]["median"]
@@ -357,39 +304,44 @@ def run_uautomizer_as_baseline(
             results.append(result)
             with open(results_path, "w") as f:
                 json.dump(results, f, indent=2)
-    total_time = time.time() - start_time
-    logger.info(f"Total time: {total_time} seconds")
+
+    logger.info(f"Total time: {time.time() - start_time:.1f}s")
     return results
 
+
+# ---------------------------------------------------------------------------
+# HuggingFace dataset creation
+# ---------------------------------------------------------------------------
 
 def create_hf_base_dataset(
     results_path: Path, output_dir: Path, push_to_hub: bool = False
 ) -> DatasetDict:
-    """Create HF dataset from evaluation JSON. Optionally push to Hub."""
-    logger.info(f"Creating evaluation dataset from {results_path}")
+    """Create a HuggingFace DatasetDict from baseline evaluation JSON."""
+    logger.info(f"Creating dataset from {results_path}")
     with open(results_path, "r") as f:
         results = json.load(f)
-    logger.info(f"Loaded {len(results)} results")
-    filtered_results = [
+
+    filtered = [
         e for e in results if e["baseline_decision"] in {"TRUE", "FALSE", "TIMEOUT"}
     ]
     logger.info(
-        f"Filtered {len(results) - len(filtered_results)} results out of {len(results)} examples that had errors. kept {len(filtered_results)} results."
+        f"Kept {len(filtered)}/{len(results)} results "
+        f"(dropped {len(results) - len(filtered)} with errors)"
     )
-    results_dict = {
-        "id": [i + 1 for i in range(len(filtered_results))],
-        "file": [e["file"] for e in filtered_results],
-        "original_program": [f"{e['original_program']}" for e in filtered_results],
-        "program_for_baseline": [
-            f"{e['program_for_baseline']}" for e in filtered_results
-        ],
-        "baseline_decision": [e["baseline_decision"] for e in filtered_results],
-        "timings": [e["timings"]["all"] for e in filtered_results],
-        "median_timing": [e["timings"]["median"] for e in filtered_results],
-        "program_for_llm": [f"{e['program_for_llm']}" for e in filtered_results],
-        "split": [e["split"] for e in filtered_results],
+
+    results_dict: dict[str, list] = {
+        "id": list(range(1, len(filtered) + 1)),
+        "file": [e["file"] for e in filtered],
+        "original_program": [e["original_program"] for e in filtered],
+        "program_for_baseline": [e["program_for_baseline"] for e in filtered],
+        "baseline_decision": [e["baseline_decision"] for e in filtered],
+        "timings": [e["timings"]["all"] for e in filtered],
+        "median_timing": [e["timings"]["median"] for e in filtered],
+        "program_for_llm": [e["program_for_llm"] for e in filtered],
+        "split": [e["split"] for e in filtered],
     }
-    if "invariants" in filtered_results[0]:
+
+    if filtered and "invariants" in filtered[0]:
         results_dict["invariants"] = [
             [
                 {
@@ -399,8 +351,9 @@ def create_hf_base_dataset(
                 }
                 for inv in e.get("invariants", [])
             ]
-            for e in filtered_results
+            for e in filtered
         ]
+
     dataset = Dataset.from_dict(results_dict)
     easy = dataset.filter(lambda x: x["split"] == "easy")
     hard = dataset.filter(lambda x: x["split"] == "hard")

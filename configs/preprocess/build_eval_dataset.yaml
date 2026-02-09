@@ -1,6 +1,6 @@
 # Configuration for baseline evaluation dataset creation (AST-based)
 # Used by: wonda/data_pipeline/build_baseline_eval_dataset.py
-compute_node_type: "l40s" # "h200" or "l40s" or "cpu"
+# compute_node_type: "l40s" # "h200" or "l40s" or "cpu"
 # Dataset configuration
 dataset:
   type: "eval"  # Fixed to "eval" for this script

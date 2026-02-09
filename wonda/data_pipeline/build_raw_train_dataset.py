@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Build baseline training dataset using AST-based program processing."""
+"""Build the raw training dataset using UAutomizer.
+
+Runs UAutomizer on training programs, collects baseline results, then
+creates both a flat HF dataset and a per-location-task variant.
+
+Usage:
+    uv run -m wonda.data_pipeline.build_raw_train_dataset output.test_mode=true dataset.limit=1
+    uv run -m wonda.data_pipeline.build_raw_train_dataset verifier.k=1 output.push_to_hub=true
+"""
 
 import logging
 
@@ -7,15 +15,13 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from configs import global_config as GC
-from wonda.data_pipeline.create_sft_data import per_location_task
-from wonda.verifiers.uautomizer import UAutomizerVerifier
 from wonda.data_pipeline.baseline_dataset_common import (
-    run_uautomizer_as_baseline,
-    logger,
     create_hf_base_dataset,
+    logger,
+    run_uautomizer_as_baseline,
 )
+from wonda.verifiers.uautomizer import UAutomizerVerifier
 
-# logging configuration
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -27,49 +33,36 @@ logging.basicConfig(
     config_name="build_train_dataset",
 )
 def main(cfg: DictConfig):
-    """Main function for building training dataset."""
     logger.info(f"Configuration:\n{OmegaConf.to_yaml(cfg)}")
 
     test_suffix = "test" if cfg.output.test_mode else "full"
-    output_dir = (
-        GC.DATASET_DIR
-        / "train"
-        / f"invbench-train-uautomizer{cfg.verifier.version}-k{cfg.verifier.k}-{test_suffix}-raw"
-    )
+    output_dir = GC.DATASET_DIR / "train" / f"wonda-train-dataset-{test_suffix}-raw"
+    
+    # output_dir = (
+    #     GC.DATASET_DIR
+    #     / "train"
+    #     / f"wonda-train-uautomizer{cfg.verifier.version}"
+    #       f"-k{cfg.verifier.k}-{test_suffix}-raw"
+    # )
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / f"{output_dir.name}.json"
-    logger.info(f"Output directory: {output_dir}")
-    logger.info(f"Results path: {results_path}")
+    logger.info(f"Output: {output_dir}")
 
-    property_path = GC.PROPERTIES_DIR / cfg.verifier.property
     verifier = UAutomizerVerifier(
         uautomizer_path=GC.UAUTOMIZER_PATHS[cfg.verifier.version],
-        property_file_path=property_path,
+        property_file_path=GC.PROPERTIES_DIR / cfg.verifier.property,
         arch=cfg.verifier.arch,
         timeout_seconds=cfg.verifier.timeout,
         version=cfg.verifier.version,
     )
+
     run_uautomizer_as_baseline(cfg=cfg, verifier=verifier, results_path=results_path)
     create_hf_base_dataset(
         results_path=results_path,
         output_dir=output_dir,
         push_to_hub=cfg.output.push_to_hub,
     )
-    per_location_task_output_dir = (
-        output_dir
-        / f"invbench-train-uautomizer{cfg.verifier.version}-k{cfg.verifier.k}-perloc-{test_suffix}"
-    )
-    per_location_task_output_dir.mkdir(parents=True, exist_ok=True)
-    per_location_task(
-        cfg=cfg,
-        results_path=results_path,
-        output_dir=per_location_task_output_dir,
-        push_to_hub=cfg.output.push_to_hub,
-    )
 
 
 if __name__ == "__main__":
     main()
-
-# Example usage:
-# uv run -m wonda.data_pipeline.build_train_dataset output.test_mode=true dataset.limit=1 verifier.k=1 output.push_to_hub=true

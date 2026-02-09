@@ -25,7 +25,7 @@ model:
       min_p: 0
 
 dataset:
-  repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
+  repo_name: "idopinto/wonda-train-dataset-full-raw"
   json_path: null
   # json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
   limit: -1 # (3513 -> 4000)

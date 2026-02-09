@@ -10,7 +10,8 @@ weave:
 # Evaluation configuration
 dataset:
   # https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-full
-  name: "idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim" 
+  # name: "idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim"
+  name: "idopinto/wonda-eval-benchmark-full"
   limit: -1 # number of samples to evaluate -1 for all
   prefix: "" # prefix to filter files by (useful for testing also)
   split: "hard" # split to evaluate on

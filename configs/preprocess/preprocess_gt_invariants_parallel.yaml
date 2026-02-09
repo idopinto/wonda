@@ -29,8 +29,13 @@ dataset:
 output:
   preprocessed_invariants_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest.json"
   push_to_hub: true  # Push the dataset to the Hugging Face hub
-  hub_name: "invbench-train-uautomizer25-k1-full-parallel-latest"  # Optional: custom hub name (defaults to dataset name from output path)
+  # hub_name: "invbench-train-uautomizer25-k1-full-parallel-latest"  # Optional: custom hub name (defaults to dataset name from output path)
+  hub_name: "wonda-train-dataset-full-v2-raw"
   hub_organization: "idopinto"
+
+# Filtering criteria for identifying verbose invariants that need generalization
+filtering:
+  min_char_length: 20      # Minimum length to consider verbose
 
 prompts:  
   simplify_invariant_system_prompt: |
@@ -107,11 +112,8 @@ prompts:
   #     output: "i >= 0 && res >= 0"
   #     explanation: "Simplify to basic bounds. size == 5 and target == 10 are redundant since they are always true."
 
-# Filtering criteria for identifying verbose invariants that need generalization
-filtering:
   # min_disjuncts: 0          # Minimum || clauses to consider for generalization
   # max_disjuncts: 500        # Skip if too many (likely pathological)
-  min_char_length: 20      # Minimum length to consider verbose
   # max_char_length: 30000    # Skip extremely long ones
 
 # Example usage:

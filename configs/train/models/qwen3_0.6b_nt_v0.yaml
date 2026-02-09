@@ -22,7 +22,7 @@ model:
       min_p: 0
 
 dataset:
-  repo_name: "idopinto/invbench-train-uautomizer25-k1-full-raw"
+  repo_name: "idopinto/wonda-train-dataset-full-raw"
   json_path: null
   limit: -1 # (3513 -> 4000)
   split: "full" # "full" or "easy" or "hard"
