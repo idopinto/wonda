@@ -5,7 +5,7 @@ Build v1 training dataset: clean raw invariants and verify them with quality gra
 This script pre-processes the raw UAutomizer invariants offline:
 1. Load raw training data with original invariants
 2. For each invariant:
-   - Clean it using clean_invariant(inv, pretty=True) to remove casts and tautologies
+   - Normalize it using normalize_invariant(inv, pretty=True) to remove casts and tautologies
    - Verify the cleaned invariant (correctness + usefulness)
    - Assign a quality grade (0-3)
 3. Save qualifying entries (grade > 0) to main output file
@@ -43,7 +43,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from configs import global_config as GC
-from wonda.data_pipeline.clean_invariants import clean_invariant
+from wonda.data_pipeline.gt_invariant_normalization import normalize_invariant
 from wonda.core.ast_program import AstProgram
 from wonda.core.property import Property
 from wonda.eval.validate import syntactic_validation
@@ -477,7 +477,7 @@ def build_v1_train_dataset(
                 continue
 
             # Clean the invariant (even if using raw mode, for reference)
-            cleaned_inv = clean_invariant(original_inv, pretty=True)
+            cleaned_inv = normalize_invariant(original_inv, pretty=True)
             
             # Select target invariant based on mode
             target_inv = original_inv if inv_mode == "raw" else cleaned_inv

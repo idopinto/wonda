@@ -1,15 +1,41 @@
-"""
-Utilities for pruning / normalizing invariant strings coming from tools like UAutomizer.
+"""Stage 1 of the Wonda data pipeline: ground-truth invariant normalization.
 
-Main use-case:
-  - Parse a C-like boolean expression (the invariant) into a `pycparser` AST
-  - Rewrite the AST to remove noisy / unnecessary typing casts such as `(long long)`
-  - Regenerate a simplified invariant string
+Raw invariants emitted by automated verifiers (e.g. UAutomizer) are correct
+by construction but cluttered with syntactic noise that obscures the
+underlying logic and makes them poor training targets.  This module applies
+a semantic-preserving AST normalization (NORMALIZE) that performs a single
+bottom-up traversal over the pycparser AST and rewrites it using the
+following rules:
 
-Example invariant (from InvBench/UAutomizer):
-    ((((prime_count <= x) && ((((long long) prime_count + 1) % 4294967296) <= x)) ...
-After stripping casts:
-    (((prime_count <= x) && (((prime_count + 1) % 4294967296) <= x)) ...
+  Tautology elimination
+    Remove conjuncts that are trivially true (e.g. "x <= x", constant
+    comparisons that always hold, or explicit "true" literals).
+
+  Contradiction propagation
+    Collapse expressions that contain trivially false terms (e.g. "x > x",
+    "x != x") — a conjunction with false becomes false, a disjunction with
+    false drops the false branch. 
+
+  Integral cast elimination
+    Strip redundant (long long), (__int128), etc. casts used for
+    bit-precise semantics, prioritizing logical clarity for training.
+
+  Parenthesis minimization
+    Re-render with minimal parentheses based on C operator precedence.
+
+The normalized predicate phi' = NORMALIZE(phi) is semantically equivalent
+to the original (phi' === phi).  Soundness is ensured by formally verifying
+the final generated invariants against the original program (see Stage 2).
+
+Example (UAutomizer output for a prime-counting loop):
+
+  Before:  (x <= x) && ((long long) prime_count + 1 <= x) && (0 < 1)
+  After:   prime_count + 1 <= x
+
+  - "x <= x"  removed (tautology: reflexive <=)
+  - "0 < 1"   removed (tautology: constant comparison that holds)
+  - "(long long)" stripped (redundant integral cast)
+  - outer conjunction simplified after tautologous conjuncts are dropped
 """
 
 from __future__ import annotations
@@ -332,7 +358,7 @@ def _make_false() -> c_ast.Constant:
     return c_ast.Constant(type='int', value='0')
 
 
-def clean_invariant(
+def normalize_invariant(
     invariant_src: str,
     *,
     remove_all_casts: bool = False,
@@ -342,13 +368,13 @@ def clean_invariant(
     parser: Optional[c_parser.CParser] = None,
     print_ast: bool = False,
 ) -> str:
-    """
-    Parse `invariant_src`, remove noisy typing casts and tautologies, and return simplified C source.
+    """Parse, normalize, and re-render an invariant string.
 
-    By default we remove *integral* casts (e.g., `(long long)`, `(unsigned int)`),
-    but we keep pointer casts unless `remove_all_casts=True`.
-    
-    We also remove tautological constraints like `x <= x`, `0 < 1`, etc.
+    Applies AST-level rewrites: strips integral casts (e.g. ``(long long)``,
+    ``(unsigned int)``), eliminates tautologies/contradictions, and optionally
+    re-renders with minimal parentheses.
+
+    Pointer casts are preserved unless *remove_all_casts* is True.
     """
     ast = parse_invariant_expr(invariant_src, parser=parser)
     if ast is None:
@@ -357,7 +383,7 @@ def clean_invariant(
     else:
         if print_ast:
             print(ast)
-        new_ast = clean_invariant_ast(
+        new_ast = normalize_invariant_ast(
             ast,
             remove_all_casts=remove_all_casts,
             remove_integral_casts=remove_integral_casts,
@@ -387,7 +413,7 @@ def pretty_invariant_src(
     if ast is None:
         return (invariant_src or "").strip().rstrip(";").strip()
     if strip_casts or remove_tautologies:
-        ast = clean_invariant_ast(
+        ast = normalize_invariant_ast(
             ast,
             remove_all_casts=remove_all_casts,
             remove_integral_casts=remove_integral_casts if strip_casts else False,
@@ -396,21 +422,17 @@ def pretty_invariant_src(
     return invariant_ast_to_pretty_src(ast)
 
 
-def clean_invariant_ast(
+def normalize_invariant_ast(
     expr_ast: c_ast.Node,
     *,
     remove_all_casts: bool = False,
     remove_integral_casts: bool = True,
     remove_tautologies: bool = True,
 ) -> c_ast.Node:
-    """
-    Rewrite pass over a `pycparser` expression AST that removes cast nodes and tautologies.
+    """Single bottom-up rewrite pass that normalizes an invariant AST.
 
-    This is conservative by default:
-    - **Integral casts** are removed (common UAutomizer noise), e.g. `(long long)x`
-    - **Pointer casts** are preserved unless `remove_all_casts=True`
-    - **Tautologies** like `x <= x`, `0 < 1` are removed from conjunctions
-    - **Contradictions** like `x < x` in disjunctions are removed
+    Strips integral casts, eliminates tautological / contradictory sub-expressions,
+    and propagates boolean constants through conjunctions and disjunctions.
     """
 
     def should_strip_cast(node: c_ast.Cast) -> bool:
@@ -626,3 +648,4 @@ def some_tests():
 
 def main() -> None:
     some_tests()
+

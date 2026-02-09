@@ -56,7 +56,7 @@ echo "=========================================="
 echo ""
 
 # Run ground truth invariants preprocessor
-uv run -m wonda.data_pipeline.preprocess_gt_invariants_parallel "$@"
+uv run -m wonda.data_pipeline.gt_invariant_simplification "$@"
 
 echo ""
 echo "=========================================="

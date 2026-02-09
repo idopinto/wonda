@@ -11,7 +11,7 @@ Pipeline:
 4. Save qualifying entries
 
 Usage:
-    uv run -m wonda.data_pipeline.preprocess_gt_invariants_parallel dataset.limit=5
+    uv run -m wonda.data_pipeline.gt_invariant_simplification dataset.limit=5
     sbatch scripts/preprocess/preprocess_gt_invariants_parallel.sbatch dataset.limit=-1
 """
 
@@ -41,7 +41,7 @@ from tqdm import tqdm
 T = TypeVar("T")
 
 from configs import global_config as GC
-from wonda.data_pipeline.clean_invariants import clean_invariant
+from wonda.data_pipeline.gt_invariant_normalization import normalize_invariant
 from wonda.core.ast_program import AstProgram
 from wonda.core.property import Property
 from wonda.eval.validate import syntactic_validation
@@ -640,7 +640,7 @@ def preprocess_gt_invariants_parallel(
             
             pretty_inv = ""
             if cfg.pipeline.prettify:
-                pretty_inv = clean_invariant(original_inv, pretty=True)
+                pretty_inv = normalize_invariant(original_inv, pretty=True)
             invariant_to_process = pretty_inv if cfg.pipeline.prettify else original_inv
             ctx = InvariantContext(
                 entry=entry,

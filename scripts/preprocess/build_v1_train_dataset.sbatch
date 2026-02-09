@@ -12,7 +12,7 @@
 #
 # This script:
 # 1. Loads raw training data with UAutomizer invariants
-# 2. Cleans each invariant using clean_invariant(inv, pretty=True)
+# 2. Normalizes each invariant using normalize_invariant(inv, pretty=True)
 #    - Removes integral casts (long long, unsigned int, etc.)
 #    - Removes tautologies (x <= x, 0 < 1, etc.)
 #    - Pretty-prints with minimal parentheses

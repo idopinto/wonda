@@ -6,7 +6,7 @@ from huggingface_hub import HfApi
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from wonda.data_pipeline.clean_invariants import clean_invariant
+from wonda.data_pipeline.gt_invariant_normalization import normalize_invariant
 from wonda.core.ast_program import AstProgram
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -228,7 +228,7 @@ def inv_gen_per_marker_task_v0_to_v1(
                 program=ast_program.llm_code, target_marker=invariant["marker"]
             )
             if inv_mode == "pretty":
-                content = clean_invariant(invariant["invariant"], pretty=True)
+                content = normalize_invariant(invariant["invariant"], pretty=True)
             elif inv_mode == "raw":
                 content = invariant["invariant"]
             else:

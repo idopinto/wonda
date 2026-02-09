@@ -22,9 +22,9 @@ from typing import Dict, List, Tuple, Any
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from preprocess.clean_invariants import (
+from preprocess.gt_invariant_normalization import (
     parse_invariant_expr,
-    clean_invariant,
+    normalize_invariant,
     pretty_invariant_src,
     _is_tautology,
     _is_contradiction,

@@ -115,7 +115,7 @@ filtering:
   # max_char_length: 30000    # Skip extremely long ones
 
 # Example usage:
-# uv run -m wonda.data_pipeline.preprocess_gt_invariants_parallel dataset.limit=1
-# uv run -m wonda.data_pipeline.preprocess_gt_invariants_parallel dataset.limit=-1  # Process all
-# uv run -m wonda.data_pipeline.preprocess_gt_invariants_parallel model.n=10  # More candidates
+# uv run -m wonda.data_pipeline.gt_invariant_simplification dataset.limit=1
+# uv run -m wonda.data_pipeline.gt_invariant_simplification dataset.limit=-1  # Process all
+# uv run -m wonda.data_pipeline.gt_invariant_simplification model.n=10  # More candidates
 #     - Prefer using LINEAR arithmetic expressions (the verifier struggles with non-linear math)

@@ -150,7 +150,7 @@ inv-gen/
 │   ├── preprocess/     # WONDA data curation pipeline
 │   │   ├── build_eval_dataset.py
 │   │   ├── build_v1_train_dataset.py
-│   │   └── clean_invariants.py
+│   │   └── gt_invariant_normalization.py
 │   ├── train/          # Training code
 │   │   └── sft/        # Supervised fine-tuning
 │   ├── utils/          # Utilities

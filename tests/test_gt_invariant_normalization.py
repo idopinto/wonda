@@ -1,5 +1,5 @@
 """
-Comprehensive pytest test suite for wonda/data_pipeline/clean_invariants.py
+Comprehensive pytest test suite for wonda/data_pipeline/gt_invariant_normalization.py
 
 Tests are organized from easy to hard:
 1. Basic parsing tests
@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pycparser import c_ast, c_parser
 
-from wonda.data_pipeline.clean_invariants import (
+from wonda.data_pipeline.gt_invariant_normalization import (
     _extract_identifier_type_names,
     _is_integral_typename,
     _set_child,
@@ -29,8 +29,8 @@ from wonda.data_pipeline.clean_invariants import (
     invariant_ast_to_src,
     parse_invariant_expr,
     pretty_invariant_src,
-    clean_invariant,
-    clean_invariant_ast,
+    normalize_invariant,
+    normalize_invariant_ast,
 )
 
 
@@ -237,66 +237,66 @@ class TestStripUnnecessaryTypingCasts:
 
     def test_strip_long_long_cast(self):
         """Strip (long long) cast."""
-        result = clean_invariant("(long long) x")
+        result = normalize_invariant("(long long) x")
         assert "long long" not in result
         assert "x" in result
 
     def test_strip_unsigned_int_cast(self):
         """Strip (unsigned int) cast."""
-        result = clean_invariant("(unsigned int) y")
+        result = normalize_invariant("(unsigned int) y")
         assert "unsigned" not in result
         assert "int" not in result
 
     def test_strip_signed_char_cast(self):
         """Strip (signed char) cast."""
-        result = clean_invariant("(signed char) z")
+        result = normalize_invariant("(signed char) z")
         assert "signed" not in result
         assert "char" not in result
 
     def test_strip_int128_cast(self):
         """Strip (__int128) cast."""
-        result = clean_invariant("(__int128) x + 1")
+        result = normalize_invariant("(__int128) x + 1")
         assert "__int128" not in result
 
     def test_strip_unsigned_int128_cast(self):
         """Strip (unsigned __int128) cast."""
-        result = clean_invariant("(unsigned __int128) y >= 0")
+        result = normalize_invariant("(unsigned __int128) y >= 0")
         assert "__int128" not in result
 
     def test_strip_bool_cast(self):
         """Strip (_Bool) cast."""
-        result = clean_invariant("(_Bool) flag")
+        result = normalize_invariant("(_Bool) flag")
         assert "_Bool" not in result
 
     # def test_strip_bool_lowercase_cast(self):
     #     """Strip (bool) cast."""
-    #     result = clean_invariant("(bool) flag")
+    #     result = normalize_invariant("(bool) flag")
     #     assert "bool" not in result
 
     def test_strip_short_cast(self):
         """Strip (short) cast."""
-        result = clean_invariant("(short) val")
+        result = normalize_invariant("(short) val")
         assert "short" not in result
 
     def test_strip_unsigned_short_cast(self):
         """Strip (unsigned short) cast."""
-        result = clean_invariant("(unsigned short) val")
+        result = normalize_invariant("(unsigned short) val")
         assert "unsigned" not in result
         assert "short" not in result
 
     def test_strip_long_cast(self):
         """Strip (long) cast."""
-        result = clean_invariant("(long) val")
+        result = normalize_invariant("(long) val")
         assert "(long)" not in result
 
     def test_strip_unsigned_long_cast(self):
         """Strip (unsigned long) cast."""
-        result = clean_invariant("(unsigned long) val")
+        result = normalize_invariant("(unsigned long) val")
         assert "unsigned long" not in result
 
     def test_strip_unsigned_long_long_cast(self):
         """Strip (unsigned long long) cast."""
-        result = clean_invariant("(unsigned long long) val")
+        result = normalize_invariant("(unsigned long long) val")
         assert "unsigned long long" not in result
 
     # --- Multiple casts in one expression ---
@@ -304,13 +304,13 @@ class TestStripUnnecessaryTypingCasts:
     def test_strip_multiple_casts(self):
         """Strip multiple casts in one expression."""
         inv = "((long long) a + 1) > ((unsigned int) b - 1)"
-        result = clean_invariant(inv)
+        result = normalize_invariant(inv)
         assert "long long" not in result
         assert "unsigned" not in result
 
     def test_strip_nested_casts(self):
         """Strip nested casts."""
-        result = clean_invariant("(long) (int) x")
+        result = normalize_invariant("(long) (int) x")
         assert "(long)" not in result
         assert "(int)" not in result
 
@@ -319,14 +319,14 @@ class TestStripUnnecessaryTypingCasts:
     def test_preserve_pointer_cast_by_default(self):
         """Pointer casts should be preserved by default."""
         inv = "(int *) ptr"
-        result = clean_invariant(inv)
+        result = normalize_invariant(inv)
         # Pointer cast should be preserved
         assert "*" in result
 
     def test_remove_pointer_cast_when_remove_all(self):
         """Pointer casts should be removed when remove_all_casts=True."""
         inv = "(int *) ptr"
-        result = clean_invariant(inv, remove_all_casts=True)
+        result = normalize_invariant(inv, remove_all_casts=True)
         assert "*" not in result or result == "ptr"
 
     # --- Configuration options ---
@@ -334,13 +334,13 @@ class TestStripUnnecessaryTypingCasts:
     def test_remove_all_casts_option(self):
         """Test remove_all_casts option."""
         inv = "(long long) x"
-        result = clean_invariant(inv, remove_all_casts=True)
+        result = normalize_invariant(inv, remove_all_casts=True)
         assert "long" not in result
 
     def test_remove_integral_casts_false(self):
         """Test remove_integral_casts=False keeps integral casts."""
         inv = "(long long) x"
-        result = clean_invariant(inv, remove_integral_casts=False)
+        result = normalize_invariant(inv, remove_integral_casts=False)
         # Should keep the cast
         assert "long long" in result
 
@@ -349,13 +349,13 @@ class TestStripUnnecessaryTypingCasts:
     def test_pretty_option(self):
         """Test pretty=True produces minimal parentheses output."""
         inv = "((a + b))"
-        result = clean_invariant(inv, pretty=True)
+        result = normalize_invariant(inv, pretty=True)
         assert result == "a + b"
 
     def test_not_pretty_option(self):
         """Test pretty=False uses default pycparser generator."""
         inv = "a + b"
-        result = clean_invariant(inv, pretty=False)
+        result = normalize_invariant(inv, pretty=False)
         # May have parentheses from pycparser
         assert "a" in result and "b" in result
 
@@ -366,14 +366,14 @@ class TestStripUnnecessaryTypingCastsAst:
     def test_strip_cast_returns_inner_expr(self):
         """Stripping a cast should return the inner expression."""
         ast = parse_invariant_expr("(long long) x")
-        stripped = clean_invariant_ast(ast)
+        stripped = normalize_invariant_ast(ast)
         assert isinstance(stripped, c_ast.ID)
         assert stripped.name == "x"
 
     def test_strip_preserves_non_cast_nodes(self):
         """Non-cast nodes should be preserved."""
         ast = parse_invariant_expr("a + b")
-        stripped = clean_invariant_ast(ast)
+        stripped = normalize_invariant_ast(ast)
         assert isinstance(stripped, c_ast.BinaryOp)
 
 
@@ -387,52 +387,52 @@ class TestParenthesesPreservationArithmetic:
 
     def test_addition_before_multiplication_needs_parens(self):
         """(a + b) * c - parens needed."""
-        result = clean_invariant("((a + b) * c)", pretty=True)
+        result = normalize_invariant("((a + b) * c)", pretty=True)
         assert result == "(a + b) * c"
 
     def test_division_with_grouped_multiply_needs_parens(self):
         """a / (b * c) - parens needed."""
-        result = clean_invariant("(a / (b * c))", pretty=True)
+        result = normalize_invariant("(a / (b * c))", pretty=True)
         assert result == "a / (b * c)"
 
     def test_right_associative_subtraction_needs_parens(self):
         """a - (b - c) - parens needed."""
-        result = clean_invariant("(a - (b - c))", pretty=True)
+        result = normalize_invariant("(a - (b - c))", pretty=True)
         assert result == "a - (b - c)"
 
     def test_modulo_with_grouped_addition_needs_parens(self):
         """a % (b + c) - parens needed."""
-        result = clean_invariant("(a % (b + c))", pretty=True)
+        result = normalize_invariant("(a % (b + c))", pretty=True)
         assert result == "a % (b + c)"
 
     def test_multiplication_higher_precedence_no_parens(self):
         """(a * b) + c - parens NOT needed."""
-        result = clean_invariant("((a * b) + c)", pretty=True)
+        result = normalize_invariant("((a * b) + c)", pretty=True)
         assert result == "a * b + c"
 
     def test_multiplication_in_addition_no_parens(self):
         """a + (b * c) - parens NOT needed."""
-        result = clean_invariant("(a + (b * c))", pretty=True)
+        result = normalize_invariant("(a + (b * c))", pretty=True)
         assert result == "a + b * c"
 
     def test_left_associative_addition_no_parens(self):
         """(a + b) + c - parens NOT needed (left associative)."""
-        result = clean_invariant("((a + b) + c)", pretty=True)
+        result = normalize_invariant("((a + b) + c)", pretty=True)
         assert result == "a + b + c"
 
     def test_left_associative_multiplication(self):
         """(a * b) * c - parens NOT needed."""
-        result = clean_invariant("((a * b) * c)", pretty=True)
+        result = normalize_invariant("((a * b) * c)", pretty=True)
         assert result == "a * b * c"
 
     def test_right_associative_division_needs_parens(self):
         """a / (b / c) - parens needed."""
-        result = clean_invariant("(a / (b / c))", pretty=True)
+        result = normalize_invariant("(a / (b / c))", pretty=True)
         assert result == "a / (b / c)"
 
     def test_both_sides_need_parens_multiplication(self):
         """(a + b) * (c + d) - both sides need parens."""
-        result = clean_invariant("((a + b) * (c + d))", pretty=True)
+        result = normalize_invariant("((a + b) * (c + d))", pretty=True)
         assert result == "(a + b) * (c + d)"
 
 
@@ -441,37 +441,37 @@ class TestParenthesesPreservationLogical:
 
     def test_or_before_and_needs_parens(self):
         """(a || b) && c - parens needed."""
-        result = clean_invariant("((a || b) && c)", pretty=True)
+        result = normalize_invariant("((a || b) && c)", pretty=True)
         assert result == "(a || b) && c"
 
     def test_or_grouped_in_and_needs_parens(self):
         """a && (b || c) - parens needed."""
-        result = clean_invariant("(a && (b || c))", pretty=True)
+        result = normalize_invariant("(a && (b || c))", pretty=True)
         assert result == "a && (b || c)"
 
     def test_and_higher_precedence_no_parens_left(self):
         """(a && b) || c - parens NOT needed."""
-        result = clean_invariant("((a && b) || c)", pretty=True)
+        result = normalize_invariant("((a && b) || c)", pretty=True)
         assert result == "a && b || c"
 
     def test_and_higher_precedence_no_parens_right(self):
         """a || (b && c) - parens NOT needed."""
-        result = clean_invariant("(a || (b && c))", pretty=True)
+        result = normalize_invariant("(a || (b && c))", pretty=True)
         assert result == "a || b && c"
 
     def test_both_or_need_parens_in_and(self):
         """(a || b) && (c || d) - both OR need parens."""
-        result = clean_invariant("((a || b) && (c || d))", pretty=True)
+        result = normalize_invariant("((a || b) && (c || d))", pretty=True)
         assert result == "(a || b) && (c || d)"
 
     def test_chain_of_and(self):
         """a && b && c - no parens needed."""
-        result = clean_invariant("((a && b) && c)", pretty=True)
+        result = normalize_invariant("((a && b) && c)", pretty=True)
         assert result == "a && b && c"
 
     def test_chain_of_or(self):
         """a || b || c - no parens needed."""
-        result = clean_invariant("((a || b) || c)", pretty=True)
+        result = normalize_invariant("((a || b) || c)", pretty=True)
         assert result == "a || b || c"
 
 
@@ -480,27 +480,27 @@ class TestParenthesesPreservationComparison:
 
     def test_addition_higher_than_comparison(self):
         """(a + 1) > b - parens NOT needed."""
-        result = clean_invariant("((a + 1) > b)", pretty=True)
+        result = normalize_invariant("((a + 1) > b)", pretty=True)
         assert result == "a + 1 > b"
 
     def test_subtraction_higher_than_comparison(self):
         """a > (b - 1) - parens NOT needed."""
-        result = clean_invariant("(a > (b - 1))", pretty=True)
+        result = normalize_invariant("(a > (b - 1))", pretty=True)
         assert result == "a > b - 1"
 
     def test_comparison_in_logical(self):
         """(a > b) && (c < d) - parens NOT needed."""
-        result = clean_invariant("((a > b) && (c < d))", pretty=True)
+        result = normalize_invariant("((a > b) && (c < d))", pretty=True)
         assert result == "a > b && c < d"
 
     def test_equality_comparison(self):
         """a == b - no extra parens."""
-        result = clean_invariant("(a == b)", pretty=True)
+        result = normalize_invariant("(a == b)", pretty=True)
         assert result == "a == b"
 
     def test_inequality_comparison(self):
         """a != b - no extra parens."""
-        result = clean_invariant("(a != b)", pretty=True)
+        result = normalize_invariant("(a != b)", pretty=True)
         assert result == "a != b"
 
 
@@ -509,27 +509,27 @@ class TestParenthesesPreservationNegation:
 
     def test_negation_of_conjunction_needs_parens(self):
         """!(a && b) - needs parens."""
-        result = clean_invariant("(!(a && b))", pretty=True)
+        result = normalize_invariant("(!(a && b))", pretty=True)
         assert result == "!(a && b)"
 
     def test_negation_binds_tighter_no_parens(self):
         """(!a) && b - no parens needed around !a."""
-        result = clean_invariant("((!a) && b)", pretty=True)
+        result = normalize_invariant("((!a) && b)", pretty=True)
         assert result == "!a && b"
 
     def test_negation_of_disjunction_needs_parens(self):
         """!(a || b) - needs parens."""
-        result = clean_invariant("(!(a || b))", pretty=True)
+        result = normalize_invariant("(!(a || b))", pretty=True)
         assert result == "!(a || b)"
 
     def test_double_negation(self):
         """!!a - no parens needed."""
-        result = clean_invariant("!!a", pretty=True)
+        result = normalize_invariant("!!a", pretty=True)
         assert result == "!!a"
 
     def test_negation_of_comparison(self):
         """!(a > b) - needs parens."""
-        result = clean_invariant("(!(a > b))", pretty=True)
+        result = normalize_invariant("(!(a > b))", pretty=True)
         assert result == "!(a > b)"
 
 
@@ -538,32 +538,32 @@ class TestParenthesesPreservationBitwise:
 
     def test_bitwise_and_in_or(self):
         """(a & b) | c - parens NOT needed (& has higher precedence)."""
-        result = clean_invariant("((a & b) | c)", pretty=True)
+        result = normalize_invariant("((a & b) | c)", pretty=True)
         assert result == "a & b | c"
 
     def test_bitwise_or_in_and(self):
         """a & (b | c) - parens needed."""
-        result = clean_invariant("(a & (b | c))", pretty=True)
+        result = normalize_invariant("(a & (b | c))", pretty=True)
         assert result == "a & (b | c)"
 
     def test_bitwise_xor(self):
         """a ^ b - no extra parens."""
-        result = clean_invariant("(a ^ b)", pretty=True)
+        result = normalize_invariant("(a ^ b)", pretty=True)
         assert result == "a ^ b"
 
     def test_shift_operations(self):
         """a << b - no extra parens."""
-        result = clean_invariant("(a << b)", pretty=True)
+        result = normalize_invariant("(a << b)", pretty=True)
         assert result == "a << b"
 
     def test_right_shift(self):
         """a >> b - no extra parens."""
-        result = clean_invariant("(a >> b)", pretty=True)
+        result = normalize_invariant("(a >> b)", pretty=True)
         assert result == "a >> b"
 
     def test_shift_associativity(self):
         """a << (b << c) - parens needed for right-side same-precedence."""
-        result = clean_invariant("(a << (b << c))", pretty=True)
+        result = normalize_invariant("(a << (b << c))", pretty=True)
         assert result == "a << (b << c)"
 
 
@@ -572,19 +572,19 @@ class TestParenthesesPreservationMixed:
 
     def test_arithmetic_and_comparison_and_logical(self):
         """Complex mixed expression."""
-        result = clean_invariant(
+        result = normalize_invariant(
             "((a + 1 > 0) && (b * 2 < 10))", pretty=True
         )
         assert result == "a + 1 > 0 && b * 2 < 10"
 
     def test_deep_nesting(self):
         """Deeply nested expression."""
-        result = clean_invariant("(((((a + b)))))", pretty=True)
+        result = normalize_invariant("(((((a + b)))))", pretty=True)
         assert result == "a + b"
 
     def test_complex_invariant_style(self):
         """Invariant-style complex expression."""
-        result = clean_invariant(
+        result = normalize_invariant(
             "((x >= 0) && (x <= n) && (y > 0))", pretty=True
         )
         assert result == "x >= 0 && x <= n && y > 0"
@@ -749,7 +749,7 @@ class TestRealWorldInvariants:
             "&& ((((long long) 2 + prime_count) % 4294967296) <= ((long long) n + 1))) "
             "|| ((prime_count == 0) && (n == 0)))"
         )
-        result = clean_invariant(inv, pretty=True)
+        result = normalize_invariant(inv, pretty=True)
 
         # All casts should be removed
         assert "(long long)" not in result
@@ -762,7 +762,7 @@ class TestRealWorldInvariants:
     def test_int128_mixed_invariant(self):
         """Test invariant with __int128 casts."""
         inv = "(((__int128) x + 1) > 0) && ((unsigned __int128) y >= 0)"
-        result = clean_invariant(inv, pretty=True)
+        result = normalize_invariant(inv, pretty=True)
 
         assert "__int128" not in result
         assert "unsigned" not in result
@@ -774,7 +774,7 @@ class TestRealWorldInvariants:
     def test_multiple_comparison_chain(self):
         """Test chain of comparisons in logical expression."""
         inv = "(((x >= 0) && (x <= 100)) && ((y > x) || (z == 0)))"
-        result = clean_invariant(inv, pretty=True)
+        result = normalize_invariant(inv, pretty=True)
 
         # Should have minimal parens but preserve meaning
         ast = parse_invariant_expr(result)
@@ -784,14 +784,14 @@ class TestRealWorldInvariants:
     def test_complex_arithmetic_with_modulo(self):
         """Test complex arithmetic with modulo operations."""
         inv = "((((a + 1) % 4294967296) <= b) && ((c * 2) > 0))"
-        result = clean_invariant(inv, pretty=True)
+        result = normalize_invariant(inv, pretty=True)
 
         assert "(a + 1) % 4294967296" in result
 
     def test_nested_function_calls(self):
         """Test expression with nested function calls."""
         inv = "(foo(bar(x), y) > 0) && (baz(a, b, c) == 1)"
-        result = clean_invariant(inv, pretty=True)
+        result = normalize_invariant(inv, pretty=True)
 
         assert "foo(bar(x), y)" in result
         assert "baz(a, b, c)" in result
@@ -802,84 +802,84 @@ class TestEdgeCases:
 
     def test_single_variable(self):
         """Single variable expression."""
-        result = clean_invariant("x", pretty=True)
+        result = normalize_invariant("x", pretty=True)
         assert result == "x"
 
     def test_single_constant(self):
         """Single constant expression."""
-        result = clean_invariant("42", pretty=True)
+        result = normalize_invariant("42", pretty=True)
         assert result == "42"
 
     def test_negative_number(self):
         """Negative number."""
-        result = clean_invariant("-1", pretty=True)
+        result = normalize_invariant("-1", pretty=True)
         assert result == "-1"
 
     def test_hexadecimal_constant(self):
         """Hexadecimal constant."""
-        result = clean_invariant("0xDEADBEEF", pretty=True)
+        result = normalize_invariant("0xDEADBEEF", pretty=True)
         assert "0xDEADBEEF" in result or "DEADBEEF" in result.upper()
 
     def test_large_number(self):
         """Large number constant."""
-        result = clean_invariant("4294967296", pretty=True)
+        result = normalize_invariant("4294967296", pretty=True)
         assert result == "4294967296"
 
     def test_empty_function_args(self):
         """Function call with no arguments."""
-        result = clean_invariant("func()", pretty=True)
+        result = normalize_invariant("func()", pretty=True)
         assert result == "func()"
 
     def test_array_with_expression_index(self):
         """Array with expression as index."""
-        result = clean_invariant("arr[i + 1]", pretty=True)
+        result = normalize_invariant("arr[i + 1]", pretty=True)
         assert result == "arr[i + 1]"
 
     def test_multiple_array_refs(self):
         """Multiple array references."""
-        result = clean_invariant("arr[i][j]", pretty=True)
+        result = normalize_invariant("arr[i][j]", pretty=True)
         assert "arr" in result and "i" in result and "j" in result
 
     def test_unary_plus(self):
         """Unary plus operator."""
-        result = clean_invariant("+x", pretty=True)
+        result = normalize_invariant("+x", pretty=True)
         assert result == "+x"
 
     def test_bitwise_not(self):
         """Bitwise NOT operator."""
-        result = clean_invariant("~x", pretty=True)
+        result = normalize_invariant("~x", pretty=True)
         assert result == "~x"
 
     def test_increment_postfix(self):
         """Postfix increment."""
-        result = clean_invariant("x++", pretty=True)
+        result = normalize_invariant("x++", pretty=True)
         assert result == "x++"
 
     def test_decrement_postfix(self):
         """Postfix decrement."""
-        result = clean_invariant("x--", pretty=True)
+        result = normalize_invariant("x--", pretty=True)
         assert result == "x--"
 
     def test_ternary_nested(self):
         """Nested ternary expression."""
-        result = clean_invariant("a ? b ? c : d : e", pretty=True)
+        result = normalize_invariant("a ? b ? c : d : e", pretty=True)
         assert "?" in result and ":" in result
 
     def test_very_long_identifier(self):
         """Very long identifier name."""
         long_name = "very_long_variable_name_that_goes_on_and_on"
-        result = clean_invariant(long_name, pretty=True)
+        result = normalize_invariant(long_name, pretty=True)
         assert result == long_name
 
     def test_cast_of_expression(self):
         """Cast of a complex expression."""
-        result = clean_invariant("(long long) (a + b)", pretty=True)
+        result = normalize_invariant("(long long) (a + b)", pretty=True)
         assert "long long" not in result
         assert "a + b" in result
 
     def test_multiple_casts_same_subexpr(self):
         """Multiple casts on the same sub-expression."""
-        result = clean_invariant("(long) (int) (short) x", pretty=True)
+        result = normalize_invariant("(long) (int) (short) x", pretty=True)
         assert result == "x"
 
 
@@ -888,32 +888,32 @@ class TestAssociativityChains:
 
     def test_long_and_chain(self):
         """Long chain of AND operations."""
-        result = clean_invariant("(((a && b) && c) && d)", pretty=True)
+        result = normalize_invariant("(((a && b) && c) && d)", pretty=True)
         assert result == "a && b && c && d"
 
     def test_long_or_chain(self):
         """Long chain of OR operations."""
-        result = clean_invariant("(((a || b) || c) || d)", pretty=True)
+        result = normalize_invariant("(((a || b) || c) || d)", pretty=True)
         assert result == "a || b || c || d"
 
     def test_long_add_chain(self):
         """Long chain of additions."""
-        result = clean_invariant("(((a + b) + c) + d)", pretty=True)
+        result = normalize_invariant("(((a + b) + c) + d)", pretty=True)
         assert result == "a + b + c + d"
 
     def test_long_mult_chain(self):
         """Long chain of multiplications."""
-        result = clean_invariant("(((a * b) * c) * d)", pretty=True)
+        result = normalize_invariant("(((a * b) * c) * d)", pretty=True)
         assert result == "a * b * c * d"
 
     def test_mixed_add_sub_chain(self):
         """Mixed addition and subtraction (not associative)."""
-        result = clean_invariant("a - (b - c)", pretty=True)
+        result = normalize_invariant("a - (b - c)", pretty=True)
         assert result == "a - (b - c)"
 
     def test_mixed_mult_div_chain(self):
         """Mixed multiplication and division (not associative for div)."""
-        result = clean_invariant("a / (b / c)", pretty=True)
+        result = normalize_invariant("a / (b / c)", pretty=True)
         assert result == "a / (b / c)"
 
 
@@ -922,17 +922,17 @@ class TestSpecialOperators:
 
     def test_struct_ref_dot(self):
         """Struct member access with dot."""
-        result = clean_invariant("s.field", pretty=True)
+        result = normalize_invariant("s.field", pretty=True)
         assert result == "s.field"
 
     def test_struct_ref_arrow(self):
         """Struct member access with arrow."""
-        result = clean_invariant("p->field", pretty=True)
+        result = normalize_invariant("p->field", pretty=True)
         assert result == "p->field"
 
     def test_sizeof_style_expression(self):
         """Expression that might look like sizeof."""
-        result = clean_invariant("size + 1", pretty=True)
+        result = normalize_invariant("size + 1", pretty=True)
         assert result == "size + 1"
 
 
@@ -982,7 +982,7 @@ class TestAllParenTestsFromMain:
     )
     def test_paren_preservation(self, original, expected, description):
         """Parameterized test for all paren_tests cases."""
-        result = clean_invariant(original, pretty=True)
+        result = normalize_invariant(original, pretty=True)
         assert result == expected, f"Failed: {description}"
 
 
@@ -991,13 +991,13 @@ class TestCombinedCastAndParens:
 
     def test_cast_in_arithmetic(self):
         """Cast inside arithmetic expression."""
-        result = clean_invariant("((long long) a + b) * c", pretty=True)
+        result = normalize_invariant("((long long) a + b) * c", pretty=True)
         assert "long long" not in result
         assert "(a + b) * c" in result
 
     def test_cast_on_both_sides(self):
         """Casts on both sides of operator."""
-        result = clean_invariant(
+        result = normalize_invariant(
             "((long long) a > (int) b)", pretty=True
         )
         assert "long long" not in result
@@ -1006,7 +1006,7 @@ class TestCombinedCastAndParens:
 
     def test_cast_in_complex_expression(self):
         """Cast in a complex expression with multiple precedence levels."""
-        result = clean_invariant(
+        result = normalize_invariant(
             "(((long long) x + 1) > 0) && (y < ((unsigned) z * 2))",
             pretty=True,
         )
