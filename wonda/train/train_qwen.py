@@ -116,11 +116,12 @@ def main(cfg: DictConfig):
         device_map=cfg.model.init_kwargs_train.device_map,
     )
 
-    # Load pre-built SFT dataset and split
+    # Load pre-built SFT dataset and split (optional min_grade: keep only quality_grade >= min_grade)
     full_dataset = load_sft_dataset(
         hf_repo=hf_repo,
         json_path=json_path,
         limit=cfg.dataset.get("limit", -1),
+        min_grade=cfg.dataset.get("min_grade"),
     )
     train_dataset, validation_dataset = split_dataset(full_dataset, split_ratio=cfg.dataset.split_ratio)
 

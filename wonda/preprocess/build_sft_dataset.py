@@ -5,8 +5,9 @@ Converts per-marker invariant data into chat-formatted SFT samples. Run as a
 preprocess step so training only loads pre-built datasets.
 
 Usage:
-    uv run -m wonda.data_pipeline.build_sft_dataset --config-name=build_sft_dataset
-    uv run -m wonda.data_pipeline.build_sft_dataset dataset.inv_mode=simplified dataset.min_grade=3
+    uv run -m wonda.preprocess.build_sft_dataset --config-name=build_sft_dataset
+    uv run -m wonda.preprocess.build_sft_dataset dataset.version=v2 dataset.min_grade=3
+    uv run -m wonda.preprocess.build_sft_dataset dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full dataset.version=v0
 """
 
 import logging
@@ -19,8 +20,13 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 from wonda.core.ast_program import AstProgram
-from wonda.data_pipeline.gt_invariant_normalization import normalize_invariant
-from wonda.data_pipeline.gt_invariant_simplification import is_degenerate_invariant
+from wonda.preprocess.gt_invariant_normalization import normalize_invariant
+from wonda.preprocess.gt_invariant_simplification import is_degenerate_invariant
+from wonda.preprocess.sft_plots import (
+    plot_invariant_token_distribution,
+    plot_sft_dataset_stats,
+    plot_token_distribution,
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -47,29 +53,33 @@ def build_sft_dataset_v2(
     chat_template_kwargs: dict,
     max_length: int = 1024,
     min_grade: int = 2,
-    inv_mode: str = "simplified",
+    version: str = "v2",
     output_dir: str | None = None,
     hf_repo_name: str | None = None,
 ) -> Dataset:
     """Build SFT dataset from v2 format (gt_invariant per sample)."""
-    logger.info(
-        f"Creating SFT train data: build_sft_dataset_v2 for inv_mode={inv_mode}, min_grade={min_grade}"
-    )
+    logger.info(f"Creating SFT train data: build_sft_dataset_v2 for version={version}, min_grade={min_grade}")
+    out_parts = []
     if output_dir:
-        token_plot_path = Path(output_dir) / f"token_length_distribution_per_marker_{inv_mode}_v2.{min_grade}.png"
-        grade_plot_path = Path(output_dir) / f"grade_distribution_per_marker_{inv_mode}_v2.{min_grade}.png"
-        inv_token_plot_path = Path(output_dir) / f"invariant_token_length_distribution_{inv_mode}_v2.{min_grade}.png"
+        dataset_name = Path(output_dir).name
+        out_parts.append(f"disk: {Path(output_dir) / f'{dataset_name}.json'} (folder + plots)")
+    if hf_repo_name:
+        out_parts.append(f"HF: {hf_repo_name}")
+    if out_parts:
+        logger.info(f"Dataset will be written at the end to: {' and '.join(out_parts)}")
+    if output_dir:
+        stats_plot_path = Path(output_dir) / "dataset_stats.png"
     else:
-        token_plot_path = grade_plot_path = inv_token_plot_path = None
+        stats_plot_path = None
 
     samples = []
     kept_grades = []
     invariant_token_lengths = []
     max_tokens = 0
-    skipped_baseline = skipped_grade = skipped_no_invariant = skipped_length = skipped_trivial = 0
+    skipped_baseline = skipped_grade = skipped_no_invariant = skipped_length = skipped_degenerate = 0
 
     for sample in tqdm(raw_dataset):
-        if sample.get("baseline_decision") in {"UNKNOWN", "ERROR", "TIMEOUT"}:
+        if sample.get("baseline_decision") != "TRUE":
             skipped_baseline += 1
             continue
         if not sample.get("gt_invariant"):
@@ -80,7 +90,7 @@ def build_sft_dataset_v2(
             skipped_grade += 1
             continue
         if is_degenerate_invariant(invariant.get("target_invariant", "")):
-            skipped_trivial += 1
+            skipped_degenerate += 1
             continue
         program_str = sample["original_program"]
         ast_program = AstProgram().from_code(program_str)
@@ -89,16 +99,8 @@ def build_sft_dataset_v2(
             program=ast_program.llm_code,
             target_marker=invariant.get("marker", ""),
         )
-        if inv_mode == "simplified":
-            content = invariant.get("target_invariant", "")
-        elif inv_mode == "normalized":
-            content = invariant.get("pretty_invariant", "")
-        elif inv_mode == "raw":
-            content = invariant.get("original_invariant", "")
-        else:
-            raise ValueError(
-                f"Invalid inv_mode: {inv_mode}. Must be 'simplified', 'normalized', or 'raw'"
-            )
+        content = invariant.get("target_invariant", "")
+            
         answer = f'```json\n{{"marker":"{invariant.get("marker", "")}","content":"{content}"}}\n```'
         conversation = [
             {"role": "system", "content": system_prompt},
@@ -113,12 +115,10 @@ def build_sft_dataset_v2(
             )
             continue
         inv_token_len = len(tokenizer.encode(content))
-        speedup = invariant.get("speedup", 0.0)
         samples.append({
             "text": text,
-            "grade": invariant.get("quality_grade", -1),
-            "invariant_token_length": inv_token_len,
-            "speedup": speedup,
+            "quality_grade": invariant.get("quality_grade", -1),
+            "speedup": invariant.get("speedup", 0.0),
         })
         kept_grades.append(invariant.get("quality_grade", -1))
         invariant_token_lengths.append(inv_token_len)
@@ -127,29 +127,21 @@ def build_sft_dataset_v2(
     logger.info(
         f"Filtering stats: skipped_baseline={skipped_baseline}, skipped_grade={skipped_grade}, "
         f"skipped_no_invariant={skipped_no_invariant}, skipped_length={skipped_length}, "
-        f"skipped_trivial={skipped_trivial}, kept={len(samples)}"
+        f"skipped_degenerate={skipped_degenerate}, kept={len(samples)}"
     )
     logger.info(f"Max tokens: {max_tokens}")
 
     final_dataset = Dataset.from_list(samples)
 
-    if len(samples) > 0 and token_plot_path:
-        _plot_token_distribution(
-            final_dataset, tokenizer,
-            name=f"per_marker_{inv_mode}_v2.{min_grade}",
-            plot_path=str(token_plot_path),
-        )
-    if len(kept_grades) > 0 and grade_plot_path:
-        _plot_grade_distribution(
-            kept_grades,
-            name=f"per_marker_{inv_mode}_v2.{min_grade}",
-            plot_path=str(grade_plot_path),
-        )
-    if len(invariant_token_lengths) > 0 and inv_token_plot_path:
-        _plot_invariant_token_distribution(
-            invariant_token_lengths,
-            name=f"per_marker_{inv_mode}_v2.{min_grade}",
-            plot_path=str(inv_token_plot_path),
+    if len(samples) > 0 and stats_plot_path:
+        plot_sft_dataset_stats(
+            final_dataset=final_dataset,
+            tokenizer=tokenizer,
+            kept_grades=kept_grades,
+            invariant_token_lengths=invariant_token_lengths,
+            min_grade=min_grade,
+            name=f"{version}.g{min_grade}",
+            plot_path=str(stats_plot_path),
         )
 
     if hf_repo_name and len(samples) > 0:
@@ -165,22 +157,24 @@ def build_sft_dataset_v0_v1(
     user_prompt_template: str,
     chat_template_kwargs: dict,
     max_length: int = 1024,
-    inv_mode: str = "raw",
+    version: str = "v0",
     output_dir: str | None = None,
 ) -> Dataset:
-    """Build SFT dataset from v0/v1 format (invariants list per sample). inv_mode: 'raw' or 'normalized'."""
-    logger.info(f"Creating SFT train data: build_sft_dataset_v0_v1 for inv_mode={inv_mode}")
+    """Build SFT dataset from v0/v1 format (invariants list per sample). version: v0 (raw) or v1 (normalized)."""
+    logger.info(f"Creating SFT train data: build_sft_dataset_v0_v1 for version={version}")
     if output_dir:
-        plot_path = Path(output_dir) / f"token_length_distribution_per_marker_{inv_mode}.png"
+        token_plot_path = Path(output_dir) / f"token_length_distribution_{version}.png"
+        inv_token_plot_path = Path(output_dir) / f"invariant_token_length_distribution_{version}.png"
     else:
-        plot_path = None
+        token_plot_path = inv_token_plot_path = None
 
     samples = []
+    invariant_token_lengths = []
     max_tokens = 0
     skipped_baseline = skipped_no_invariant = skipped_length = 0
 
     for sample in tqdm(raw_dataset, desc="Processing samples"):
-        if sample.get("baseline_decision") in {"UNKNOWN", "ERROR", "TIMEOUT"}:
+        if sample.get("baseline_decision") != "TRUE":
             skipped_baseline += 1
             continue
         if not sample.get("invariants"):
@@ -198,14 +192,12 @@ def build_sft_dataset_v0_v1(
                 program=ast_program.llm_code,
                 target_marker=invariant["marker"],
             )
-            if inv_mode == "normalized":
+            if version == "v1":
                 content = normalize_invariant(invariant["invariant"], pretty=True)
-            elif inv_mode == "raw":
+            elif version == "v0":
                 content = invariant["invariant"]
             else:
-                raise ValueError(
-                    f"Invalid inv_mode: {inv_mode}. Must be 'raw' or 'normalized' (v0/v1)"
-                )
+                raise ValueError(f"Invalid version: {version}. Must be 'v0' or 'v1'")
             answer = f'```json\n{{"marker":"{invariant["marker"]}","content":"{content}"}}\n```'
             conversation = [
                 {"role": "system", "content": system_prompt},
@@ -219,7 +211,9 @@ def build_sft_dataset_v0_v1(
                     f"Skipping sample {sample.get('file', '?')} token length > {max_length - 1}"
                 )
                 continue
+            inv_token_len = len(tokenizer.encode(content))
             samples.append({"text": text})
+            invariant_token_lengths.append(inv_token_len)
             max_tokens = max(max_tokens, len(tokenizer.encode(text)))
 
     logger.info(
@@ -228,12 +222,18 @@ def build_sft_dataset_v0_v1(
     )
     logger.info(f"Max tokens: {max_tokens}")
 
-    if len(samples) > 0 and plot_path:
-        _plot_token_distribution(
+    if len(samples) > 0 and token_plot_path:
+        plot_token_distribution(
             Dataset.from_list(samples),
             tokenizer,
-            name=f"per_marker_{inv_mode}",
-            plot_path=str(plot_path),
+            name=version,
+            plot_path=str(token_plot_path),
+        )
+    if len(invariant_token_lengths) > 0 and inv_token_plot_path:
+        plot_invariant_token_distribution(
+            invariant_token_lengths,
+            name=version,
+            plot_path=str(inv_token_plot_path),
         )
     return Dataset.from_list(samples)
 
@@ -259,104 +259,6 @@ def _upload_dataset_to_hf(dataset: Dataset, repo_name: str, private: bool = Fals
         logger.error(f"Failed to upload dataset to HuggingFace: {e}")
 
 
-def _plot_token_distribution(
-    dataset: Dataset,
-    tokenizer: AutoTokenizer,
-    name: str = "dataset",
-    plot_path: str | None = None,
-) -> None:
-    from collections import Counter
-
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    if plot_path:
-        Path(plot_path).parent.mkdir(parents=True, exist_ok=True)
-    token_lengths = [len(tokenizer.encode(s["text"])) for s in dataset]
-    plt.figure(figsize=(10, 6))
-    plt.hist(token_lengths, bins=100, color="steelblue", edgecolor="black", alpha=0.7)
-    plt.xlabel("Token Length")
-    plt.ylabel("Frequency")
-    plt.title(f"Token Length Distribution - {name}")
-    total = len(token_lengths)
-    mean_len = sum(token_lengths) / total if total > 0 else 0
-    plt.axvline(mean_len, color="red", linestyle="dashed", linewidth=2, label=f"Mean: {mean_len:.1f}")
-    min_len = min(token_lengths) if token_lengths else 0
-    max_len = max(token_lengths) if token_lengths else 0
-    plt.text(
-        0.95, 0.95, f"Total: {total}\nMean: {mean_len:.1f}\nMin: {min_len}\nMax: {max_len}",
-        transform=plt.gca().transAxes, ha="right", va="top",
-        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-    )
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(plot_path)
-    plt.close()
-    logger.info(f"Token length distribution plot saved to {plot_path}")
-
-
-def _plot_grade_distribution(
-    grades: list,
-    name: str = "dataset",
-    plot_path: str | None = None,
-) -> None:
-    from collections import Counter
-
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    if plot_path:
-        Path(plot_path).parent.mkdir(parents=True, exist_ok=True)
-    grade_counts = Counter(grades)
-    sorted_grades = sorted(grade_counts.keys())
-    counts = [grade_counts[g] for g in sorted_grades]
-    plt.figure(figsize=(10, 6))
-    bars = plt.bar([str(g) for g in sorted_grades], counts, color="steelblue", edgecolor="black")
-    for bar, count in zip(bars, counts):
-        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5, str(count), ha="center", va="bottom", fontsize=10)
-    plt.xlabel("Quality Grade")
-    plt.ylabel("Frequency")
-    plt.title(f"Grade Distribution (Kept Samples) - {name}")
-    total = len(grades)
-    mean_grade = sum(grades) / total if total > 0 else 0
-    plt.text(0.95, 0.95, f"Total: {total}\nMean: {mean_grade:.2f}", transform=plt.gca().transAxes, ha="right", va="top", bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5))
-    plt.tight_layout()
-    plt.savefig(plot_path)
-    plt.close()
-    logger.info(f"Grade distribution plot saved to {plot_path}")
-
-
-def _plot_invariant_token_distribution(
-    token_lengths: list,
-    name: str = "dataset",
-    plot_path: str | None = None,
-) -> None:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    if plot_path:
-        Path(plot_path).parent.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(10, 6))
-    plt.hist(token_lengths, bins=50, color="coral", edgecolor="black", alpha=0.7)
-    plt.xlabel("Invariant Token Length")
-    plt.ylabel("Frequency")
-    plt.title(f"Invariant Token Length Distribution - {name}")
-    total = len(token_lengths)
-    mean_len = sum(token_lengths) / total if total > 0 else 0
-    min_len = min(token_lengths) if token_lengths else 0
-    max_len = max(token_lengths) if token_lengths else 0
-    plt.axvline(mean_len, color="red", linestyle="dashed", linewidth=2, label=f"Mean: {mean_len:.1f}")
-    plt.text(0.95, 0.95, f"Total: {total}\nMean: {mean_len:.1f}\nMin: {min_len}\nMax: {max_len}", transform=plt.gca().transAxes, ha="right", va="top", bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5))
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(plot_path)
-    plt.close()
-    logger.info(f"Invariant token length distribution plot saved to {plot_path}")
-
-
 @hydra.main(
     version_base=None,
     config_path="../../configs/preprocess",
@@ -376,17 +278,28 @@ def main(cfg: DictConfig) -> None:
     if cfg.dataset.get("limit", -1) > 0:
         raw_dataset = raw_dataset.select(range(cfg.dataset.limit))
 
-    inv_mode = cfg.dataset.inv_mode
+    version = cfg.dataset.get("version", "v2")
+    if version not in ("v0", "v1", "v2"):
+        raise ValueError(f"dataset.version must be v0, v1, or v2; got {version}")
     min_grade = cfg.dataset.get("min_grade", 2)
     max_length = cfg.dataset.get("max_length", 1024)
-    output_dir = cfg.output.get("dir")
-    hf_repo_base = cfg.output.get("hf_repo")
-    # Only v2 (simplified) uses grade suffix; v0/v1 use base repo as-is
-    hf_repo_name = (
-        f"{hf_repo_base}-g{min_grade}" if inv_mode == "simplified" and hf_repo_base else hf_repo_base
-    )
+    base_output_dir = cfg.output.get("dir")
+    # Build HF repo: {org}/wonda-{model_family}-{nt|t}-sft-{v0|v1|v2-g{min_grade}}
+    org = cfg.output.get("hf_organization", "idopinto")
+    model_family = cfg.tokenizer.name.split("/")[0].lower()
+    enable_thinking = cfg.tokenizer.get("chat_template_kwargs", {}).get("enable_thinking", False)
+    thinking_suffix = "t" if enable_thinking else "nt"
+    repo_base = f"{org}/wonda-{model_family}-{thinking_suffix}-sft"
+    if version == "v2":
+        hf_repo_name = f"{repo_base}-v2-g{min_grade}"
+    elif version == "v1":
+        hf_repo_name = f"{repo_base}-v1"
+    else:
+        hf_repo_name = f"{repo_base}-v0"
+    dataset_name = hf_repo_name.split("/")[-1]
+    output_dir = str(Path(base_output_dir) / dataset_name) if base_output_dir else None
 
-    if inv_mode == "simplified":
+    if version == "v2":
         dataset = build_sft_dataset_v2(
             raw_dataset=raw_dataset,
             tokenizer=tokenizer,
@@ -395,7 +308,7 @@ def main(cfg: DictConfig) -> None:
             chat_template_kwargs=chat_template_kwargs,
             max_length=max_length,
             min_grade=min_grade,
-            inv_mode=inv_mode,
+            version=version,
             output_dir=output_dir,
             hf_repo_name=hf_repo_name,
         )
@@ -407,7 +320,7 @@ def main(cfg: DictConfig) -> None:
             user_prompt_template=cfg.prompts.user_prompt_template,
             chat_template_kwargs=chat_template_kwargs,
             max_length=max_length,
-            inv_mode=inv_mode,
+            version=version,
             output_dir=output_dir,
         )
         if hf_repo_name and len(dataset) > 0:
@@ -416,7 +329,7 @@ def main(cfg: DictConfig) -> None:
     if output_dir and len(dataset) > 0:
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
-        json_path = out_path / f"sft_dataset_{inv_mode}_g{min_grade}.json"
+        json_path = out_path / f"{dataset_name}.json"
         dataset.to_json(str(json_path))
         logger.info(f"Saved SFT dataset to {json_path}")
 

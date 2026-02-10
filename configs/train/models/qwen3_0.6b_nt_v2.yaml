@@ -25,10 +25,11 @@ model:
       min_p: 0
 
 dataset:
-  hf_repo: "idopinto/wonda-sft-v2-g2"  # pre-built SFT dataset (simplified, min_grade>=2); use -g3 for grade>=3
+  hf_repo: "idopinto/wonda-qwen-nt-sft-v2-g2"  # pre-built SFT dataset; use -g1 to load all then filter with min_grade
   json_path: null
   limit: -1
   split_ratio: 0.8
+  min_grade: null  # optional: keep only quality_grade >= this (e.g. 2 when loading -g1 repo)
 
 sft:
   output_dir: "trained_models/qwen3-0.6b-nt-gen-inv-sft-v2"

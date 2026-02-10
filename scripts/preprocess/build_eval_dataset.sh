@@ -57,7 +57,7 @@ echo "=========================================="
 echo ""
 
 # Run eval dataset builder
-uv run -m wonda.data_pipeline.build_eval_dataset "$@"
+uv run -m wonda.preprocess.build_eval_dataset "$@"
 
 echo ""
 echo "=========================================="

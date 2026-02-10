@@ -11,6 +11,6 @@ cd "$(dirname "$0")/../.."
 
 echo "=== Running Wonda Pipeline (AST-based Invariant Normalization + LLM-based Invariant Simplification) ==="
 
-uv run -m wonda.data_pipeline.wonda_pipeline "$@"
+uv run -m wonda.preprocess.wonda_pipeline "$@"
 
 echo "=== Done ==="

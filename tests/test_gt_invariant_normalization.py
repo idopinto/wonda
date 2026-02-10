@@ -1,5 +1,5 @@
 """
-Comprehensive pytest test suite for wonda/data_pipeline/gt_invariant_normalization.py
+Comprehensive pytest test suite for wonda/preprocess/gt_invariant_normalization.py
 
 Tests are organized from easy to hard:
 1. Basic parsing tests
@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pycparser import c_ast, c_parser
 
-from wonda.data_pipeline.gt_invariant_normalization import (
+from wonda.preprocess.gt_invariant_normalization import (
     _extract_identifier_type_names,
     _is_integral_typename,
     _set_child,

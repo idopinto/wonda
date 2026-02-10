@@ -1,5 +1,5 @@
 # Configuration for baseline training dataset creation (AST-based)
-# Used by: wonda/data_pipeline/build_baseline_train_dataset.py
+# Used by: wonda/preprocess/build_raw_train_dataset.py
 
 # Dataset configuration
 dataset:
@@ -97,6 +97,6 @@ prompts:
         ```
 
 # Example usage:
-# uv run -m wonda.data_pipeline.build_train_dataset output.test_mode=true dataset.limit=1 verifier.k=1 output.push_to_hub=true
+# uv run -m wonda.preprocess.build_raw_train_dataset output.test_mode=true dataset.limit=1 verifier.k=1 output.push_to_hub=true
 # sbatch command:
 # sbatch scripts/preprocess/build_raw_train_dataset.sh output.test_mode=false dataset.limit=-1 verifier.k=1 output.push_to_hub=true

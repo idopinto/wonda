@@ -11,10 +11,13 @@ def load_sft_dataset(
     hf_repo: str | None = None,
     json_path: str | None = None,
     limit: int = -1,
+    min_grade: int | None = None,
 ) -> Dataset:
     """Load a pre-built SFT dataset from HuggingFace Hub or local JSON.
 
     Exactly one of hf_repo or json_path must be provided.
+    If min_grade is set and the dataset has a quality_grade column, keep only samples with quality_grade >= min_grade
+    (e.g. load wonda-qwen-nt-sft-v2-g1 then filter to grade >= 2).
     """
     if hf_repo and json_path:
         raise ValueError("Provide exactly one of hf_repo or json_path")
@@ -28,6 +31,10 @@ def load_sft_dataset(
         logger.info(f"Loading SFT dataset from HuggingFace: {hf_repo}")
         dataset = load_dataset(hf_repo, split="train")
 
+    if min_grade is not None and "quality_grade" in dataset.column_names:
+        n_before = len(dataset)
+        dataset = dataset.filter(lambda x: x["quality_grade"] >= min_grade)
+        logger.info(f"Filtered to quality_grade >= {min_grade}: {len(dataset)} / {n_before} samples")
     if limit > 0:
         dataset = dataset.select(range(min(limit, len(dataset))))
     logger.info(f"Loaded {len(dataset)} SFT samples")
@@ -62,8 +69,9 @@ def log_dataset_stats(dataset: Dataset, tokenizer: AutoTokenizer, name: str = "d
         "max": max(token_lengths),
     }
 
-    if "grade" in dataset.column_names:
-        grades = [sample["grade"] for sample in dataset]
+    grade_col = "quality_grade" if "quality_grade" in dataset.column_names else ("grade" if "grade" in dataset.column_names else None)
+    if grade_col:
+        grades = [sample[grade_col] for sample in dataset]
         grade_counts = Counter(grades)
         stats["grade"] = {
             "mean": sum(grades) / len(grades),
@@ -79,8 +87,8 @@ def log_dataset_stats(dataset: Dataset, tokenizer: AutoTokenizer, name: str = "d
         }
 
     if "speedup" in dataset.column_names:
-        if "grade" in dataset.column_names:
-            speedups = [sample["speedup"] for sample in dataset if sample["grade"] > 1]
+        if grade_col:
+            speedups = [sample["speedup"] for sample in dataset if sample[grade_col] > 1]
         else:
             speedups = [sample["speedup"] for sample in dataset]
         if speedups:

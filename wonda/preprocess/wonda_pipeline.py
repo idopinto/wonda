@@ -17,9 +17,9 @@ Stage 2 — Simplification (gt_invariant_simplification.py):
 
 Usage:
     for testing:
-      uv run -m wonda.data_pipeline.wonda_pipeline dataset.limit=5
+      uv run -m wonda.preprocess.wonda_pipeline dataset.limit=5
     for full run:
-      uv run -m wonda.data_pipeline.wonda_pipeline dataset.limit=-1
+      uv run -m wonda.preprocess.wonda_pipeline dataset.limit=-1
     for slurm run:
       sbatch scripts/preprocess/preprocess_gt_invariants_parallel.sbatch dataset.limit=-1
 """
@@ -41,12 +41,12 @@ load_dotenv()
 
 from configs import global_config as GC
 from wonda.core.ast_program import AstProgram
-from wonda.data_pipeline.gt_invariant_normalization import normalize_invariant
-from wonda.data_pipeline.gt_invariant_simplification import (
+from wonda.preprocess.gt_invariant_normalization import normalize_invariant
+from wonda.preprocess.gt_invariant_simplification import (
     InvariantContext,
     process_invariant,
 )
-from wonda.data_pipeline.pipe_utils import (
+from wonda.preprocess.pipe_utils import (
     build_processed_keys,
     get_checkpoint_path,
     load_attempted_keys,

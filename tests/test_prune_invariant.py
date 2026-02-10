@@ -4,7 +4,7 @@ import sys
 # Keep the test style consistent with existing tests in this repo.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from wonda.data_pipeline.prune_invariant import (
+from wonda.preprocess.prune_invariant import (
     parse_invariant_expr,
     pretty_invariant_src,
     strip_unnecessary_typing_casts,

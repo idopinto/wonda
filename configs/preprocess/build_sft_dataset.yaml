@@ -1,17 +1,18 @@
 # Build SFT-ready training dataset from raw or v2 datasets.
-# Used by: wonda/data_pipeline/build_sft_dataset.py
+# Used by: wonda/preprocess/build_sft_dataset.py
 #
-# Input repo depends on inv_mode:
-#   - v2 (simplified): idopinto/wonda-train-dataset-full-v2 (output of wonda_pipeline)
-#   - v0 (raw) / v1 (normalized): idopinto/wonda-train-dataset-full-raw
-
+# Input repo depends on version:
+#   - v2: idopinto/wonda-train-dataset-full-v2 (output of wonda_pipeline)
+#   - v0 / v1: idopinto/wonda-train-dataset-full-raw, split="full"
+# uv run -m wonda.preprocess.build_sft_dataset dataset.version=v0 dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full
+# uv run -m wonda.preprocess.build_sft_dataset dataset.version=v2 dataset.min_grade=2
 dataset:
   input_repo: "idopinto/wonda-train-dataset-full-v2"
   json_path: null
   split: "train"
   limit: -1
-  inv_mode: "simplified"  # "raw", "normalized", "simplified"
-  min_grade: 2
+  version: "v2"  # v0 (raw) | v1 (normalized) | v2 (simplified + verified)
+  min_grade: 2   # only for v2
   max_length: 1024
 
 tokenizer:
@@ -23,7 +24,11 @@ tokenizer:
 
 output:
   dir: "data/train/sft-ready/"
-  hf_repo: "idopinto/wonda-sft-v2"  # suffixed with "-g{min_grade}" dynamically (e.g. wonda-sft-v2-g2)
+  hf_organization: "idopinto"
+  # HF repo is built as: {hf_organization}/wonda-{model_family}-{nt|t}-sft-{suffix}
+  # model_family = first segment of tokenizer.name, lowercased (e.g. Qwen/Qwen3-0.6B -> qwen)
+  # nt = non-think, t = think (from tokenizer.chat_template_kwargs.enable_thinking if present)
+  # suffix = v0 | v1 | v2-g{min_grade} from dataset.version (min_grade only for v2)
 
 prompts:
   system_prompt: |
