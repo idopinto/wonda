@@ -13,6 +13,8 @@ The synthesis of inductive loop invariants is a critical bottleneck in automated
 
 This repository contains the code for **WONDA** (data curation pipeline) and the full training and evaluation framework for fine-tuning Small Language Models (SLMs) on loop invariant generation for C programs.
 
+**Released models and datasets:** All fine-tuned models and datasets are available in the [Wonda HuggingFace collection](https://huggingface.co/collections/idopinto/wonda).
+
 ```
 C Program → Fine-tuned SLM → Candidate Invariant → Decision Procedure
                                                         ├── Correct & Useful → Accelerated Verification
@@ -27,13 +29,15 @@ C Program → Fine-tuned SLM → Candidate Invariant → Decision Procedure
 - CUDA-compatible GPU (L40S or H200 recommended)
 - [uv](https://github.com/astral-sh/uv) package manager
 - [UAutomizer](https://zenodo.org/records/14209043) (for verification)
+- [runlim](https://github.com/arminbiere/runlim) (for time/memory limits during verification)
+- [Weights & Biases (W&B)](https://wandb.ai) account (optional but recommended): we use **wandb** for experiment tracking when training fine-tuned models, and [W&B Weave](https://docs.wandb.ai/weave) for evaluation observability; a W&B account gives you the full experience.
 
 ### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/idopinto/inv-gen.git
-cd inv-gen
+git clone https://github.com/idopinto/wonda.git
+cd wonda
 
 # Install dependencies
 uv sync
@@ -41,6 +45,17 @@ uv sync
 # Install dev dependencies (optional)
 uv sync --extra dev
 ```
+
+### Environment variables
+
+Copy `.env.example` to `.env` and fill in any credentials you need:
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys (OpenAI, Together, OpenRouter, HuggingFace, W&B, etc.)
+```
+
+Variables are optional and depend on what you run: API keys for external model backends, `HF_TOKEN` for private models or pushing to the Hub, `WANDB_API_KEY` for experiment tracking. See `.env.example` for the full list.
 
 ### UAutomizer Setup
 
@@ -51,6 +66,12 @@ tools/
 └── UAutomizer25/
     └── Ultimate.py
 ```
+Other releases can be found here:
+https://fm-tools.sosy-lab.org/#tool-uautomizer
+
+### Runlim Setup
+
+Build or install [runlim](https://github.com/arminbiere/runlim) and place the `runlim` binary at `tools/runlim/runlim`. It is used to enforce time and memory limits when running the verifier (e.g. for evaluation and dataset building).
 
 ## Quick Start
 
@@ -68,123 +89,43 @@ uv run -m wonda.eval.evaluate dataset.limit=5 models.eval_ft_model=true
 
 ### 1. Data Preparation
 
-The preprocessed datasets are available on HuggingFace:
-
-- **InvBench (evaluation)**: [`idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim`](https://huggingface.co/datasets/idopinto/invbench-eval-uautomizer25-k3-l40s-full-runlim)
-- **Training (raw)**: [`invbench-train-uautomizer25-k1-full-raw.json`](data/invbench-train-uautomizer25-k1-full-raw.json) — raw verifier-generated invariants before WONDA curation
-- **Training (curated)**: [`invbench-train-uautomizer25-k1-full-parallel-latest.json`](data/invbench-train-uautomizer25-k1-full-parallel-latest.json) — training data after the WONDA pipeline (AST normalization + LLM-driven semantic rewriting)
-- **Training (HuggingFace)**: versioned splits based on quality grade — [v2.1](https://huggingface.co/datasets/idopinto/invbench-train-uautomizer25-k1-v2.1), [v2.2](https://huggingface.co/datasets/idopinto/invbench-train-uautomizer25-k1-v2.2), [v2.3](https://huggingface.co/datasets/idopinto/invbench-train-uautomizer25-k1-v2.3)
-
-> **Note:** The evaluation dataset above was built on an NVIDIA L40S GPU to match the hardware used for local model inference (0.6B--8B parameters; up to ~14B fits on an L40S for inference). If you plan to evaluate larger local models requiring a more powerful GPU, we recommend rebuilding the dataset from scratch on your hardware infrastructure, as baseline timings and easy/hard splits may differ across machines.
-
-To rebuild the datasets from scratch:
-
-```bash
-# Build evaluation dataset (requires UAutomizer)
-sbatch scripts/preprocess/build_eval_dataset.sh
-
-# Build training dataset
-sbatch scripts/preprocess/build_train_dataset.sh
-
-# Run WONDA pipeline (clean, normalize, and grade training data)
-sbatch scripts/preprocess/build_v1_train_dataset.sbatch
-```
+All datasets are on HuggingFace (see the [Wonda collection](https://huggingface.co/collections/idopinto/wonda) for the full list). See [wonda/preprocess/README.md](wonda/preprocess/README.md) for dataset details and how to rebuild them.
 
 ### 2. Training
 
-Fine-tune a Qwen3 model with LoRA:
-
-```bash
-# Train Qwen3-0.6B
-sbatch scripts/train/train_qwen3_0.6b.sbatch
-
-# Train larger models
-sbatch scripts/train/train_qwen3_4b.sbatch
-sbatch scripts/train/train_qwen3_8b.sbatch
-```
-
-Training configuration is in `configs/train/`. Key parameters:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `sft.num_train_epochs` | 3 | Number of training epochs |
-| `sft.learning_rate` | 0.0002 | Learning rate |
-| `lora.r` | 8 | LoRA rank |
-| `lora.lora_alpha` | 16 | LoRA alpha |
+We release fine-tuned Qwen3 (non-think) models on HuggingFace; training uses LoRA and the WONDA SFT datasets. See [wonda/train/README.md](wonda/train/README.md) for released models and how to train your own.
 
 ### 3. Evaluation
 
-Run multi-trial evaluation with confidence intervals:
-
-```bash
-# Run 3 trials with statistical aggregation
-sbatch scripts/eval/run_multi_eval.sbatch --num_runs=3 models=qwen3_0.6b_nt_config
-
-# Evaluate specific fine-tuned model
-sbatch scripts/eval/run_multi_eval.sbatch --num_runs=3 \
-    models=qwen3_0.6b_nt_config \
-    models.eval_ft_model=true \
-    models.ft_model.sft_version="v2.3"
-```
-
-Results are saved to `experiments/` with aggregated statistics.
+We run multi-trial evaluation and report the metrics described in the paper. The metrics (validation, correctness, usefulness, VBS, speedup, etc.) are implemented and explained in [wonda/eval/inv_gen_scorer.py](wonda/eval/inv_gen_scorer.py). See [wonda/eval/README.md](wonda/eval/README.md) for the evaluation process, models used in the paper, and how to run evaluations.
 
 ## Project Structure
 
 ```
-inv-gen/
+wonda/
 ├── configs/
-│   ├── eval/           # Evaluation configs (Hydra)
-│   ├── train/          # Training configs
-│   └── preprocess/     # Data preprocessing configs
+│   ├── eval/           # Evaluation configs (Hydra), incl. model configs in models/
+│   ├── train/          # Training configs (qwen3_0.6b … qwen3_14b)
+│   └── preprocess/     # Preprocessing configs (build_eval_dataset, build_sft_dataset, wonda_data_pipeline)
 ├── scripts/
-│   ├── eval/           # SLURM evaluation scripts
-│   ├── train/          # SLURM training scripts
-│   └── preprocess/     # SLURM preprocessing scripts
-├── src/
+│   ├── eval/           # SLURM scripts: run_evaluation.sbatch, run_multi_eval.sbatch
+│   ├── train/          # SLURM scripts: train_qwen.sbatch, train_and_eval_qwen.sbatch
+│   └── preprocess/     # SLURM/shell: build_eval_dataset.sbatch, build_raw_train_dataset.sbatch, wonda_pipeline.sbatch, build_sft_dataset.sh
+├── wonda/              # Main package
+│   ├── core/           # AST and property utilities (ast_program.py, property.py)
 │   ├── eval/           # Evaluation pipeline
-│   │   ├── evaluate.py         # Main evaluation entry point
-│   │   ├── run_multi_eval.py   # Multi-trial evaluation
-│   │   ├── decision_procedure.py
-│   │   └── models/             # Model implementations
+│   │   ├── evaluate.py, run_multi_eval.py, inv_gen_scorer.py
+│   │   ├── decision_procedure.py, eval_data.py, validate.py, aggregate_results.py
+│   │   └── models/     # Model backends (qwen_model, oss_model, open_router_model, vllm_model, etc.)
 │   ├── preprocess/     # WONDA data curation pipeline
-│   │   ├── build_eval_dataset.py
-│   │   ├── build_v1_train_dataset.py
-│   │   └── gt_invariant_normalization.py
-│   ├── train/          # Training code
-│   │   └── sft/        # Supervised fine-tuning
-│   ├── utils/          # Utilities
-│   └── verifiers/      # UAutomizer wrapper
+│   │   ├── build_eval_dataset.py, build_raw_train_dataset.py, build_sft_dataset.py
+│   │   ├── wonda_pipeline.py, baseline_dataset_common.py
+│   │   └── gt_invariant_normalization.py, gt_invariant_simplification.py
+│   ├── train/          # Training: train_qwen.py, data_utils.py, train_utils.py
+│   └── verifiers/      # UAutomizer wrapper (uautomizer.py)
 ├── tests/              # Test suite
-└── docs/               # Documentation
+└── tools/              # UAutomizer and runlim (see Installation)
 ```
-
-## Configuration
-
-Configuration uses [Hydra](https://hydra.cc/). Override any parameter from the command line:
-
-```bash
-# Common overrides
-uv run -m wonda.eval.evaluate \
-    dataset.split=easy \
-    dataset.limit=10 \
-    models=qwen3_0.6b_nt_config \
-    scorer.verifier.timeout_seconds=300
-```
-
-See `configs/eval/config.yaml` for all available options.
-
-## Datasets
-
-| Dataset | Description | Size |
-|---------|-------------|------|
-| `invbench-eval-*` | InvBench evaluation benchmark | 219 programs |
-| `invbench-train-*-raw` | Raw verifier-generated invariants (before WONDA) | — |
-| `invbench-train-*-v2.1` | WONDA-curated training data (quality grade 1--3) | — |
-| `invbench-train-*-v2.2` | WONDA-curated training data (quality grade 2--3) | — |
-| `invbench-train-*-v2.3` | WONDA-curated training data (quality grade 3 only) | — |
-
-All datasets are available on [HuggingFace](https://huggingface.co/idopinto).
 
 ## Citation
 
