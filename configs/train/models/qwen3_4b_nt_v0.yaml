@@ -25,16 +25,10 @@ model:
       min_p: 0
 
 dataset:
-  repo_name: "idopinto/wonda-train-dataset-full-raw"
+  hf_repo: "idopinto/wonda-sft-v0"  # pre-built SFT dataset (raw)
   json_path: null
-  # json_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest-2222-test.json"
-  limit: -1 # (3513 -> 4000)
-  split: "full" # "full" or "easy" or "hard"
+  limit: -1
   split_ratio: 0.8
-  inv_mode: "raw" # "raw" or "pretty" or "simplified"
-  min_grade: null
-  hf_upload_repo: null  # will be concatentaed with .min_grade
-  force_reprocess: false  # Set to true to skip loading from HF and reprocess raw data
 
 sft:
   output_dir: "trained_models/qwen3-4b-instruct-2507-nt-gen-inv-sft-v0"  # will be concatentaed with .min_grade

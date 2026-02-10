@@ -23,7 +23,7 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
 
-from wonda.train.data_utils import load_training_data, split_dataset
+from wonda.train.data_utils import load_sft_dataset, split_dataset
 from wonda.train.train_utils import (
     init_tokenizer,
     load_model,
@@ -61,16 +61,12 @@ def main(cfg: DictConfig):
     logger.info(OmegaConf.to_yaml(cfg))
     logger.info("=" * 50)
 
-    # Derive run-specific naming from min_grade
-    min_grade_str = "." + str(cfg.dataset.min_grade) if cfg.dataset.get("min_grade") else ""
-    wandb_name = cfg.wandb.name + min_grade_str
-    output_dir = cfg.sft.output_dir + min_grade_str
-    hf_upload_repo = (cfg.dataset.hf_upload_repo + min_grade_str) if cfg.dataset.get("hf_upload_repo") else None
+    wandb_name = cfg.wandb.name
+    output_dir = cfg.sft.output_dir
 
     if cfg.test_mode:
         logger.info("Training in test mode...")
         wandb_name = wandb_name + "-test"
-        hf_upload_repo = (hf_upload_repo + "-test") if hf_upload_repo else None
         output_dir = output_dir + "-test"
         cfg.dataset.limit = 100
 
@@ -80,14 +76,14 @@ def main(cfg: DictConfig):
         logger.info("Wandb is disabled. Skipping wandb initialization...")
 
     model_name = cfg.model.base_model_name
-    raw_repo_name = cfg.dataset.repo_name
-    force_reprocess = cfg.dataset.get("force_reprocess", False)
+    hf_repo = cfg.dataset.get("hf_repo")
+    json_path = cfg.dataset.get("json_path")
+    if not hf_repo and not json_path:
+        raise ValueError("Provide dataset.hf_repo (pre-built SFT dataset) or dataset.json_path")
+    if hf_repo and json_path:
+        raise ValueError("Provide exactly one of dataset.hf_repo or dataset.json_path")
     tokenizer = init_tokenizer(model_name)
-    logger.info(
-        f"model_name: {model_name} | raw_repo_name: {raw_repo_name} | "
-        f"hf_upload_repo: {hf_upload_repo} | output_dir: {output_dir}"
-    )
-    logger.info(f"force_reprocess training data: {force_reprocess}")
+    logger.info(f"model_name: {model_name} | dataset: {hf_repo or json_path} | output_dir: {output_dir}")
 
     # Build SFT training args from config
     training_args = SFTConfig(
@@ -120,21 +116,11 @@ def main(cfg: DictConfig):
         device_map=cfg.model.init_kwargs_train.device_map,
     )
 
-    # Load and split data
-    full_dataset = load_training_data(
-        dataset_name=raw_repo_name,
-        tokenizer=tokenizer,
-        system_prompt=cfg.prompts.per_marker_system_prompt,
-        user_prompt_template=cfg.prompts.per_marker_user_prompt_template,
-        limit=cfg.dataset.limit,
-        inv_mode=cfg.dataset.inv_mode,
-        split=cfg.dataset.split,
-        max_length=cfg.sft.max_length,
-        json_path=cfg.dataset.get("json_path"),
-        min_grade=cfg.dataset.get("min_grade") or 1,
-        output_dir=cfg.sft.output_dir,
-        hf_upload_repo=hf_upload_repo,
-        force_reprocess=force_reprocess,
+    # Load pre-built SFT dataset and split
+    full_dataset = load_sft_dataset(
+        hf_repo=hf_repo,
+        json_path=json_path,
+        limit=cfg.dataset.get("limit", -1),
     )
     train_dataset, validation_dataset = split_dataset(full_dataset, split_ratio=cfg.dataset.split_ratio)
 

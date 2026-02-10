@@ -20,7 +20,7 @@ from wonda.data_pipeline.baseline_dataset_common import (
     logger,
     run_uautomizer_as_baseline,
 )
-from wonda.verifiers.uautomizer import UAutomizerVerifier
+from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -35,15 +35,9 @@ logging.basicConfig(
 def main(cfg: DictConfig):
     logger.info(f"Configuration:\n{OmegaConf.to_yaml(cfg)}")
 
-    test_suffix = "test" if cfg.output.test_mode else "full"
-    output_dir = GC.DATASET_DIR / "train" / f"wonda-train-dataset-{test_suffix}-raw"
+    test_suffix = "-test" if cfg.output.test_mode else ""
+    output_dir = GC.DATASET_DIR / "train" / f"wonda-train-dataset-raw{test_suffix}"
     
-    # output_dir = (
-    #     GC.DATASET_DIR
-    #     / "train"
-    #     / f"wonda-train-uautomizer{cfg.verifier.version}"
-    #       f"-k{cfg.verifier.k}-{test_suffix}-raw"
-    # )
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / f"{output_dir.name}.json"
     logger.info(f"Output: {output_dir}")
@@ -54,6 +48,7 @@ def main(cfg: DictConfig):
         arch=cfg.verifier.arch,
         timeout_seconds=cfg.verifier.timeout,
         version=cfg.verifier.version,
+        memory_limit_mb=GC.MEMORY_LIMIT_MB,
     )
 
     run_uautomizer_as_baseline(cfg=cfg, verifier=verifier, results_path=results_path)

@@ -191,7 +191,7 @@ def process_program(
 
     target_assert = ast_program.get_target_assert()
     program_for_baseline = ast_program.get_program_with_assertion(
-        predicate=target_assert, assumptions=[], for_llm=False
+        property_to_assert=target_assert, assumptions=[], for_llm=False
     )
 
     result: dict[str, Any] = {

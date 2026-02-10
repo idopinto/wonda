@@ -49,7 +49,7 @@ def syntactic_validation(content: str) -> bool:
     Based on paper requirements:
     - Must be a boolean condition over program state
     - Must not contain assignments (e.g., a += 1, a = 5)
-    - Must be safely interpretable as a state predicate
+    - Must be safely interpretable as a state property
     """
     # Early rejection of empty or whitespace-only strings
     if not content or not content.strip():
@@ -59,7 +59,7 @@ def syntactic_validation(content: str) -> bool:
         import pycparser.c_parser
         from pycparser.c_ast import NodeVisitor
 
-        # Parse the predicate as a C expression wrapped in an assert
+        # Parse the property as a C expression wrapped in an assert
         # This allows us to check its AST structure
         wrapped_expr = f"void test() {{ assert({content}); }}"
         ast = pycparser.c_parser.CParser().parse(wrapped_expr)
@@ -76,7 +76,7 @@ def syntactic_validation(content: str) -> bool:
         visitor = AssignmentVisitor()
         visitor.visit(ast)
 
-        # If the predicate contains any assignment, it's invalid
+        # If the property contains any assignment, it's invalid
         if visitor.has_assignment:
             return False
 
@@ -87,9 +87,9 @@ def syntactic_validation(content: str) -> bool:
         return True
 
     except Exception as e:
-        # If parsing fails, the predicate is likely malformed
+        # If parsing fails, the property is likely malformed
         # Log the error but return False for safety
-        print(f"Warning: Failed to parse predicate '{content}': {e}")
+        print(f"Warning: Failed to parse property '{content}': {e}")
         return False
 
 def validate_model_answer(raw_model_answer: str, target_marker: Optional[str] = None) -> tuple[Property, dict]:

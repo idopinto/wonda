@@ -23,7 +23,7 @@ following rules:
   Parenthesis minimization
     Re-render with minimal parentheses based on C operator precedence.
 
-The normalized predicate phi' = NORMALIZE(phi) is semantically equivalent
+The normalized property phi' = NORMALIZE(phi) is semantically equivalent
 to the original (phi' === phi).  Soundness is ensured by formally verifying
 the final generated invariants against the original program (see Stage 2).
 

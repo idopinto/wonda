@@ -1,6 +1,8 @@
+test_mode: false
+
 weave:
   entity: "ip-ai"
-  project_name: "preprocess-gt-invariants-parallel-latest"
+  project_name: "wonda-data-pipeline"
   use_weave: true
 
 verifier:
@@ -8,31 +10,25 @@ verifier:
   arch: "32bit"
   property: "unreach-call.prp"
   timeout: 600.0
-  max_parallel_workers: 4  # Should equal model.n (N candidates verified in parallel)
+  # max_parallel_workers: 4  # Should equal model.n (also acts as N, number of candidates verified in parallel)
 
 model:
   name: "moonshotai/Kimi-K2-Thinking"
   temperature: 1.0
   max_tokens: 16384 
-  # n: 5  # Number of candidates to generate per verbose invariant
+  n: 4  # Number of candidates to generate per verbose invariant
   
-pipeline:
-    prettify: true
-    simplify: true
-    verify: true
-
-dataset:
-  name: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-raw.json"
+pipe:
+  hf_organization: "idopinto"
+  dataset_name: "wonda-train-dataset"
+  input_suffix: "full-raw"
   limit: -1  # Number of samples to process (-1 for all)
-
-# Output configuration
-output:
-  preprocessed_invariants_path: "data/train/invbench-train-uautomizer25-k1-full-raw/invbench-train-uautomizer25-k1-full-parallel-latest.json"
+  normalize: true
+  simplify: true
+  verify: true
+  output_suffix: "full-v2"
   push_to_hub: true  # Push the dataset to the Hugging Face hub
-  # hub_name: "invbench-train-uautomizer25-k1-full-parallel-latest"  # Optional: custom hub name (defaults to dataset name from output path)
-  hub_name: "wonda-train-dataset-full-v2-raw"
-  hub_organization: "idopinto"
-
+    
 # Filtering criteria for identifying verbose invariants that need generalization
 filtering:
   min_char_length: 20      # Minimum length to consider verbose

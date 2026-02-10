@@ -32,14 +32,8 @@ logging.basicConfig(
 def main(cfg: DictConfig):
     logger.info(f"Configuration:\n{OmegaConf.to_yaml(cfg)}")
 
-    test_suffix = "test" if cfg.output.test_mode else "full"
-    output_dir = GC.DATASET_DIR / "eval" / f"wonda-eval-benchmark-{test_suffix}"
-    # output_dir = (
-    #     GC.DATASET_DIR
-    #     / "eval"
-    #     / f"invbench-eval-uautomizer{cfg.verifier.version}"
-    #       f"-k{cfg.verifier.k}-{cfg.compute_node_type}-{test_suffix}-runlim"
-    # )
+    test_suffix = "-test" if cfg.output.test_mode else ""
+    output_dir = GC.DATASET_DIR / "eval" / f"wonda-eval-benchmark-full{test_suffix}"
     output_dir.mkdir(parents=True, exist_ok=True)
     results_path = output_dir / f"{output_dir.name}.json"
     logger.info(f"Output: {output_dir}")
@@ -50,6 +44,7 @@ def main(cfg: DictConfig):
         arch=cfg.verifier.arch,
         timeout_seconds=cfg.verifier.timeout,
         version=cfg.verifier.version,
+        memory_limit_mb=GC.MEMORY_LIMIT_MB,
     )
 
     run_uautomizer_as_baseline(cfg=cfg, verifier=verifier, results_path=results_path)

@@ -7,8 +7,8 @@ from typing import Optional
 @dataclass
 class Property:
     """
-    A property is a pair (location, predicate) where the location is a loop
-    marker (e.g. INVARIANT_MARKER_1) and the predicate is a boolean expression
+    A property is a pair (location, expression) where the location is a loop
+    marker (e.g. INVARIANT_MARKER_1) and the expression is a boolean expression
     over the program variables.
     """
 

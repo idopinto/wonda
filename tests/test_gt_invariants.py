@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime
-from wonda.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport, write_file
+from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport, write_file
 from wonda.core.ast_program import AstProgram
 from wonda.core.property import Property
 import tempfile
@@ -461,5 +461,6 @@ if __name__ == "__main__":
         arch="32bit",
         timeout_seconds=600.0,
         version="25",
+        memory_limit_mb=GC.MEMORY_LIMIT_MB,
     )
     test_gt_invariants(data, verifier, limit=-1)

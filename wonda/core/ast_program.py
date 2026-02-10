@@ -247,7 +247,7 @@ class AstProgram:
             self.llm_ast,
             marker_name=TARGET_ASSERT_MARKER,
             call_name="assert",
-            predicate_content=self.assertions[0].content,
+            property_content=self.assertions[0].content,
         )
 
         # Emit code strings (no PATCH here; PATCH is added by get_program_with_assertion when for_llm=False)
@@ -327,7 +327,7 @@ class AstProgram:
         Markerizer().visit(ast)
 
     def _parse_expr(self, expr_src: str) -> c_ast.Node:
-        """Parse a predicate expression into a pycparser expression node (best-effort)."""
+        """Parse a property expression into a pycparser expression node (best-effort)."""
         try:
             wrapped = f"void _temp() {{ int _dummy = {expr_src}; }}"
             temp_ast = self.parser.parse(wrapped)
@@ -355,11 +355,11 @@ class AstProgram:
         ast: c_ast.FileAST,
         marker_name: str,
         call_name: str,
-        predicate_content: str,
+        property_content: str,
     ) -> None:
         call_stmt = c_ast.FuncCall(
             name=c_ast.ID(call_name),
-            args=c_ast.ExprList(exprs=[self._parse_expr(predicate_content)]),
+            args=c_ast.ExprList(exprs=[self._parse_expr(property_content)]),
         )
 
         class Replacer(c_ast.NodeVisitor):
@@ -469,27 +469,27 @@ class AstProgram:
 
     def get_program_with_assertion(
         self,
-        predicate: Optional[Property],
+        property_to_assert: Optional[Property],
         assumptions: List[Property],
         for_llm: bool,
-        preserve_predicate_format: bool = True,
+        preserve_property_format: bool = True,
     ) -> str:
         """
         Marker-based instrumentation.
 
         - assumptions: each must have marker_name=INVARIANT_MARKER_k
-        - predicate:
+        - property_to_assert:
             - if marker_name==TARGET_ASSERT_MARKER: assert(target) at original target location
             - else marker_name==INVARIANT_MARKER_k: assert(candidate) at that loop marker
-        - preserve_predicate_format: if True, use string replacement to preserve the original
-            predicate format (avoids pycparser adding extra parentheses)
+        - preserve_property_format: if True, use string replacement to preserve the original
+            property format (avoids pycparser adding extra parentheses)
         """
         if self.marked_ast is None or self.llm_ast is None:
             raise ValueError("Call process() first")
 
-        # Use placeholder for string-based replacement to preserve predicate format
-        PLACEHOLDER = "__PREDICATE_PLACEHOLDER__"
-        original_predicates: Dict[str, str] = {}  # marker -> original content
+        # Use placeholder for string-based replacement to preserve property format
+        PLACEHOLDER = "__PROPERTY_PLACEHOLDER__"
+        original_properties: Dict[str, str] = {}  # marker -> original content
 
         working_ast = copy.deepcopy(self.llm_ast if for_llm else self.marked_ast)
 
@@ -499,49 +499,49 @@ class AstProgram:
                 INVARIANT_MARKER_PREFIX
             ):
                 raise ValueError("assumptions must have marker_name=INVARIANT_MARKER_k")
-            if preserve_predicate_format:
+            if preserve_property_format:
                 placeholder_id = f"{PLACEHOLDER}_{a.marker_name}"
-                original_predicates[placeholder_id] = a.content
+                original_properties[placeholder_id] = a.content
                 repls[a.marker_name] = {"kind": "assume", "expr": placeholder_id}
             else:
                 repls[a.marker_name] = {"kind": "assume", "expr": a.content}
 
-        if predicate is not None:
-            if predicate.marker_name == TARGET_ASSERT_MARKER:
-                if preserve_predicate_format:
+        if property_to_assert is not None:
+            if property_to_assert.marker_name == TARGET_ASSERT_MARKER:
+                if preserve_property_format:
                     placeholder_id = f"{PLACEHOLDER}_{TARGET_ASSERT_MARKER}"
-                    original_predicates[placeholder_id] = predicate.content
+                    original_properties[placeholder_id] = property_to_assert.content
                     self._replace_marker_with_call(
                         working_ast,
                         marker_name=TARGET_ASSERT_MARKER,
                         call_name="assert",
-                        predicate_content=placeholder_id,
+                        property_content=placeholder_id,
                     )
                 else:
                     self._replace_marker_with_call(
                         working_ast,
                         marker_name=TARGET_ASSERT_MARKER,
                         call_name="assert",
-                        predicate_content=predicate.content,
+                        property_content=property_to_assert.content,
                     )
-            elif predicate.marker_name and predicate.marker_name.startswith(
+            elif property_to_assert.marker_name and property_to_assert.marker_name.startswith(
                 INVARIANT_MARKER_PREFIX
             ):
-                if preserve_predicate_format:
-                    placeholder_id = f"{PLACEHOLDER}_{predicate.marker_name}"
-                    original_predicates[placeholder_id] = predicate.content
-                    repls[predicate.marker_name] = {
+                if preserve_property_format:
+                    placeholder_id = f"{PLACEHOLDER}_{property_to_assert.marker_name}"
+                    original_properties[placeholder_id] = property_to_assert.content
+                    repls[property_to_assert.marker_name] = {
                         "kind": "assert",
                         "expr": placeholder_id,
                     }
                 else:
-                    repls[predicate.marker_name] = {
+                    repls[property_to_assert.marker_name] = {
                         "kind": "assert",
-                        "expr": predicate.content,
+                        "expr": property_to_assert.content,
                     }
             else:
                 raise ValueError(
-                    "predicate must have marker_name=TARGET_ASSERT_MARKER or INVARIANT_MARKER_k"
+                    "property_to_assert must have marker_name=TARGET_ASSERT_MARKER or INVARIANT_MARKER_k"
                 )
 
         if repls:
@@ -552,9 +552,9 @@ class AstProgram:
 
         program = self.generator.visit(working_ast).strip()
 
-        # Replace placeholders with original predicate content (preserves formatting)
-        if preserve_predicate_format:
-            for placeholder_id, original_content in original_predicates.items():
+        # Replace placeholders with original property content (preserves formatting)
+        if preserve_property_format:
+            for placeholder_id, original_content in original_properties.items():
                 program = program.replace(placeholder_id, original_content)
 
         if for_llm:
@@ -589,20 +589,20 @@ if __name__ == "__main__":
     print("----- LLM (nondet->rand) -----")
     print(llm)
 
-    predicate = Property(content="x > 0", marker_name="INVARIANT_MARKER_1")
+    prop = Property(content="x > 0", marker_name="INVARIANT_MARKER_1")
     assumptions = []
-    program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
+    program = p.get_program_with_assertion(prop, assumptions, for_llm=False)
     print("----- Program -----")
     print(program)
 
-    predicate = p.get_target_assert()
+    prop = p.get_target_assert()
     print("----- Target Assert -----")
-    print(predicate)
+    print(prop)
     assumptions = [
         # Property(content="y > 0", marker_name="INVARIANT_MARKER_2"),
         # Property(content="z > 0", marker_name="INVARIANT_MARKER_3"),
     ]
-    program = p.get_program_with_assertion(predicate, assumptions, for_llm=False)
+    program = p.get_program_with_assertion(prop, assumptions, for_llm=False)
     print("----- Program -----")
     print(program)
     print("----- Available Markers -----")

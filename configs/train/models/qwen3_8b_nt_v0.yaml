@@ -25,13 +25,10 @@ model:
       min_p: 0
 
 dataset:
-  repo_name: "idopinto/wonda-train-dataset-full-raw"
+  hf_repo: "idopinto/wonda-sft-v0"  # pre-built SFT dataset (raw)
   json_path: null
-  limit: -1 # (3513 -> 4000)
-  split: "full" # "full" or "easy" or "hard"
+  limit: -1
   split_ratio: 0.8
-  inv_mode: "raw" # "raw" or "pretty" or "simplified"
-  min_grade: null
 
 sft:
   output_dir: "trained_models/qwen3-8b-gen-inv-sft-v0-latest"

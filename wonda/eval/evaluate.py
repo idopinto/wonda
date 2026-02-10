@@ -168,6 +168,7 @@ def main(cfg: DictConfig):
         arch=cfg.scorer.verifier.arch,
         timeout_seconds=cfg.scorer.verifier.timeout_seconds,
         version=cfg.scorer.verifier.version,
+        memory_limit_mb=GC.MEMORY_LIMIT_MB,
     )
     
     scorer = InvGenScorer(

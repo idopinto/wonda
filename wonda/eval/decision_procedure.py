@@ -117,11 +117,11 @@ class DecisionProcedure:
     ) -> DecisionProcedureReport:
 
         program_for_correctness = self.program.get_program_with_assertion(
-            predicate=candidate_invariant, assumptions=[], for_llm=False
+            property_to_assert=candidate_invariant, assumptions=[], for_llm=False
         )
 
         program_for_usefulness = self.program.get_program_with_assertion(
-            predicate=self.target_assert, assumptions=[candidate_invariant], for_llm=False
+            property_to_assert=self.target_assert, assumptions=[candidate_invariant], for_llm=False
         )
 
         # Parallel evaluation: run both verifier queries concurrently
