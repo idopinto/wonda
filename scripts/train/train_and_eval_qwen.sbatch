@@ -9,26 +9,44 @@
 #SBATCH --killable
 
 # Script to train Qwen model and then evaluate it
-# Usage: sbatch scripts/train/train_and_eval_qwen.sbatch [TRAIN_CONFIG_OVERRIDES] [EVAL_CONFIG_OVERRIDES]
+# Usage: sbatch scripts/train/train_and_eval_qwen.sbatch [TRAIN_ARGS] [--] [EVAL_ARGS]
 #
 # The script will:
 #   1. Train the model using train_qwen.py
 #   2. Extract the output directory from training
 #   3. Evaluate the trained model using evaluate.py
 #
-# Hydra config overrides for training (pass before --):
-#   --config-name=qwen_0_6b_v0|qwen_0_6b_v1|qwen_1_7b_v0|qwen_1_7b_v1
-#   dataset.limit=N                      Limit number of training samples
-#   sft.num_train_epochs=N               Number of training epochs
+# Training args (before --): --config-name=qwen3_0.6b|qwen3_1.7b|qwen3_4b|qwen3_8b|qwen3_14b, dataset.version=v0|v1|v2, dataset.min_grade=2 (for v2), etc.
+# Evaluation args (after --): models=qwen_no_think_config|..., dataset.limit=N, dataset.split=easy|hard, etc.
 #
-# Hydra config overrides for evaluation (pass after --):
-#   models=qwen_no_think_config|qwen_config
-#   dataset.limit=N                      Limit number of evaluation samples
-#   dataset.split=easy|hard               Evaluation split
-#
-# Examples:
-#   sbatch scripts/train/train_and_eval_qwen.sbatch
-#   sbatch scripts/train/train_and_eval_qwen.sbatch --config-name=qwen_0_6b_v1 --models=qwen_no_think_config dataset.limit=10
+# Explicit commands (model size × version; v2 uses min_grade=2):
+#   0.6B
+#   sbatch --job-name=train_eval_0.6b_v0 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_0.6b dataset.version=v0
+#   sbatch --job-name=train_eval_0.6b_v1 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_0.6b dataset.version=v1
+#   sbatch --job-name=train_eval_0.6b_v2 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_0.6b dataset.version=v2 dataset.min_grade=2
+#   sbatch --job-name=train_eval_0.6b_v2_test scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_0.6b dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   1.7B
+#   sbatch --job-name=train_eval_1.7b_v0 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_1.7b dataset.version=v0
+#   sbatch --job-name=train_eval_1.7b_v1 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_1.7b dataset.version=v1
+#   sbatch --job-name=train_eval_1.7b_v2 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_1.7b dataset.version=v2 dataset.min_grade=2
+#   sbatch --job-name=train_eval_1.7b_v2_test scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_1.7b dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   4B
+#   sbatch --job-name=train_eval_4b_v0 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_4b dataset.version=v0
+#   sbatch --job-name=train_eval_4b_v1 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_4b dataset.version=v1
+#   sbatch --job-name=train_eval_4b_v2 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_4b dataset.version=v2 dataset.min_grade=2
+#   sbatch --job-name=train_eval_4b_v2_test scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_4b dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   8B
+#   sbatch --job-name=train_eval_8b_v0 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_8b dataset.version=v0
+#   sbatch --job-name=train_eval_8b_v1 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_8b dataset.version=v1
+#   sbatch --job-name=train_eval_8b_v2 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_8b dataset.version=v2 dataset.min_grade=2
+#   sbatch --job-name=train_eval_8b_v2_test scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_8b dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   14B
+#   sbatch --job-name=train_eval_14b_v0 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_14b dataset.version=v0
+#   sbatch --job-name=train_eval_14b_v1 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_14b dataset.version=v1
+#   sbatch --job-name=train_eval_14b_v2 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_14b dataset.version=v2 dataset.min_grade=2
+#   sbatch --job-name=train_eval_14b_v2_test scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_14b dataset.version=v2 dataset.min_grade=2 test_mode=true
+# With evaluation overrides (e.g. limit eval samples):
+#   sbatch --job-name=train_eval_0.6b_v2 scripts/train/train_and_eval_qwen.sbatch --config-name=qwen3_0.6b dataset.version=v2 dataset.min_grade=2 -- dataset.limit=10
 
 echo "Starting Qwen training and evaluation pipeline..."
 set -e
@@ -93,25 +111,24 @@ else
     exit 1
 fi
 
-# Extract output directory from training config or output
-# Try to get it from the config file or from training output
-MODEL_OUTPUT_DIR=$(grep -oP 'output_dir["\s:]+["\s]+[^"]*["\s]+' "$TRAIN_OUTPUT" | head -1 | sed 's/.*["\s]\([^"]*\)["\s].*/\1/' || echo "")
+# Extract output directory from training output (train_qwen prints model_name and output_dir after derivation)
+CONFIG_NAME=$(echo "${TRAIN_ARGS[@]}" | grep -oP '--config-name=\K[^\s]+' || echo "qwen3_0.6b")
+VERSION=$(echo "${TRAIN_ARGS[@]}" | grep -oP 'dataset\.version=\K[^\s]+' || echo "v0")
+MODEL_OUTPUT_DIR=$(grep -oP 'trained_models/qwen3-[^[:space:]]+-nt-gen-inv-sft-[^[:space:]]+' "$TRAIN_OUTPUT" | tail -1 || true)
 
-# If not found in output, try to extract from Hydra config
+# If not in log, try config file (unified configs have output_dir: null, so this often fails)
 if [ -z "$MODEL_OUTPUT_DIR" ]; then
-    # Get config name from args or use default
-    CONFIG_NAME=$(echo "${TRAIN_ARGS[@]}" | grep -oP '--config-name=\K[^\s]+' || echo "qwen_0_6b_v0")
-    CONFIG_FILE="configs/train/qwen/${CONFIG_NAME}.yaml"
+    CONFIG_FILE="configs/train/models/${CONFIG_NAME}.yaml"
     if [ -f "$CONFIG_FILE" ]; then
-        MODEL_OUTPUT_DIR=$(grep -A 1 "^sft:" "$CONFIG_FILE" | grep "output_dir:" | sed 's/.*output_dir:\s*["\s]*\([^"]*\)["\s]*/\1/')
+        MODEL_OUTPUT_DIR=$(grep "^  output_dir:" "$CONFIG_FILE" | sed 's/.*output_dir:\s*["\s]*\([^"]*\)["\s]*/\1/')
     fi
 fi
 
-# If still not found, construct default path
-if [ -z "$MODEL_OUTPUT_DIR" ]; then
-    CONFIG_NAME=$(echo "${TRAIN_ARGS[@]}" | grep -oP '--config-name=\K[^\s]+' || echo "qwen_0_6b_v0")
-    MODEL_OUTPUT_DIR="trained_models/qwen-3-0.6b-gen-inv-sft-v0"
-    echo "WARNING: Could not extract output_dir, using default: $MODEL_OUTPUT_DIR"
+# Fallback: derive from config name + version (matches train_qwen derive_run_names)
+if [ -z "$MODEL_OUTPUT_DIR" ] || [ "$MODEL_OUTPUT_DIR" = "null" ]; then
+    SIZE_SLUG="${CONFIG_NAME#qwen3_}"
+    MODEL_OUTPUT_DIR="trained_models/qwen3-${SIZE_SLUG}-nt-gen-inv-sft-${VERSION}"
+    echo "WARNING: Could not extract output_dir from log/config, using: $MODEL_OUTPUT_DIR"
 fi
 
 echo "Model output directory: $MODEL_OUTPUT_DIR"
