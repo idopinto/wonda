@@ -1,6 +1,7 @@
 # Evaluation
 
-We evaluate loop invariant generation on a fixed benchmark (219 programs before expansion). Each run: the model proposes invariants per loop; the decision procedure (UAutomizer + runlim) checks correctness and sufficiency; we aggregate over multiple trials for confidence intervals.
+In the paper, we evaluate loop invariant generation on 123 instances. Each run: the model proposes invariant per loop; the decision procedure checks correctness and sufficiency; we aggregate over multiple trials for confidence intervals.
+
 
 ## Evaluation process
 
@@ -13,10 +14,11 @@ The metrics (validation, correctness, usefulness, VBS, VBS end-to-end, speedup, 
 
 ## Models evaluated in the paper
 
-- **Qwen3 (SLMs):** 0.6B, 4B, 8B — each as **base (no-think)** and **fine-tuned** on WONDA data (v0, v1, v2.2). Fine-tuned 8B and 14B use LoRA.
+- **Qwen3 (SLMs):** 0.6B, 4B, 8B — each as **base (no-think)** and **fine-tuned** on WONDA data (v2.2). Fine-tuned 8B and 14B use LoRA.
 - **Baselines:** GPT-5.2, GPT-OSS-120B (via open-router api)
-
+- **Ablation Study** 0.6B, 8B - on WONDA data (v0, v1, v2.2)
 Configs for these are under `configs/eval/models/` (e.g. `qwen3_0.6b_nt_config`, `qwen3_4b_nt_config`, `gpt_5.2_config`).
+See the paper for the results tables.
 
 ## Running evaluation
 
