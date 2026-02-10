@@ -3,7 +3,7 @@ SFT fine-tuning script for Qwen models on the loop-invariant generation task.
 
 Loads a pre-trained Qwen checkpoint, optionally applies LoRA, and trains it
 via supervised fine-tuning on per-marker invariant prediction data.
-Configuration is managed by Hydra (configs/train/models/).
+Configuration is managed by Hydra (configs/train/).
 
 Usage:
     uv run -m wonda.train.train_qwen --config-name=<config> [overrides...]
@@ -90,7 +90,7 @@ def train(
     trainer.train()
 
 
-@hydra.main(version_base=None, config_path="../../configs/train/models", config_name="qwen3_0.6b")
+@hydra.main(version_base=None, config_path="../../configs/train", config_name="qwen3_0.6b")
 def main(cfg: DictConfig):
     logger.info("=" * 50)
     logger.info(OmegaConf.to_yaml(cfg))

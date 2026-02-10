@@ -118,7 +118,7 @@ MODEL_OUTPUT_DIR=$(grep -oP 'trained_models/qwen3-[^[:space:]]+-nt-gen-inv-sft-[
 
 # If not in log, try config file (unified configs have output_dir: null, so this often fails)
 if [ -z "$MODEL_OUTPUT_DIR" ]; then
-    CONFIG_FILE="configs/train/models/${CONFIG_NAME}.yaml"
+    CONFIG_FILE="configs/train/${CONFIG_NAME}.yaml"
     if [ -f "$CONFIG_FILE" ]; then
         MODEL_OUTPUT_DIR=$(grep "^  output_dir:" "$CONFIG_FILE" | sed 's/.*output_dir:\s*["\s]*\([^"]*\)["\s]*/\1/')
     fi

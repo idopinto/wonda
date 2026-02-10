@@ -21,7 +21,7 @@ Usage:
     for full run:
       uv run -m wonda.preprocess.wonda_pipeline dataset.limit=-1
     for slurm run:
-      sbatch scripts/preprocess/preprocess_gt_invariants_parallel.sbatch dataset.limit=-1
+      sbatch scripts/preprocess/wonda_pipeline.sbatch pipe.limit=-1
 """
 
 import json

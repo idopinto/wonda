@@ -3,8 +3,12 @@
 #
 # Usage:
 #   ./scripts/preprocess/build_sft_dataset.sh
-#   ./scripts/preprocess/build_sft_dataset.sh dataset.version=v2 dataset.min_grade=3
 #   ./scripts/preprocess/build_sft_dataset.sh dataset.version=v0 dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full
+#   ./scripts/preprocess/build_sft_dataset.sh dataset.version=v1 dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full
+#   ./scripts/preprocess/build_sft_dataset.sh dataset.version=v2 dataset.min_grade=1
+#   ./scripts/preprocess/build_sft_dataset.sh dataset.version=v2 dataset.min_grade=2
+#   ./scripts/preprocess/build_sft_dataset.sh dataset.version=v2 dataset.min_grade=3
+
 
 set -e
 
