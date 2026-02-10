@@ -24,7 +24,7 @@ from wonda.core.ast_program import AstProgram
 from wonda.core.property import Property
 from wonda.preprocess.pipe_utils import call_together_api, parse_llm_response
 from wonda.eval.validate import syntactic_validation
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
+from wonda.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

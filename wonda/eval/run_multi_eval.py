@@ -78,7 +78,7 @@ def main():
     # Ensure a stable default for reproducibility/metadata and propagate into subprocesses.
     # (evaluate.py also sets a default, but that happens in the child process.)
     # Model inference can run in parallel; verifier calls are serialized via semaphore
-    # in uautomizer_runlim.py (VERIFIER_MAX_CONCURRENT env var, default=1).
+    # in uautomizer.py (VERIFIER_MAX_CONCURRENT env var, default=1).
     os.environ.setdefault("WEAVE_PARALLELISM", GC.WEAVE_PARALLELISM)
     
     # Create experiment directory

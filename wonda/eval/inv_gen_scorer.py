@@ -13,7 +13,7 @@ import weave  # type: ignore[import-not-found]
 
 from wonda.eval.decision_procedure import DecisionProcedure
 from wonda.core.ast_program import AstProgram
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
+from wonda.verifiers.uautomizer import UAutomizerVerifier
 
 
 class ResultCollector:

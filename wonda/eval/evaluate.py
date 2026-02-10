@@ -38,7 +38,7 @@ from wonda.eval.models.model_factory import ModelFactory
 from wonda.eval.eval_data import (get_evaluation_dataset,
                                 preprocess_for_model)
 from wonda.eval.inv_gen_scorer import InvGenScorer
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
+from wonda.verifiers.uautomizer import UAutomizerVerifier
 
 # Configure logging
 logging.basicConfig(
@@ -53,7 +53,7 @@ load_dotenv()
 # Set Weave parallelism (must be set before weave.init() or any weave operations)
 # Weave reads this at import/init time, so it must be set early
 # Model inference can run in parallel; verifier calls are serialized via semaphore
-# in uautomizer_runlim.py (VERIFIER_MAX_CONCURRENT env var, default=1).
+# in uautomizer.py (VERIFIER_MAX_CONCURRENT env var, default=1).
 weave_parallelism = os.environ.get("WEAVE_PARALLELISM", "8")
 os.environ["WEAVE_PARALLELISM"] = weave_parallelism
 logger.info(f"WEAVE_PARALLELISM set to: {os.environ['WEAVE_PARALLELISM']}")

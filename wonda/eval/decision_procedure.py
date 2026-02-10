@@ -30,7 +30,7 @@ import weave  # type: ignore[import-not-found]
 
 from wonda.core.property import Property
 from wonda.core.ast_program import AstProgram
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport
+from wonda.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 
 logger = logging.getLogger(__name__)
 

@@ -20,7 +20,7 @@ from wonda.preprocess.baseline_dataset_common import (
     logger,
     run_uautomizer_as_baseline,
 )
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
+from wonda.verifiers.uautomizer import UAutomizerVerifier
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

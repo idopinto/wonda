@@ -56,7 +56,7 @@ from wonda.preprocess.pipe_utils import (
     save_checkpoint,
 )
 
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
+from wonda.verifiers.uautomizer import UAutomizerVerifier
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier, VerifierCallReport, write_file
+from wonda.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport, write_file
 from wonda.core.ast_program import AstProgram
 from wonda.core.property import Property
 import tempfile

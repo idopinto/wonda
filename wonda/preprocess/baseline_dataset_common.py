@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 from configs import global_config as GC
 from wonda.core.ast_program import AstProgram
-from wonda.verifiers.uautomizer_runlim import UAutomizerVerifier
+from wonda.verifiers.uautomizer import UAutomizerVerifier
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
