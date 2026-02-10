@@ -34,6 +34,7 @@ Ultimate.log
 # Caches
 unsloth_compiled_cache/
 llm_response_cache/
+llm_response_cache.tar.gz
 
 # Test artifacts
 tests/timing_test_reports/

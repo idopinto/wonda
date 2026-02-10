@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import atexit
 import hashlib
 import json
 import logging
 import re
+import shutil
+import tarfile
 import time
 from functools import wraps
 from pathlib import Path
@@ -196,8 +199,49 @@ def parse_llm_response(content: str) -> tuple[str, str]:
 # =============================================================================
 # LLM Response Caching
 # =============================================================================
-# Use absolute path based on project root to avoid Hydra working directory issues
-LLM_CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "llm_response_cache"
+# On disk the cache lives as a single tar.gz archive to keep the repo clean.
+# At runtime it is extracted to a directory, used normally, and re-packed on exit.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+LLM_CACHE_ARCHIVE = _PROJECT_ROOT / "llm_response_cache.tar.gz"
+LLM_CACHE_DIR = _PROJECT_ROOT / "llm_response_cache"
+
+_cache_dirty = False  # Track whether new entries were written
+
+
+def extract_llm_cache() -> None:
+    """Extract the cache archive to LLM_CACHE_DIR (no-op if already extracted or no archive)."""
+    if LLM_CACHE_DIR.exists():
+        return  # Already extracted
+    if not LLM_CACHE_ARCHIVE.exists():
+        LLM_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        return  # First run, nothing to extract
+    logger.info(f"Extracting LLM response cache from {LLM_CACHE_ARCHIVE} ...")
+    with tarfile.open(LLM_CACHE_ARCHIVE, "r:gz") as tar:
+        tar.extractall(path=_PROJECT_ROOT)
+    logger.info(f"Extracted LLM response cache to {LLM_CACHE_DIR}")
+
+
+def compress_llm_cache() -> None:
+    """Re-pack LLM_CACHE_DIR into the tar.gz archive and remove the directory."""
+    if not LLM_CACHE_DIR.exists():
+        return
+    logger.info(f"Compressing LLM response cache to {LLM_CACHE_ARCHIVE} ...")
+    temp_archive = LLM_CACHE_ARCHIVE.with_suffix(".tar.gz.tmp")
+    with tarfile.open(temp_archive, "w:gz") as tar:
+        tar.add(LLM_CACHE_DIR, arcname=LLM_CACHE_DIR.name)
+    temp_archive.rename(LLM_CACHE_ARCHIVE)
+    shutil.rmtree(LLM_CACHE_DIR)
+    logger.info(f"Compressed LLM response cache ({LLM_CACHE_ARCHIVE}), removed directory.")
+
+
+def _atexit_compress() -> None:
+    """Atexit handler: only compress if new cache entries were written this session."""
+    if _cache_dirty:
+        compress_llm_cache()
+
+
+# Register the atexit handler once at import time.
+atexit.register(_atexit_compress)
 
 
 def get_cache_key(model: str, messages: list[dict], max_tokens: int, temperature: float, n: int) -> str:
@@ -214,6 +258,7 @@ def get_cache_key(model: str, messages: list[dict], max_tokens: int, temperature
 
 def save_to_cache(cache_key: str, response) -> None:
     """Serialize and save the API response to disk (atomic write)."""
+    global _cache_dirty
     LLM_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_file = LLM_CACHE_DIR / f"{cache_key}.json"
     
@@ -237,6 +282,7 @@ def save_to_cache(cache_key: str, response) -> None:
     with open(temp_file, "w") as f:
         json.dump(data, f, indent=2)
     temp_file.rename(cache_file)
+    _cache_dirty = True
 
 
 def load_from_cache(cache_key: str):
@@ -272,6 +318,9 @@ def call_together_api(
     n: int,
 ):
     """Call Together API with retry logic, caching, and transient error handling."""
+    # Ensure cache is extracted before first use
+    extract_llm_cache()
+
     cache_key = get_cache_key(model, messages, max_tokens, temperature, n)
     
     # Check cache first
