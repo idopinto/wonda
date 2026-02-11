@@ -32,7 +32,7 @@ def verify_correctness_with_temp_dir(
     )
     return report
 
-def test_gt_invariants(
+def run_gt_invariants(
     data: list[dict[str, Any]], 
     verifier: UAutomizerVerifier, 
     limit: int = -1,
@@ -463,4 +463,4 @@ if __name__ == "__main__":
         version="25",
         memory_limit_mb=GC.MEMORY_LIMIT_MB,
     )
-    test_gt_invariants(data, verifier, limit=-1)
+    run_gt_invariants(data, verifier, limit=-1)

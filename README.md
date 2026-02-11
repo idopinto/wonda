@@ -123,9 +123,13 @@ wonda/
 │   │   └── gt_invariant_normalization.py, gt_invariant_simplification.py
 │   ├── train/          # Training: train_qwen.py, data_utils.py, train_utils.py
 │   └── verifiers/      # UAutomizer wrapper (uautomizer.py)
-├── tests/              # Test suite
+├── tests/              # Test suite (see [tests/README.md](tests/README.md))
 └── tools/              # UAutomizer and runlim (see Installation)
 ```
+
+## Testing
+
+See **[tests/README.md](tests/README.md)** for how to run the test suite, what to run, and a summary of test modules. Tests use no external tools (gcc, UAutomizer, runlim) or network and are suitable for CI.
 
 ## Citation
 

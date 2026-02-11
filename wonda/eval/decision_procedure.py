@@ -15,7 +15,7 @@ issues two parallel verifier queries:
 and combines the outcomes via three decision rules:
 
     DEC-FALSE  —  if db = F, decide FALSE  (short-circuit refutation)
-    DEC-PROP   —  if da = T and db ∈ {T, U}, decide db
+    DEC-PROP   —  if da = T and db ∈ {T, U, TIMEOUT, ERROR}, decide db (non-T → UNKNOWN)
     DEC-U      —  if da ≠ T and db ≠ F, decide UNKNOWN
 """
 
@@ -33,6 +33,25 @@ from wonda.core.ast_program import AstProgram
 from wonda.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport
 
 logger = logging.getLogger(__name__)
+
+
+def compute_decision(da: str, db: str) -> tuple[str, str]:
+    """
+    Pure decision calculus: given correctness result da and usefulness result db,
+    return (final_decision, decision_rule).
+    """
+    # DEC-FALSE: If db = F, decide F (short-circuit refutation)
+    if db == "FALSE":
+        return "FALSE", "DEC-FALSE"
+    # DEC-PROP: If da = T and db in {T, U, TIMEOUT, ERROR}, decide db (or UNKNOWN for non-TRUE)
+    if da == "TRUE" and db in {"TRUE", "UNKNOWN", "TIMEOUT", "ERROR"}:
+        final = "TRUE" if db == "TRUE" else "UNKNOWN"
+        return final, "DEC-PROP"
+    # DEC-U: If da != T and db != F, decide UNKNOWN
+    if da != "TRUE" and db != "FALSE":
+        return "UNKNOWN", "DEC-U"
+    return "UNKNOWN", ""
+
 
 @dataclass
 class DecisionProcedureReport:
@@ -190,49 +209,18 @@ class DecisionProcedure:
                         reports_dir=str(self.reports_dir),
                     )
 
-        decision_rule = ""
-        # Apply decision calculus
-        final_decision = "UNKNOWN"
-
-        # DEC-FALSE: If db = F, decide F (short-circuit refutation)
-        # This is a "short-circuit" because da doesn't need to be T to decide F
-        if (
-            invariant_usefulness_report
-            and invariant_usefulness_report.decision == "FALSE"
-        ):
-            final_decision = "FALSE"
-            decision_rule = "DEC-FALSE"
-
-        # DEC_PROP: If da = T and db ∈ {T, U}, decide db
-        # Rule DEC-PROP implements the prove then-use strategy:
-        # once the candidate invariant q is established, the outcome is exactly the verifier answer on the goal under the assumption q
-        elif (
-            invariant_correctness_report
-            and invariant_correctness_report.decision == "TRUE"
-            and invariant_usefulness_report
-            and invariant_usefulness_report.decision
-            in {"TRUE", "UNKNOWN", "TIMEOUT", "ERROR"}
-        ):
-            if invariant_usefulness_report.decision == "TRUE":
-                final_decision = "TRUE"
-            else:
-                final_decision = (
-                    "UNKNOWN"  # TIMEOUTS AND ERRORS are considered as UNKNOWN
-                )
-            # final_decision = invariant_usefulness_report.decision
-            decision_rule = "DEC-PROP"
-
-        # DEC-U: If da ≠ T and db ≠ F, decide U
-        # Rule DEC-U gives explicit conditions for inconclusiveness:
-        # the goal is not refuted under q and q is not established as an invariant
-        elif (
-            invariant_correctness_report
-            and invariant_correctness_report.decision != "TRUE"
-            and invariant_usefulness_report
-            and invariant_usefulness_report.decision != "FALSE"
-        ):
-            final_decision = "UNKNOWN"
-            decision_rule = "DEC-U"
+        # Apply decision calculus (pure helper)
+        da = (
+            invariant_correctness_report.decision
+            if invariant_correctness_report
+            else "UNKNOWN"
+        )
+        db = (
+            invariant_usefulness_report.decision
+            if invariant_usefulness_report
+            else "UNKNOWN"
+        )
+        final_decision, decision_rule = compute_decision(da, db)
 
         # Calculate verification time: max of both runs since they execute in parallel
         # Use 0 if correctness was cancelled (short-circuited) or time_taken is None
