@@ -1,8 +1,16 @@
 eval_per_marker: true
+
+# Multi-run: num_runs=1 is single eval; num_runs>=2 runs multiple subprocesses and aggregates
+multi_run:
+  num_runs: 1
+  experiment_name: null
+  confidence_level: 0.95
+
 # Weave configuration
 weave:
   entity: "ip-ai"
-  project_name: "eval-inv-gen-new-latest-trails-runlim"
+  # project_name: "eval-inv-gen-new-latest-trails-runlim"
+  project_name: "eval-wonda"
   test_mode: false
   skip_weave: false
   run_id: null # optional run ID for unique Weave UI display name

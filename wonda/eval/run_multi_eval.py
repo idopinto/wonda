@@ -24,9 +24,16 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from omegaconf import OmegaConf
+
 import configs.global_config as GC
 from wonda.eval.system_metadata import collect_system_metadata, extract_override_value
-from wonda.eval.aggregate_results import load_summaries, aggregate_summaries, format_results
+from wonda.eval.aggregate_results import (
+    load_summaries,
+    aggregate_summaries,
+    format_results,
+    aggregated_table_rows,
+)
 
 
 def run_single_evaluation(run_id: int, experiment_dir: Path, hydra_args: list[str]) -> Path:
@@ -70,6 +77,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run multiple evaluations and aggregate results")
     parser.add_argument("--num_runs", type=int, default=3, help="Number of evaluation runs")
     parser.add_argument("--experiment_name", type=str, default=None, help="Name for experiment folder")
+    parser.add_argument("--version", type=str, default=None, help="Version label in folder name (e.g. v0, v1, v2.1, v2.2, v2.3)")
     parser.add_argument("--confidence_level", type=float, default=0.95, help="Confidence level for CI")
     
     # Parse known args, pass the rest through to Hydra *inside* evaluate
@@ -84,7 +92,10 @@ def main():
     # Create experiment directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_name = extract_override_value(hydra_args, "models") or "unknown_model"
-    exp_name = args.experiment_name or f"multi_eval_{model_name}_{args.num_runs}_runs_{timestamp}"
+    # Strip Hydra config suffix for cleaner folder names (e.g. qwen3_0.6b_nt_config -> qwen3_0.6b_nt)
+    model_label = model_name.removesuffix("_config") if model_name else "unknown_model"
+    version_part = f"{args.version}_" if args.version else ""
+    exp_name = args.experiment_name or f"multi_eval_{model_label}_{version_part}{args.num_runs}_runs_{timestamp}"
     experiment_dir = GC.EXPERIMENTS_DIR / exp_name
     experiment_dir.mkdir(parents=True, exist_ok=True)
     
@@ -104,6 +115,8 @@ def main():
         "confidence_level": args.confidence_level,
         "system": collect_system_metadata(hydra_args),
     }
+    if args.version is not None:
+        config["version"] = args.version
     with open(experiment_dir / "config.json", "w") as f:
         json.dump(config, f, indent=2)
     
@@ -129,9 +142,73 @@ def main():
     with open(aggregated_path, "w") as f:
         json.dump(aggregated, f, indent=2)
     print(f"\nAggregated results saved to: {aggregated_path}")
-    
+
     # Print formatted results
-    print(format_results(aggregated))
+    formatted_table = format_results(aggregated)
+    print(formatted_table)
+
+    # Save the final table to Weave as an artifact (if Weave is enabled)
+    _publish_aggregated_table_to_weave(
+        aggregated=aggregated,
+        formatted_table=formatted_table,
+        experiment_name=exp_name,
+    )
+
+
+def _load_weave_config() -> dict | None:
+    """Load weave section from eval config. Returns None if file missing or invalid."""
+    config_path = GC.ROOT_DIR / "configs" / "eval" / "config.yaml"
+    if not config_path.exists():
+        return None
+    try:
+        cfg = OmegaConf.load(config_path)
+        weave_cfg = OmegaConf.to_container(cfg.get("weave", {}), resolve=True)
+        return weave_cfg if isinstance(weave_cfg, dict) else None
+    except Exception:
+        return None
+
+
+def _publish_aggregated_table_to_weave(
+    aggregated: dict,
+    formatted_table: str,
+    experiment_name: str,
+) -> None:
+    """Publish the multi-run aggregated results table to Weave as an artifact."""
+    weave_cfg = _load_weave_config()
+    if not weave_cfg or weave_cfg.get("skip_weave", True):
+        return
+    try:
+        import weave
+    except ImportError:
+        print("Weave not available; skipping artifact publish.")
+        return
+    entity = weave_cfg.get("entity", "")
+    project = weave_cfg.get("project_name", "eval-wonda")
+    if not entity or not project:
+        return
+    try:
+        weave.init(f"{entity}/{project}")
+    except Exception as e:
+        print(f"Could not initialize Weave: {e}. Skipping artifact publish.")
+        return
+    table_rows = aggregated_table_rows(aggregated)
+    if not table_rows:
+        return
+    try:
+        table = weave.Table(table_rows)
+        name = f"multi_eval_aggregated_{experiment_name}"
+        ref = weave.publish(table, name=name)
+        print(f"\nAggregated table published to Weave: {name}")
+        # Also publish the raw aggregated dict and formatted text as a single artifact for reference
+        summary_artifact = {
+            "experiment_name": experiment_name,
+            "n_runs": aggregated.get("n_runs"),
+            "confidence_level": aggregated.get("confidence_level"),
+            "formatted_table": formatted_table,
+        }
+        weave.publish(summary_artifact, name=f"{name}_summary")
+    except Exception as e:
+        print(f"Failed to publish Weave artifact: {e}")
 
 
 if __name__ == "__main__":

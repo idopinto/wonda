@@ -6,18 +6,11 @@ import os
 import subprocess
 import shutil
 import tempfile
-import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from configs import global_config as GC
 
-# Semaphore to limit concurrent verification calls.
-# This allows WEAVE_PARALLELISM > 1 for model inference while preventing
-# resource contention and SIGTERM issues from too many concurrent verifiers.
-# Default: 1 (sequential verification). Set via VERIFIER_MAX_CONCURRENT env var.
-_MAX_CONCURRENT_VERIFIERS = int(os.environ.get("VERIFIER_MAX_CONCURRENT", "1"))
-_verifier_semaphore = threading.Semaphore(_MAX_CONCURRENT_VERIFIERS)
 
 @dataclass
 class VerifierCallReport:
@@ -93,7 +86,6 @@ class UAutomizerVerifier:
         timeout_seconds: float = 600.0,
         version: str = "25",
         memory_limit_mb: int = GC.MEMORY_LIMIT_MB,
-        use_semaphore: bool = True,
     ):
         self.uautomizer_path = uautomizer_path
         self.property_file_path = property_file_path
@@ -101,7 +93,6 @@ class UAutomizerVerifier:
         self.timeout_seconds = timeout_seconds
         self.version = version
         self.memory_limit_mb = memory_limit_mb
-        self.use_semaphore = use_semaphore
 
     def verify(
         self, program_path: Path, reports_dir: Path, timeout_seconds: float = None,
@@ -175,22 +166,15 @@ class UAutomizerVerifier:
         report = VerifierCallReport(reports_dir=str(reports_dir))
         temp_work_dir = Path(tempfile.mkdtemp(prefix="uautomizer_"))
         try:
-            # Optionally acquire semaphore to limit concurrent verifications.
-            # This prevents resource contention and SIGTERM issues when WEAVE_PARALLELISM > 1.
-            if self.use_semaphore:
-                _verifier_semaphore.acquire()
-            try:
-                completed_process = subprocess.run(
-                    command,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    env=env,
-                    cwd=temp_work_dir,
-                )
-            finally:
-                if self.use_semaphore:
-                    _verifier_semaphore.release()
+            completed_process = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+                cwd=temp_work_dir,
+                start_new_session=True,
+            )
 
             write_file(log_file_path, completed_process.stdout)
             write_file(err_file_path, completed_process.stderr)
@@ -220,7 +204,7 @@ class UAutomizerVerifier:
                       f"Stderr (last 200): {(completed_process.stderr or '')[-200:]!r}")
             report.runlim = self._parse_runlim_output(runlim_text)
             label_prefix = f"[{label}] " if label else ""
-            print(f"{label_prefix}runlim output: {report.runlim}")
+            # print(f"{label_prefix}runlim output: {report.runlim}")
             
             # Handle different runlim statuses
             if report.runlim["status"] == "ok":
@@ -324,18 +308,19 @@ class UAutomizerVerifier:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run UAutomizer verifier")
-    parser.add_argument("--program_dir", type=str, default="examples")
+    parser.add_argument("--program-dir", type=str, default="data/examples")
     parser.add_argument(
-        "--program_name", type=str, default="4261_2_t.c"
+        "--program-name", type=str, default="paper_example_direct.c"
     )
     # parser.add_argument("--property_name", type=str, default='unreach-call.prp')
     parser.add_argument("--arch", type=str, default="32bit", choices=["32bit", "64bit"])
-    parser.add_argument("--reports_dir", type=str, default="example_reports")
-    parser.add_argument("--timeout_seconds", type=float, default=600.0)
+    parser.add_argument("--reports-dir", type=str, default="example_reports")
+    parser.add_argument("--timeout-seconds", type=float, default=600.0)
     parser.add_argument(
-        "--uautomizer_version", type=str, default="25", choices=["23", "24", "25", "26"]
+        "--uautomizer-version", type=str, default="25", choices=["23", "24", "25", "26"]
     )
     return parser.parse_args()
+
 
 
 if __name__ == "__main__":
@@ -380,5 +365,6 @@ if __name__ == "__main__":
     print("--------------------------------")
 
 
+
 # uv run -m wonda.verifiers.uautomizer
-# uv run -m wonda.verifiers.uautomizer --program_name test.c
+# uv run -m wonda.verifiers.uautomizer --program-name test.c

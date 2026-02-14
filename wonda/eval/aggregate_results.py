@@ -102,6 +102,40 @@ def aggregate_summaries(summaries: list[dict], confidence_level: float = 0.95) -
     return aggregated
 
 
+# Key metrics to highlight (shared by format_results and aggregated_table_rows)
+KEY_METRICS = [
+    # Counts
+    "validation_count", "correctness_count", "usefulness_count",
+    "speedup_count", "speedup_e2e_count",
+    # Rates
+    "validation_rate", "correctness_rate", "usefulness_rate",
+    "speedup_rate", "speedup_e2e_rate",
+    # Performance
+    "vbp", "vbp_e2e", "avg_median_timing",
+    "speedup_gt1", "speedup_gt1_e2e",
+    "speedup_all", "speedup_all_e2e",
+]
+
+
+def aggregated_table_rows(aggregated: dict) -> list[dict]:
+    """Build a list of row dicts for Weave Table (metric, mean, std, ci_low, ci_high)."""
+    rows = []
+    for metric in KEY_METRICS:
+        if metric not in aggregated:
+            continue
+        data = aggregated[metric]
+        if not isinstance(data, dict) or "mean" not in data:
+            continue
+        rows.append({
+            "metric": metric,
+            "mean": data["mean"],
+            "std": data["std"],
+            "ci_low": data["ci_low"],
+            "ci_high": data["ci_high"],
+        })
+    return rows
+
+
 def format_results(aggregated: dict) -> str:
     """Format aggregated results as a readable string."""
     lines = [
@@ -117,23 +151,7 @@ def format_results(aggregated: dict) -> str:
         "-" * 80,
     ]
     
-    # Key metrics to highlight
-    key_metrics = [
-        # Counts
-        "validation_count", "correctness_count", "usefulness_count",
-        "speedup_count", "speedup_e2e_count",
-
-        # Rates
-        "validation_rate", "correctness_rate", "usefulness_rate",
-        "speedup_rate", "speedup_e2e_rate",
-
-        # Performance
-        "vbp", "vbp_e2e", "avg_median_timing",
-        "speedup_gt1", "speedup_gt1_e2e",
-        "speedup_all", "speedup_all_e2e",
-    ]
-    
-    for metric in key_metrics:
+    for metric in KEY_METRICS:
         if metric in aggregated:
             data = aggregated[metric]
             ci_str = f"[{data['ci_low']:.4f}, {data['ci_high']:.4f}]"

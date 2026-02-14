@@ -4,7 +4,9 @@ Scorer module for evaluation.
 Contains the InvariantScorer class for evaluating model-generated invariants.
 """
 
+import logging
 import tempfile
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -14,6 +16,12 @@ import weave  # type: ignore[import-not-found]
 from wonda.eval.decision_procedure import DecisionProcedure
 from wonda.core.ast_program import AstProgram
 from wonda.verifiers.uautomizer import UAutomizerVerifier
+
+logger = logging.getLogger(__name__)
+
+# Module-level thread-safe counter for per-example logging
+_example_counter = 0
+_counter_lock = threading.Lock()
 
 
 class ResultCollector:
@@ -63,6 +71,79 @@ class InvGenScorer(weave.Scorer):
 
     verifier: Optional[UAutomizerVerifier] = None
     baseline_is_timeout: bool
+    model_name: str = ""
+
+    # ------------------------------------------------------------------
+    # Per-example logging (called at the end of score())
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _log_example_result(
+        model_name,
+        target_marker,
+        raw_answer,
+        parsed_answer,
+        validation_score,
+        decision_procedure_report,
+        result,
+        model_latency,
+    ):
+        """Print a concise decision summary after each scored example."""
+        global _example_counter
+        with _counter_lock:
+            _example_counter += 1
+            idx = _example_counter
+
+        label = f"{model_name} | {target_marker}" if model_name else (target_marker or "?")
+        inv_str = str(parsed_answer.content) if parsed_answer and hasattr(parsed_answer, "content") and parsed_answer.content else "(invalid)"
+        inv_display = inv_str[:120] + ("..." if len(inv_str) > 120 else "")
+
+        if not validation_score:
+            logger.info(
+                f"  [{label} #{idx}] Invariant: {inv_display}\n"
+                f"    Valid: False  Correct: False  Sufficient (useful): False  "
+                f"M: {model_latency:.1f}s"
+            )
+            return
+
+        da = (
+            decision_procedure_report.correctness_report.decision
+            if decision_procedure_report and decision_procedure_report.correctness_report
+            else "-"
+        )
+        db = (
+            decision_procedure_report.usefulness_report.decision
+            if decision_procedure_report and decision_procedure_report.usefulness_report
+            else "-"
+        )
+        final = (
+            decision_procedure_report.final_decision
+            if decision_procedure_report
+            else "-"
+        )
+
+        vt = f"{result['verification_time']:.1f}s" if result.get("verification_time") is not None else "-"
+        ml = f"{model_latency:.1f}s" if model_latency is not None else "-"
+        sp = f"{result['speedup']:.2f}x" if result.get("speedup") else "-"
+
+        lines = [
+            f"  [{label} #{idx}] Invariant: {inv_display}",
+            f"    Valid: {validation_score}  da: {da}  db: {db}  => {final}",
+        ]
+
+        # Surface verifier errors if any
+        if da == "ERROR" and decision_procedure_report and decision_procedure_report.correctness_report:
+            reason = decision_procedure_report.correctness_report.decision_reason or ""
+            lines.append(f"    da error: {reason[:200]}")
+        if db == "ERROR" and decision_procedure_report and decision_procedure_report.usefulness_report:
+            reason = decision_procedure_report.usefulness_report.decision_reason or ""
+            lines.append(f"    db error: {reason[:200]}")
+
+        lines.append(
+            f"    Correct: {result['correctness_score']}  Useful: {result['usefulness_score']}  "
+            f"V: {vt}  M: {ml}  Speedup: {sp}"
+        )
+
+        logger.info("\n".join(lines))
 
     @weave.op()
     def score(self, output: Dict, original_program: str, median_timing: float,  target_marker: Optional[str] = None) -> Dict:
@@ -97,6 +178,9 @@ class InvGenScorer(weave.Scorer):
         verification_time_e2e = model_latency
         decision_procedure_report = None
         
+        log_files = {}
+        witness_files = {}
+
         if validation_score:
             timeout = median_timing if self.baseline_is_timeout else self.verifier.timeout_seconds
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -108,6 +192,19 @@ class InvGenScorer(weave.Scorer):
                     timeout=timeout,
                 )
                 decision_procedure_report = decision_procedure.decide(candidate_invariant=parsed_model_answer)
+
+                # Collect log and witness files before the temp dir is cleaned up
+                # so they can be logged as Weave artifacts.
+                for f in code_dir.iterdir():
+                    if f.is_file():
+                        try:
+                            content = f.read_text(errors="replace")
+                        except Exception:
+                            content = "<unreadable>"
+                        if f.suffix == ".log":
+                            log_files[f.name] = content
+                        elif f.suffix in (".yml", ".yaml", ".graphml"):
+                            witness_files[f.name] = content
             
             verification_time = decision_procedure_report.verification_time # t_v
             verification_time_e2e = verification_time + model_latency # t_v + t_m
@@ -135,7 +232,21 @@ class InvGenScorer(weave.Scorer):
             "verification_time": verification_time,
             "verification_time_e2e": verification_time_e2e,
             "median_timing": median_timing,
+            "log_files": log_files,
+            "witness_files": witness_files,
         }
+
+        # --- Per-example decision summary (mirrors paper_examples/eval_ultimate_models.py) ---
+        self._log_example_result(
+            model_name=self.model_name,
+            target_marker=target_marker,
+            raw_answer=raw_model_answer,
+            parsed_answer=parsed_model_answer,
+            validation_score=validation_score,
+            decision_procedure_report=decision_procedure_report,
+            result=result,
+            model_latency=model_latency,
+        )
 
         return result
 

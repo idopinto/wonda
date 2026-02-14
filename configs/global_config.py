@@ -23,6 +23,6 @@ UAUTOMIZER_PATHS = {
 }
 
 MEMORY_LIMIT_MB = 16384
-WEAVE_PARALLELISM = "1"
+WEAVE_PARALLELISM = "8"
 #  The Ultimate.py scripts automatically detect and use the correct Java version based on the UAutomizer directory.
 #  No manual switching is required.
