@@ -1,3 +1,4 @@
+label: gpt_oss_120b
 client: openrouter
 base_model:
   id: "openai/gpt-oss-120b"

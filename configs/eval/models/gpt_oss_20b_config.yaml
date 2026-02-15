@@ -1,3 +1,4 @@
+label: gpt_oss_20b
 client: openrouter # or vllm / together
 
 base_model:

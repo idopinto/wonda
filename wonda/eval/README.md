@@ -22,28 +22,36 @@ See the paper for the results tables.
 
 ## Running evaluation
 
-From the repository root. Multi-trial evaluation with statistical aggregation:
+From the repository root. Multi-run evaluation with statistical aggregation:
 
 ```bash
-sbatch --job-name=<name> scripts/eval/run_multi_eval.sbatch --num_runs=3 [HYDRA_OVERRIDES]
+sbatch --job-name=<name> scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 [HYDRA_OVERRIDES]
 ```
 
 **Examples:**
 
 ```bash
 # Base Qwen3-0.6B (no-think)
-sbatch --job-name=me_qwen06 scripts/eval/run_multi_eval.sbatch --num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config
+sbatch --job-name=me_qwen06 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config
 
 # Fine-tuned Qwen3-0.6B v2.2
-sbatch --job-name=me_qwen06_v22 scripts/eval/run_multi_eval.sbatch --num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+sbatch --job-name=me_qwen06_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 
 # Fine-tuned Qwen3-8B v2.2 (LoRA: add is_lora=true)
-sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch --num_runs=3 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
+sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
 
 # Baseline GPT-5.2
-sbatch --job-name=me_gpt5 scripts/eval/run_multi_eval.sbatch --num_runs=3 dataset.limit=-1 models=gpt_5.2_config
+sbatch --job-name=me_gpt5 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=gpt_5.2_config
 ```
 
-**Useful overrides:** `dataset.limit=N` (use `-1` for full benchmark), `models=<config_name>`, `models.eval_ft_model=true`, `models.ft_model.sft_version="v2.2"`, `models.ft_model.is_lora=true` (for 8B/14B fine-tuned). An exhaustive list of commands per model is in the comments of [scripts/eval/run_multi_eval.sbatch](../../scripts/eval/run_multi_eval.sbatch).
+**Useful overrides:** `multi_run.num_runs=N`, `dataset.limit=N` (use `-1` for full benchmark), `models=<config_name>`, `models.eval_ft_model=true`, `models.ft_model.sft_version="v2.2"`, `models.ft_model.is_lora=true` (for 8B/14B fine-tuned). An exhaustive list of commands per model is in the comments of [scripts/eval/run_multi_eval.sbatch](../../scripts/eval/run_multi_eval.sbatch).
 
-Results are written to `experiments/` with aggregated statistics.
+Multi-run entrypoint: `wonda.eval.run_multi_eval` (Hydra config: `configs/eval/eval_config.yaml`).  
+Single-run worker: `wonda.eval.evaluate` (receives a resolved per-run YAML via `--config`).
+
+Results are written under `eval_experiments/<weave_project_name>/<experiment_name>/` and include:
+
+- `config.json` (run metadata and overrides)
+- `evaluate_config_run_<k>.yaml` (resolved config per run)
+- `summary_run_<k>.json` (raw summary per run)
+- `aggregated_results.json` and `aggregated_results.txt` (mean + confidence intervals)

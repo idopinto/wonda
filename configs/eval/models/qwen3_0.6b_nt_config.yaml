@@ -1,3 +1,4 @@
+label: qwen3_0.6b_nt
 client: hf # or hf / vllm / openrouter
 eval_ft_model: false
 
