@@ -110,7 +110,7 @@ wonda/
 │   ├── train/          # Training configs (qwen3_0.6b … qwen3_14b)
 │   └── preprocess/     # Preprocessing configs (build_eval_dataset, build_sft_dataset, wonda_data_pipeline)
 ├── scripts/
-│   ├── eval/           # SLURM scripts: run_evaluation.sbatch, run_multi_eval.sbatch
+│   ├── eval/           # SLURM scripts: run_multi_eval.sbatch
 │   ├── train/          # SLURM scripts: train_qwen.sbatch, train_and_eval_qwen.sbatch
 │   └── preprocess/     # SLURM/shell: build_eval_dataset.sbatch, build_raw_train_dataset.sbatch, wonda_pipeline.sbatch, build_sft_dataset.sh
 ├── wonda/              # Main package

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Single source of truth for project root
-# This file is in configs/, so go up 1 level to reach inv-gen/
+# This file is in configs/, so go up 1 level to reach wonda/
 ROOT_DIR = Path(__file__).parent.parent
 
 # Common paths derived from root

@@ -1,5 +1,5 @@
 [project]
-name = "inv-gen"
+name = "wonda"
 version = "0.1.0"
 description = "LLM-based loop invariant generation for accelerating program verification"
 readme = "README.md"
@@ -33,4 +33,4 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/idopinto/inv-gen"
+Repository = "https://github.com/idopinto/wonda"
