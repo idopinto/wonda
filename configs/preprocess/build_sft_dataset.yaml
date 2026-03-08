@@ -24,7 +24,7 @@ tokenizer:
 
 output:
   dir: "data/train/sft-ready/"
-  hf_organization: "idopinto"
+  hf_organization: "idopinto"  # Change to your own HuggingFace org if you're not the author
   # HF repo is built as: {hf_organization}/wonda-{model_family}-{nt|t}-sft-{suffix}
   # model_family = first segment of tokenizer.name, lowercased (e.g. Qwen/Qwen3-0.6B -> qwen)
   # nt = non-think, t = think (from tokenizer.chat_template_kwargs.enable_thinking if present)

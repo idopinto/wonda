@@ -314,7 +314,10 @@ def run_uautomizer_as_baseline(
 # ---------------------------------------------------------------------------
 
 def create_hf_base_dataset(
-    results_path: Path, output_dir: Path, push_to_hub: bool = False
+    results_path: Path,
+    output_dir: Path,
+    push_to_hub: bool = False,
+    hf_organization: str | None = None,
 ) -> DatasetDict:
     """Create a HuggingFace DatasetDict from baseline evaluation JSON."""
     logger.info(f"Creating dataset from {results_path}")
@@ -365,9 +368,13 @@ def create_hf_base_dataset(
     logger.info(f"Saved to: {output_dir}")
 
     if push_to_hub:
-        dataset_dict.push_to_hub(f"idopinto/{output_dir.name}")
-        logger.info(
-            f"Pushed to: https://huggingface.co/datasets/idopinto/{output_dir.name}"
-        )
+        if hf_organization:
+            repo_id = f"{hf_organization}/{output_dir.name}"
+            dataset_dict.push_to_hub(repo_id)
+            logger.info(f"Pushed to: https://huggingface.co/datasets/{repo_id}")
+        else:
+            logger.warning(
+                "push_to_hub is true but output.hf_organization is not set. Skipping push."
+            )
 
     return dataset_dict

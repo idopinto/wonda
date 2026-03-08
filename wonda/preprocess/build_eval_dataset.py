@@ -52,6 +52,7 @@ def main(cfg: DictConfig):
         results_path=results_path,
         output_dir=output_dir,
         push_to_hub=cfg.output.push_to_hub,
+        hf_organization=cfg.output.get("hf_organization"),
     )
 
 

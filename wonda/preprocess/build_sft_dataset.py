@@ -284,19 +284,18 @@ def main(cfg: DictConfig) -> None:
     min_grade = cfg.dataset.get("min_grade", 2)
     max_length = cfg.dataset.get("max_length", 1024)
     base_output_dir = cfg.output.get("dir")
-    # Build HF repo: {org}/wonda-{model_family}-{nt|t}-sft-{v0|v1|v2-g{min_grade}}
-    org = cfg.output.get("hf_organization", "idopinto")
+    # Build HF repo when org is set: {org}/wonda-{model_family}-{nt|t}-sft-{v0|v1|v2-g{min_grade}}
+    org = cfg.output.get("hf_organization")
     model_family = cfg.tokenizer.name.split("/")[0].lower()
     enable_thinking = cfg.tokenizer.get("chat_template_kwargs", {}).get("enable_thinking", False)
     thinking_suffix = "t" if enable_thinking else "nt"
-    repo_base = f"{org}/wonda-{model_family}-{thinking_suffix}-sft"
     if version == "v2":
-        hf_repo_name = f"{repo_base}-v2-g{min_grade}"
+        dataset_name = f"wonda-{model_family}-{thinking_suffix}-sft-v2-g{min_grade}"
     elif version == "v1":
-        hf_repo_name = f"{repo_base}-v1"
+        dataset_name = f"wonda-{model_family}-{thinking_suffix}-sft-v1"
     else:
-        hf_repo_name = f"{repo_base}-v0"
-    dataset_name = hf_repo_name.split("/")[-1]
+        dataset_name = f"wonda-{model_family}-{thinking_suffix}-sft-v0"
+    hf_repo_name = f"{org}/{dataset_name}" if org else None
     output_dir = str(Path(base_output_dir) / dataset_name) if base_output_dir else None
 
     if version == "v2":

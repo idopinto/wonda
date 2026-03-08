@@ -38,10 +38,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Default HF org for pre-built SFT datasets
-_DEFAULT_HF_ORG = "idopinto"
-
-
 def _model_name_to_size_slug(base_model_name: str) -> str:
     """Extract size slug from base_model_name, e.g. 'Qwen/Qwen3-0.6B' -> '0.6b'."""
     m = re.search(r"Qwen3-(\d+\.?\d*)[Bb]", base_model_name)
@@ -54,21 +50,25 @@ def derive_run_names(cfg: DictConfig) -> tuple[str, str | None, str]:
     """
     Derive wandb name, hf_repo, and output_dir from model + dataset.version + dataset.min_grade.
     Used when config has null for these (unified per-model-size configs).
-    Returns (wandb_name, hf_repo, output_dir).
+    Returns (wandb_name, hf_repo, output_dir). hf_repo is derived only if dataset.hf_organization is set.
     """
     base = cfg.model.base_model_name
     version = cfg.dataset.get("version") or "v2"
     min_grade = cfg.dataset.get("min_grade")
+    hf_org = cfg.dataset.get("hf_organization")
 
     size_slug = _model_name_to_size_slug(base)
     wandb_name = f"qwen3-{size_slug}-nt-gen-inv-sft-{version}"
     output_dir = f"trained_models/qwen3-{size_slug}-nt-gen-inv-sft-{version}"
 
-    if version == "v2":
-        grade_suffix = f"-g{min_grade}" if min_grade is not None else "-g2"
-        hf_repo = f"{_DEFAULT_HF_ORG}/wonda-qwen-nt-sft-{version}{grade_suffix}"
+    if hf_org:
+        if version == "v2":
+            grade_suffix = f"-g{min_grade}" if min_grade is not None else "-g2"
+            hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}{grade_suffix}"
+        else:
+            hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}"
     else:
-        hf_repo = f"{_DEFAULT_HF_ORG}/wonda-qwen-nt-sft-{version}"
+        hf_repo = None
 
     return wandb_name, hf_repo, output_dir
 
@@ -96,12 +96,12 @@ def main(cfg: DictConfig):
     logger.info(OmegaConf.to_yaml(cfg))
     logger.info("=" * 50)
 
-    # Auto-derive wandb name, hf_repo, output_dir when null 
+    # Auto-derive wandb name, hf_repo, output_dir when null
     if cfg.wandb.get("name") is None or cfg.sft.get("output_dir") is None or cfg.dataset.get("hf_repo") is None:
         derived_wandb, derived_hf_repo, derived_output = derive_run_names(cfg)
         if cfg.wandb.get("name") is None:
             OmegaConf.update(cfg, "wandb.name", derived_wandb)
-        if cfg.dataset.get("hf_repo") is None and cfg.dataset.get("json_path") is None:
+        if cfg.dataset.get("hf_repo") is None and cfg.dataset.get("json_path") is None and derived_hf_repo is not None:
             OmegaConf.update(cfg, "dataset.hf_repo", derived_hf_repo)
         if cfg.sft.get("output_dir") is None:
             OmegaConf.update(cfg, "sft.output_dir", derived_output)
@@ -116,7 +116,14 @@ def main(cfg: DictConfig):
         output_dir = output_dir + "-test"
         cfg.dataset.limit = 100
 
+    if cfg.sft.push_to_hub and not hf_repo:
+        raise ValueError(
+            "push_to_hub is true but dataset.hf_repo is not set. "
+            "Set dataset.hf_repo or dataset.hf_organization in your config."
+        )
     if cfg.wandb.use_wandb:
+        if not cfg.wandb.get("entity"):
+            raise ValueError("use_wandb is true but wandb.entity is not set. Set wandb.entity to your W&B entity.")
         wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, name=wandb_name)
     else:
         logger.info("Wandb is disabled. Skipping wandb initialization...")

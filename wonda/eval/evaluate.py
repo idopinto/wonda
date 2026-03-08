@@ -50,12 +50,14 @@ def run_single_eval(cfg: DictConfig) -> dict:
         p.write_text(OmegaConf.to_yaml(cfg) if p.suffix in {".yaml", ".yml"} else json.dumps(OmegaConf.to_container(cfg, resolve=True), indent=2))
         logger.info(f"Saved config to {p}")
 
-    if not cfg.weave.get("skip_weave", False):
+    if not cfg.weave.get("skip_weave", False) and cfg.weave.get("entity"):
         try:
             proj = f"{cfg.weave.entity}/{cfg.weave.project_name}" + ("-test" if cfg.weave.test_mode else "")
             weave.init(proj)
         except Exception as e:
             logger.warning(f"Weave init failed: {e}. Continuing without.")
+    elif not cfg.weave.get("skip_weave", False):
+        logger.info("Weave skipped: set weave.entity to your W&B entity to enable.")
     else:
         logger.info("Weave disabled (skip_weave=true)")
 

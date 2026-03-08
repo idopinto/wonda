@@ -73,13 +73,13 @@ class InvariantGeneratorOpenRouterModel(weave.Model):
             **self.model_cfg["base_model"]["sampling_params"],
         )
         model_latency = time.perf_counter() - inference_start_time
-        logger.info(f"Model latency: {model_latency}")
+        logger.debug("Model latency: %s", model_latency)
 
         # Extract response components
         message = response.choices[0].message
         reasoning = getattr(message, "reasoning_content", None) or getattr(message, "reasoning", "") or ""
         answer = message.content or ""
-        logger.info(f"Answer: {answer}")
+        logger.debug("Answer: %s", answer[:200] + "..." if len(answer) > 200 else answer)
 
         # Extract reasoning tokens from completion_tokens_details if available
         completion_details = response.usage.completion_tokens_details

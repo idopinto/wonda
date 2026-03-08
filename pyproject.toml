@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "wonda"
 version = "0.1.0"
@@ -9,21 +13,29 @@ authors = [{name = "Ido Pinto"}]
 keywords = ["loop invariants", "program verification", "LLM", "fine-tuning", "formal methods"]
 
 dependencies = [
-    "datasets==4.3.0",
+    "datasets>=4.3.0",
+    "hydra-core>=1.3.2",
+    "huggingface-hub>=0.34.0,<1.0",
+    "matplotlib>=3.10.8",
+    "numpy",
+    "openai>=2.11.0",
+    "peft",
+    "plotly>=6.5.0",
     "pycparser>=2.23",
+    "python-dotenv>=1.2.1",
+    "pyyaml",
+    "requests",
+    "scipy",
+    "together>=1.5.33",
+    "torch",
+    "transformers",
+    "trl",
     "tqdm>=4.67.1",
+    "unsloth",
+    "vllm>=0.12.0",
     "wandb>=0.23.1",
     "weave>=0.52.22",
-    "huggingface-hub>=0.34.0,<1.0",
-    "unsloth",
-    "python-dotenv>=1.2.1",
-    "plotly>=6.5.0",
-    "vllm>=0.12.0",
-    "openai>=2.11.0",
-    "together>=1.5.33",
-    "matplotlib>=3.10.8",
     "z3-solver>=4.15.4.0",
-    "hydra-core>=1.3.2",
 ]
 
 [project.optional-dependencies]

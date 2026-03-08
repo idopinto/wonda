@@ -1,5 +1,6 @@
 test_mode: false
 
+# Change entity/project to your own if you're not the author
 wandb:
   use_wandb: true
   entity: "ip-ai"
@@ -25,6 +26,7 @@ dataset:
   version: "v2"
   min_grade: null
   hf_repo: null
+  hf_organization: "idopinto"  # Change to your own HuggingFace org if you're not the author
   json_path: null
   limit: -1
   split_ratio: 0.8

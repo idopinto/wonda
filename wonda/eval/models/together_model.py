@@ -71,17 +71,15 @@ class InvariantGeneratorTogetherModel(weave.Model):
             **self.model_cfg["base_model"]["sampling_params"],
         )
         model_latency = time.perf_counter() - inference_start_time
-        logger.info(f"Model latency: {model_latency}")
+        logger.debug("Model latency: %s", model_latency)
 
         # Extract response components
         message = response.choices[0].message
         reasoning = getattr(message, "reasoning_content", None) or getattr(message, "reasoning", "") or ""
         answer = message.content or ""
+        logger.debug("Answer: %s", answer[:200] + "..." if len(answer) > 200 else answer)
 
-        logger.info(f"Answer: {answer}")
-        print(response.__dict__)
         return {
-            # "prompt": "\n".join([msg["content"] for msg in messages]),
             "reasoning": reasoning,
             "answer": answer,
             "model_latency": model_latency,

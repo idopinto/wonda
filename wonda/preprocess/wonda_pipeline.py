@@ -182,12 +182,14 @@ def run_wonda(
     logger.info(f"Total qualifying entries: {len(processed)}")
     logger.info(f"Skipped {skipped_dict['false_decision']} false decisions, {skipped_dict['unknown_decision']} unknown decisions, {skipped_dict['true_decision_no_invariants']} true decisions with no invariants")
     
-    # Push to hub
-    if cfg.pipe.push_to_hub:
+    # Push to hub (only when push_to_hub=true and hf_organization is set)
+    if cfg.pipe.push_to_hub and cfg.pipe.get("hf_organization"):
         dataset = Dataset.from_list(processed)
         hub_name = f"{cfg.pipe.hf_organization}/{output_dataset_name}"
         logger.info(f"Pushing to: {hub_name}")
         DatasetDict({"train": dataset}).push_to_hub(hub_name)
+    elif cfg.pipe.push_to_hub:
+        logger.warning("push_to_hub is true but pipe.hf_organization is not set. Skipping push.")
     
     return processed
 
@@ -218,13 +220,20 @@ def main(cfg: DictConfig) -> None:
     input_dataset_name = f"{cfg.pipe.dataset_name}-{cfg.pipe.input_suffix}"
     # input_path = GC.TRAINING_DATASET_DIR / input_dataset_name / f"{input_dataset_name}.json"
     # data = load_data(input_path, cfg.pipe.limit)
-    data = load_from_hf(f"{cfg.pipe.hf_organization}/{cfg.pipe.dataset_name}-{cfg.pipe.input_suffix}", split="full", limit=cfg.pipe.limit)
+    hf_org = cfg.pipe.get("hf_organization")
+    if not hf_org:
+        raise ValueError(
+            "pipe.hf_organization is not set. Set it to your HuggingFace org or use 'idopinto' to read the public raw dataset."
+        )
+    data = load_from_hf(f"{hf_org}/{cfg.pipe.dataset_name}-{cfg.pipe.input_suffix}", split="full", limit=cfg.pipe.limit)
     logger.info(f"\033[34mProcessing {len(data)} entries from {input_dataset_name}.\033[0m")
 
     weave_project = f"{cfg.weave.project_name}{test_suffix}"
-    if cfg.weave.get("use_weave", False):
+    if cfg.weave.get("use_weave", False) and cfg.weave.get("entity"):
         weave.init(f"{cfg.weave.entity}/{weave_project}")
-    logger.info(f"\033[34mWeave initialized ({weave_project})\033[0m")
+        logger.info(f"\033[34mWeave initialized ({weave_project})\033[0m")
+    elif cfg.weave.get("use_weave", False):
+        logger.info("Weave skipped: set weave.entity to your W&B entity to enable.")
 
     client = Together()
     logger.info(f"\033[34mTogether client initialized. using model {cfg.model.name} with temperature {cfg.model.temperature}, max tokens {cfg.model.max_tokens}, n={cfg.model.n} candidates.\033[0m")

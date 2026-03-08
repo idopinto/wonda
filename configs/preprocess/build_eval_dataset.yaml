@@ -20,9 +20,10 @@ processing:
   ignore_invariants: true  # Do not extract invariants from log/witness files (default: extract invariants)
   difficulty_threshold: 30  # Difficulty threshold for easy/hard split in seconds
 
-# Output configuration
+# Output configuration (change hf_organization to your own if you're not the author)
 output:
-  push_to_hub: true  # Push the dataset to the Hugging Face hub
+  push_to_hub: true
+  hf_organization: "idopinto"
   test_mode: false  # Run the script in test mode (affects output directory naming)
 
 # Example usage:

@@ -1,5 +1,6 @@
 test_mode: false
 
+# Change entity/project_name to your own if you're not the author
 weave:
   entity: "ip-ai"
   project_name: "wonda-data-pipeline"
@@ -19,7 +20,7 @@ model:
   n: 4  # Number of candidates to generate per verbose invariant
   
 pipe:
-  hf_organization: "idopinto"
+  hf_organization: "idopinto"  # Change to your own HuggingFace org if you're not the author
   dataset_name: "wonda-train-dataset"
   input_suffix: "full-raw"
   limit: -1  # Number of samples to process (-1 for all)
@@ -27,7 +28,7 @@ pipe:
   simplify: true
   verify: true
   output_suffix: "full-v2"
-  push_to_hub: true  # Push the dataset to the Hugging Face hub
+  push_to_hub: true
     
 # Filtering criteria for identifying verbose invariants that need generalization
 filtering:
