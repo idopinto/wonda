@@ -15,11 +15,8 @@ This repository contains the code for **WONDA** (data curation pipeline) and the
 
 **Released models and datasets:** All fine-tuned models and datasets are available in the [Wonda HuggingFace collection](https://huggingface.co/collections/idopinto/wonda).
 
-```
-C Program → Fine-tuned SLM → Candidate Invariant → Decision Procedure
-                                                        ├── Correct & Useful → Accelerated Verification
-                                                        └── Invalid → Fallback to Baseline
-```
+![WONDA evaluation overview](figures/vbs_figure.png)
+
 
 ## Installation
 
@@ -75,20 +72,20 @@ Build or install [runlim](https://github.com/arminbiere/runlim) and place the `r
 
 ## Quick Start
 
-Run a quick evaluation on a small sample (e.g. 5 instances). Use one of the following model options:
+Run a quick multi-run evaluation on a small sample (e.g. 5 instances). For a fast local smoke test, use `multi_run.num_runs=1` together with `weave.skip_weave=true` and `weave.test_mode=true`:
 
 ```bash
 # GPT-5.2 (OpenRouter API; set OPENROUTER_API_KEY in .env)
-uv run -m wonda.eval.evaluate dataset.limit=5 models=gpt_5.2_config
+uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=gpt_5.2_config
 
 # Qwen3-0.6B base (no fine-tuning)
-uv run -m wonda.eval.evaluate dataset.limit=5 models=qwen3_0.6b_nt_config
+uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=qwen3_0.6b_nt_config
 
 # Qwen3-0.6B fine-tuned v2.2 (WONDA SFT)
-uv run -m wonda.eval.evaluate dataset.limit=5 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 ```
 
-Evaluation requires UAutomizer and runlim (see Installation). We recommend using [W&B Weave](https://docs.wandb.ai/weave) for observability (traces, prompts, and model outputs); set `weave.skip_weave=false` in config or use the default. Evaluation runs model inference with Weave parallelism (`WEAVE_PARALLELISM`; single-run default 8, multi-run default 1); UAutomizer verification is throttled via a semaphore (`VERIFIER_MAX_CONCURRENT`, default 1) to avoid resource contention. More models and full benchmark runs are described in [wonda/eval/README.md](wonda/eval/README.md).
+Evaluation requires UAutomizer and runlim (see Installation). We recommend using [W&B Weave](https://docs.wandb.ai/weave) for observability (traces, prompts, and model outputs); for quick local tests, disable it with `weave.skip_weave=true` and keep outputs isolated with `weave.test_mode=true`. Evaluation runs model inference with Weave parallelism (`WEAVE_PARALLELISM`; single-run default 8, multi-run default 1); UAutomizer verification is throttled via a semaphore (`VERIFIER_MAX_CONCURRENT`, default 1) to avoid resource contention. More models and full benchmark runs are described in [wonda/eval/README.md](wonda/eval/README.md).
 
 ## Reproducing Paper Results
 
