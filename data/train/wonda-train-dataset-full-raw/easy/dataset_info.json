@@ -1,0 +1,64 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "id": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "file": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "original_program": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "program_for_baseline": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "baseline_decision": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "timings": {
+      "feature": {
+        "dtype": "float64",
+        "_type": "Value"
+      },
+      "_type": "List"
+    },
+    "median_timing": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "program_for_llm": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "split": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "invariants": {
+      "feature": {
+        "invariant": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "line": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "marker": {
+          "dtype": "string",
+          "_type": "Value"
+        }
+      },
+      "_type": "List"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

@@ -14,7 +14,6 @@ wheels/
 .env
 
 # Data directories (large/generated)
-data/
 tools/
 experiments/
 eval_experiments/

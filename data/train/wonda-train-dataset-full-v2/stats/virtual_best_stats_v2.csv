@@ -1,0 +1,15 @@
+metric,value
+count,7763
+total_baseline_time,229570.8830844513
+total_virtual_best_time,162767.60060692485
+total_verification_time,345107.4774013688
+overall_speedup,1.4104212523157655
+time_saved_seconds,66803.28247752646
+time_saved_percent,29.09919654442929
+chose_invariant_count,2915
+chose_baseline_count,4848
+chose_invariant_pct,37.54991626948345
+mean_baseline_time,29.572444040248783
+mean_virtual_best_time,20.967100425985425
+median_baseline_time,12.80626554787159
+median_virtual_best_time,11.90933884610422
