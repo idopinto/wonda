@@ -23,7 +23,7 @@ This repository contains the code for **WONDA** (data curation pipeline) and the
 ### Prerequisites
 
 - Python 3.13+
-- CUDA-compatible GPU (L40S or H200 recommended)
+- CUDA-compatible GPU (we used L40S or H200)
 - [uv](https://github.com/astral-sh/uv) package manager
 - [UAutomizer](https://zenodo.org/records/14209043) (for verification)
 - [runlim](https://github.com/arminbiere/runlim) (for time/memory limits during verification)
