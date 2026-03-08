@@ -1,8 +1,10 @@
+label: qwen3_0.6b_t
 client: hf # or hf / vllm / openrouter
 eval_ft_model: false
 
 base_model: 
   id: "Qwen/Qwen3-0.6B"
+  attn_implementation: "flash_attention_2"
   sampling_params:
     max_new_tokens: 32768
     temperature: 0.6

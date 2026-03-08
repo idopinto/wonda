@@ -12,7 +12,7 @@ PROPERTIES_DIR = DATASET_DIR / "properties"
 TOOLS_DIR = ROOT_DIR / "tools"
 # EXPERIMENTS_DIR = DATASET_DIR / "eval" / "experiments"
 EXPERIMENTS_DIR = ROOT_DIR / "experiments"
-PATH_TO_CLANG_FORMAT = ROOT_DIR / "configs" / "clang_format"
+# PATH_TO_CLANG_FORMAT = ROOT_DIR / "configs" / "clang_format"
 
 # UAutomizer paths
 UAUTOMIZER_PATHS = {
@@ -23,6 +23,6 @@ UAUTOMIZER_PATHS = {
 }
 
 MEMORY_LIMIT_MB = 16384
-WEAVE_PARALLELISM = "1"
+WEAVE_PARALLELISM = "8"
 #  The Ultimate.py scripts automatically detect and use the correct Java version based on the UAutomizer directory.
 #  No manual switching is required.

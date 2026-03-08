@@ -1,9 +1,8 @@
-client: openrouter # or vllm / together
-
+label: gpt_oss_20b
+client: together
 base_model:
   id: "openai/gpt-oss-20b"
-  system_role: "system"  # Use "system" for standard models, "developer" for OpenAI o-series
   sampling_params:
     temperature: 1.0
-
-# https://huggingface.co/collections/openai/gpt-oss
+    max_tokens: 16384
+    reasoning_effort: "medium"

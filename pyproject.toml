@@ -1,9 +1,13 @@
 [project]
 name = "inv-gen"
 version = "0.1.0"
-description = "Add your description here"
+description = "LLM-based loop invariant generation for accelerating program verification"
 readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.13"
+authors = [{name = "Ido Pinto"}]
+keywords = ["loop invariants", "program verification", "LLM", "fine-tuning", "formal methods"]
+
 dependencies = [
     "datasets==4.3.0",
     "pycparser>=2.23",
@@ -17,9 +21,16 @@ dependencies = [
     "vllm>=0.12.0",
     "openai>=2.11.0",
     "together>=1.5.33",
-    "pytest>=9.0.2",
     "matplotlib>=3.10.8",
     "z3-solver>=4.15.4.0",
     "hydra-core>=1.3.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.2",
     "ipykernel>=7.1.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/idopinto/inv-gen"

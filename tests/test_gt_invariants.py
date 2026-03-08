@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 from datetime import datetime
-from src.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport, write_file
-from src.preprocess.program import Program
-from src.preprocess.predicate import Predicate
+from wonda.verifiers.uautomizer import UAutomizerVerifier, VerifierCallReport, write_file
+from wonda.core.ast_program import AstProgram
+from wonda.core.property import Property
 import tempfile
 from configs import global_config as GC
 from logging import getLogger
@@ -14,7 +14,7 @@ logger = getLogger(__name__)
 
 
 def verify_correctness_with_temp_dir(
-    verifier: UAutomizerVerifier, program_to_verify: str, program_name: str, predicate: Predicate
+    verifier: UAutomizerVerifier, program_to_verify: str, program_name: str, predicate: Property
 ) -> VerifierCallReport:
     """Verify if the invariant is correct."""
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -32,7 +32,7 @@ def verify_correctness_with_temp_dir(
     )
     return report
 
-def test_gt_invariants(
+def run_gt_invariants(
     data: list[dict[str, Any]], 
     verifier: UAutomizerVerifier, 
     limit: int = -1,
@@ -74,7 +74,7 @@ def test_gt_invariants(
         print(f"Processing program {program_name} | {len(item['invariants'])} invariants")
         print(f"{'='*60}")
         
-        program = Program().from_code(item['original_program'])
+        program = AstProgram().from_code(item['original_program'])
         program.process(print_ast=False)
         
         for invariant in item['invariants']:
@@ -116,7 +116,7 @@ def test_gt_invariants(
             # # Test original invariant
             # if original_inv:
             #     print(f"[ORIGINAL] {original_inv[:100]}{'...' if len(original_inv) > 100 else ''}")
-            #     predicate = Predicate(content=original_inv, marker_name=marker)
+            #     predicate = Property(content=original_inv, marker_name=marker)
             #     program_to_verify = program.get_program_with_assertion(
             #         predicate=predicate, assumptions=[], for_llm=False
             #     )
@@ -142,7 +142,7 @@ def test_gt_invariants(
             # Test pretty invariant
             # if pretty_inv:
             #     print(f"[PRETTY] {pretty_inv[:100]}{'...' if len(pretty_inv) > 100 else ''}")
-            #     predicate = Predicate(content=pretty_inv, marker_name=marker)
+            #     predicate = Property(content=pretty_inv, marker_name=marker)
             #     program_to_verify = program.get_program_with_assertion(
             #         predicate=predicate, assumptions=[], for_llm=False
             #     )
@@ -175,7 +175,7 @@ def test_gt_invariants(
             #         print(f"[SIMPLIFIED] ⏭️ Skipped (same as pretty)")
             #     else:
             #         print(f"[SIMPLIFIED] {simplified_inv[:100]}{'...' if len(simplified_inv) > 100 else ''}")
-            #         predicate = Predicate(content=simplified_inv, marker_name=marker)
+            #         predicate = Property(content=simplified_inv, marker_name=marker)
             #         program_to_verify = program.get_program_with_assertion(
             #             predicate=predicate, assumptions=[], for_llm=False
             #         )
@@ -461,5 +461,6 @@ if __name__ == "__main__":
         arch="32bit",
         timeout_seconds=600.0,
         version="25",
+        memory_limit_mb=GC.MEMORY_LIMIT_MB,
     )
-    test_gt_invariants(data, verifier, limit=-1)
+    run_gt_invariants(data, verifier, limit=-1)

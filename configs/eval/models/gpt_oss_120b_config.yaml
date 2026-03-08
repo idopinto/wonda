@@ -1,10 +1,13 @@
-client: openrouter
+label: gpt_oss_120b
+client: together
 base_model:
   id: "openai/gpt-oss-120b"
   sampling_params:
     temperature: 1.0
-  extra_body: 
-    include_reasoning: True
+    max_tokens: 16384
     reasoning_effort: "medium"
+  # extra_body: 
+    # include_reasoning: True
+    # reasoning_effort: "medium"
 
 # https://huggingface.co/collections/openai/gpt-oss

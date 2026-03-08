@@ -1,193 +1,152 @@
-# Loop Invariant Generation
+# Not All Invariants Are Equal
 
-A framework for generating loop invariants using LLMs to accelerate traditional program verifiers.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+
+Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** ([arXiv preprint](https://arxiv.org/abs/XXXX.XXXXX)).
+
+## Abstract
+
+The synthesis of inductive loop invariants is a critical bottleneck in automated program verification. While Large Language Models (LLMs) show promise in mitigating this issue, they often fail on hard instances, generating invariants that are invalid or computationally ineffective. While fine-tuning is a natural route to mitigate this limitation, obtaining high-quality training data for invariant generation remains an open challenge. We present a rigorous data curation pipeline designed to extract high-quality training signals from raw verifier-generated invariants. First, we formalize the properties required for a high-quality training invariant. Second, we propose **WONDA**, a pipeline that refines noisy data via AST-based normalization, followed by LLM-driven semantic rewriting and augmentation with provable quality guarantees. We demonstrate that fine-tuning Small Language Models (SLMs) on this curated dataset result in consistent and significant performance gain. In particular, a fine-tuned 4B parameter model matches the utility of a GPT-OSS-120B baseline and approaches the state-of-the-art GPT-5.2, without incurring reasoning-time overhead. On challenging instances from the recent InvBench evaluation suite, our approach doubles the invariant correctness rate of base models; and improves their Virtual Best Performance (VBP) rates on the verification task by up to 14.2%.
 
 ## Overview
 
-This project fine-tunes LLMs (GPT-OSS) to generate candidate loop invariants for C programs. The generated invariants help traditional verifiers like UAutomizer prove or disprove program correctness faster.
+This repository contains the code for **WONDA** (data curation pipeline) and the full training and evaluation framework for fine-tuning Small Language Models (SLMs) on loop invariant generation for C programs.
+
+**Released models and datasets:** All fine-tuned models and datasets are available in the [Wonda HuggingFace collection](https://huggingface.co/collections/idopinto/wonda).
+
+```
+C Program → Fine-tuned SLM → Candidate Invariant → Decision Procedure
+                                                        ├── Correct & Useful → Accelerated Verification
+                                                        └── Invalid → Fallback to Baseline
+```
+
+## Installation
+
+### Prerequisites
+
+- Python 3.13+
+- CUDA-compatible GPU (L40S or H200 recommended)
+- [uv](https://github.com/astral-sh/uv) package manager
+- [UAutomizer](https://zenodo.org/records/14209043) (for verification)
+- [runlim](https://github.com/arminbiere/runlim) (for time/memory limits during verification)
+- [Weights & Biases (W&B)](https://wandb.ai) account (optional but recommended): we use **wandb** for experiment tracking when training fine-tuned models, and [W&B Weave](https://docs.wandb.ai/weave) for evaluation observability; a W&B account gives you the full experience.
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/idopinto/wonda.git
+cd wonda
+
+# Install dependencies
+uv sync
+
+# Install dev dependencies (optional)
+uv sync --extra dev
+```
+
+### Environment variables
+
+Copy `.env.example` to `.env` and fill in any credentials you need:
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys (OpenAI, Together, OpenRouter, HuggingFace, W&B, etc.)
+```
+
+Variables are optional and depend on what you run: API keys for external model backends, `HF_TOKEN` for private models or pushing to the Hub, `WANDB_API_KEY` for experiment tracking. See `.env.example` for the full list.
+
+### UAutomizer Setup
+
+Download and extract [UAutomizer (0.3.0-dev-d790fec)](https://zenodo.org/records/14209043) to `tools/UAutomizer25/`. The framework expects the following structure:
+
+```
+tools/
+└── UAutomizer25/
+    └── Ultimate.py
+```
+Other releases can be found here:
+https://fm-tools.sosy-lab.org/#tool-uautomizer
+
+### Runlim Setup
+
+Build or install [runlim](https://github.com/arminbiere/runlim) and place the `runlim` binary at `tools/runlim/runlim`. It is used to enforce time and memory limits when running the verifier (e.g. for evaluation and dataset building).
+
+## Quick Start
+
+Run a quick evaluation on a small sample (e.g. 5 instances). Use one of the following model options:
+
+```bash
+# GPT-5.2 (OpenRouter API; set OPENROUTER_API_KEY in .env)
+uv run -m wonda.eval.evaluate dataset.limit=5 models=gpt_5.2_config
+
+# Qwen3-0.6B base (no fine-tuning)
+uv run -m wonda.eval.evaluate dataset.limit=5 models=qwen3_0.6b_nt_config
+
+# Qwen3-0.6B fine-tuned v2.2 (WONDA SFT)
+uv run -m wonda.eval.evaluate dataset.limit=5 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+```
+
+Evaluation requires UAutomizer and runlim (see Installation). We recommend using [W&B Weave](https://docs.wandb.ai/weave) for observability (traces, prompts, and model outputs); set `weave.skip_weave=false` in config or use the default. Evaluation runs model inference with Weave parallelism (`WEAVE_PARALLELISM`; single-run default 8, multi-run default 1); UAutomizer verification is throttled via a semaphore (`VERIFIER_MAX_CONCURRENT`, default 1) to avoid resource contention. More models and full benchmark runs are described in [wonda/eval/README.md](wonda/eval/README.md).
+
+## Reproducing Paper Results
+
+### 1. Data Preparation
+
+All datasets are on HuggingFace (see the [Wonda collection](https://huggingface.co/collections/idopinto/wonda) for the full list). See [wonda/preprocess/README.md](wonda/preprocess/README.md) for dataset details and how to rebuild them.
+
+### 2. Training
+
+We release fine-tuned Qwen3 (non-think) models on HuggingFace; training uses LoRA and the WONDA SFT datasets. See [wonda/train/README.md](wonda/train/README.md) for released models and how to train your own.
+
+### 3. Evaluation
+
+We run multi-trial evaluation and report the metrics described in the paper. The metrics (validation, correctness, usefulness, VBS, speedup, etc.) are implemented and explained in [wonda/eval/inv_gen_scorer.py](wonda/eval/inv_gen_scorer.py). See [wonda/eval/README.md](wonda/eval/README.md) for the evaluation process, models used in the paper, and how to run evaluations.
 
 ## Project Structure
 
 ```
-inv-gen/
+wonda/
 ├── configs/
-│   ├── eval/config.yaml      # Evaluation configuration
-│   ├── train/config.yaml     # Training configuration
-│   └── global_config.py      # Global paths and settings
+│   ├── eval/           # Evaluation configs (Hydra), incl. model configs in models/
+│   ├── train/          # Training configs (qwen3_0.6b … qwen3_14b)
+│   └── preprocess/     # Preprocessing configs (build_eval_dataset, build_sft_dataset, wonda_data_pipeline)
 ├── scripts/
-│   └── eval/
-│       ├── eval_hf.sbatch    # Evaluation with HuggingFace client
-│       └── eval_vllm.sbatch  # Evaluation with vLLM server
-├── src/
-│   ├── eval/                 # Evaluation pipeline
-│   ├── train/sft/            # SFT training scripts
-│   ├── preprocess/           # Data preprocessing
-│   ├── utils/                # Utility classes (Program, Predicate)
-│   └── verifiers/            # UAutomizer wrapper
-└── nbs/                      # Jupyter notebooks for analysis
+│   ├── eval/           # SLURM scripts: run_evaluation.sbatch, run_multi_eval.sbatch
+│   ├── train/          # SLURM scripts: train_qwen.sbatch, train_and_eval_qwen.sbatch
+│   └── preprocess/     # SLURM/shell: build_eval_dataset.sbatch, build_raw_train_dataset.sbatch, wonda_pipeline.sbatch, build_sft_dataset.sh
+├── wonda/              # Main package
+│   ├── core/           # AST and property utilities (ast_program.py, property.py)
+│   ├── eval/           # Evaluation pipeline
+│   │   ├── evaluate.py, run_multi_eval.py, inv_gen_scorer.py
+│   │   ├── decision_procedure.py, eval_data.py, validate.py, aggregate_results.py
+│   │   └── models/     # Model backends (qwen_model, oss_model, open_router_model, vllm_model, etc.)
+│   ├── preprocess/     # WONDA data curation pipeline
+│   │   ├── build_eval_dataset.py, build_raw_train_dataset.py, build_sft_dataset.py
+│   │   ├── wonda_pipeline.py, baseline_dataset_common.py
+│   │   └── gt_invariant_normalization.py, gt_invariant_simplification.py
+│   ├── train/          # Training: train_qwen.py, data_utils.py, train_utils.py
+│   └── verifiers/      # UAutomizer wrapper (uautomizer.py)
+├── tests/              # Test suite (see [tests/README.md](tests/README.md))
+└── tools/              # UAutomizer and runlim (see Installation)
 ```
 
-## Setup
+## Testing
 
-### Prerequisites
+See **[tests/README.md](tests/README.md)** for how to run the test suite, what to run, and a summary of test modules. Tests use no external tools (gcc, UAutomizer, runlim) or network and are suitable for CI.
 
-- Python 3.11+
-- CUDA-compatible GPU (H200 recommended for vLLM, 2x L40S for HF)
-- Access to SLURM cluster
+## Citation
 
-### Installation
-
-```bash
-# Clone the repository
-cd /cs/labs/guykatz/idopinto12/projects/inv-gen
-
-# Install dependencies with uv
-uv sync
-```
-
-## Evaluation
-
-### Option 1: vLLM Server (Recommended for H200)
-
-Uses vLLM with LoRA adapters for fast inference via OpenAI-compatible API.
-
-```bash
-# Basic usage
-sbatch scripts/eval/eval_vllm.sbatch
-
-# With Hydra overrides
-sbatch scripts/eval/eval_vllm.sbatch dataset.split=easy dataset.limit=5
-sbatch scripts/eval/eval_vllm.sbatch dataset.split=hard
-```
-
-### Option 2: HuggingFace Direct (For L40S or when H200 unavailable)
-
-Loads the model directly using HuggingFace Transformers.
-
-```bash
-# Basic usage
-sbatch scripts/eval/eval_hf.sbatch
-
-# With Hydra overrides
-sbatch scripts/eval/eval_hf.sbatch dataset.split=easy dataset.limit=5
-sbatch scripts/eval/eval_hf.sbatch model.eval_finetuned_model=true
-```
-
-### Local Testing
-
-```bash
-# Run evaluation locally (requires GPU)
-uv run -m src.eval.evaluate model.client=hf dataset.limit=1
-
-# With vLLM (start server first)
-vllm serve openai/gpt-oss-20b --enable-lora \
-    --lora-modules gen_inv_adapter=idopinto/gpt-oss-20b-rlinv-sft-sep \
-    --max-lora-rank 8
-
-# Then run evaluation
-uv run -m src.eval.evaluate model.client=vllm dataset.limit=1
-```
-
-## Configuration
-
-Configuration is managed via Hydra. Override any config value from command line:
-
-### Common Overrides
-
-| Override | Description | Example |
-|----------|-------------|---------|
-| `model.client` | Inference backend | `hf` or `vllm` |
-| `dataset.split` | Data split | `easy` or `hard` |
-| `dataset.limit` | Number of samples | `5` or `-1` (all) |
-| `dataset.prefix` | Filter by prefix | `loop_` |
-| `model.reasoning_effort` | GPT-OSS reasoning | `low`, `medium`, `high` |
-| `weave.skip_wandb` | Skip W&B upload | `true` |
-
-### Full Config Reference
-
-See `configs/eval/config.yaml` for all options:
-
-```yaml
-model:
-  client: vllm              # or hf
-  base_model_name: "openai/gpt-oss-20b"
-  reasoning_effort: "medium"
-  vllm_base_url: "http://localhost:8000/v1"
-  vllm_model: "gen_inv_adapter"
-
-dataset:
-  name: "idopinto/invbench-evaluation-uautomizer25-k3"
-  split: "hard"
-  limit: -1
-
-scorer:
-  verifier:
-    version: "25"
-    timeout_seconds: 600.0
-```
-
-## Training
-
-### SFT Training
-
-```bash
-# Run training
-uv run -m src.train.sft.train_sft
-
-# Or with Unsloth (faster)
-uv run -m src.train.sft.train_unsloth
-```
-
-Training config: `configs/train/config.yaml`
-
-## Models
-
-| Model | Description | HuggingFace |
-|-------|-------------|-------------|
-| Base | GPT-OSS-20B | `openai/gpt-oss-20b` |
-| Fine-tuned | LoRA adapter | `idopinto/gpt-oss-20b-rlinv-sft-sep` |
-
-## Monitoring
-
-- **Weave**: Experiment tracking at [wandb.ai/ip-ai/eval-inv-gen](https://wandb.ai/ip-ai/eval-inv-gen)
-- **SLURM logs**: `slurm/eval_*.out` and `slurm/eval_*.err`
-
-```bash
-# Check job status
-squeue -u $USER
-
-# View logs
-tail -f slurm/eval_vllm_<job_id>.out
-```
-
-## Architecture
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  C Program      │────►│  LLM (GPT-OSS)   │────►│  Candidate      │
-│  with loops     │     │  + LoRA adapter  │     │  Invariant      │
-└─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                          │
-                        ┌──────────────────┐              │
-                        │  Decision        │◄─────────────┘
-                        │  Procedure       │
-                        └────────┬─────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-          ┌─────────────────┐       ┌─────────────────┐
-          │  Correctness    │       │  Usefulness     │
-          │  Check (V₁)     │       │  Check (V₂)     │
-          └────────┬────────┘       └────────┬────────┘
-                   │                         │
-                   └──────────┬──────────────┘
-                              ▼
-                    ┌─────────────────┐
-                    │  Final Decision │
-                    │  TRUE/FALSE/UNK │
-                    └─────────────────┘
+```bibtex
+@article{pinto2026invariants,
+  title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
+  author={Pinto, Ido},
+  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  year={2026}
+}
 ```
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
