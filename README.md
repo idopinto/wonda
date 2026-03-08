@@ -172,7 +172,7 @@ See **[tests/README.md](tests/README.md)** for how to run the test suite, what t
 ```bibtex
 @article{pinto2026invariants,
   title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
-  author={Pinto, Ido},
+  author={Ido Pinto and Yizhak Elboher and Haoze Wu and Nina Narodytska and Guy Katz},
   journal={arXiv preprint},
   year={2026},
   note={Citation to be updated upon publication}

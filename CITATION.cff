@@ -3,6 +3,24 @@ title: "Not All Invariants Are Equal: Curating Training Data to Accelerate Progr
 authors:
   - family-names: Pinto
     given-names: Ido
+    affiliation: Hebrew University of Jerusalem, Israel
+    email: ido.pinto@mail.huji.ac.il
+  - family-names: Elboher
+    given-names: Yizhak
+    affiliation: Hebrew University of Jerusalem, Israel
+    email: yizhak.elboher@mail.huji.ac.il
+  - family-names: Wu
+    given-names: Haoze
+    affiliation: Amherst College, USA
+    email: hwu@amherst.edu
+  - family-names: Narodytska
+    given-names: Nina
+    affiliation: VMware Research, by Broadcom, USA
+    email: n.narodytska@gmail.com
+  - family-names: Katz
+    given-names: Guy
+    affiliation: Hebrew University of Jerusalem, Israel
+    email: g.katz@mail.huji.ac.il
 type: article
 year: 2026
 url: "https://github.com/idopinto/wonda"
