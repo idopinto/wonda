@@ -13,6 +13,7 @@ class ModelFactory:
     def create(cfg: DictConfig, system_prompt: weave.StringPrompt, user_prompt_template: weave.StringPrompt) -> weave.Model:
         """Create a model instance based on configuration."""
         # Get model name from either id or base_model_name field
+        eval_ft_model = cfg.get("eval_ft_model", False)
         if cfg.client == "together":
             return InvariantGeneratorTogetherModel(
                 model_cfg=cfg,
@@ -39,7 +40,7 @@ class ModelFactory:
                     user_prompt_template=user_prompt_template,
                     sampling_params=cfg.base_model.sampling_params,
                     enable_thinking=cfg.base_model.extra_body.enable_thinking,
-                    eval_ft_model=cfg.eval_ft_model,
+                    eval_ft_model=eval_ft_model,
                 )
             elif "gpt-oss" in cfg.base_model.id.lower():
                 return InvariantGeneratorOssModel(
@@ -48,7 +49,7 @@ class ModelFactory:
                     user_prompt_template=user_prompt_template,
                     sampling_params=cfg.base_model.sampling_params,
                     reasoning_effort=cfg.base_model.reasoning_effort,
-                    eval_ft_model=cfg.eval_ft_model,
+                    eval_ft_model=eval_ft_model,
                 )
             else:
                 raise ValueError(f"Invalid model: {cfg.base_model.id}")

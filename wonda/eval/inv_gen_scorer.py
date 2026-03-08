@@ -232,8 +232,8 @@ class InvGenScorer(weave.Scorer):
             "verification_time": verification_time,
             "verification_time_e2e": verification_time_e2e,
             "median_timing": median_timing,
-            "log_files": log_files,
-            "witness_files": witness_files,
+            # "log_files": log_files,
+            # "witness_files": witness_files,
         }
 
         # --- Per-example decision summary (mirrors paper_examples/eval_ultimate_models.py) ---

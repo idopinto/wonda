@@ -79,13 +79,13 @@ class InvariantGeneratorTogetherModel(weave.Model):
         answer = message.content or ""
 
         logger.info(f"Answer: {answer}")
-
+        print(response.__dict__)
         return {
-            "prompt": "\n".join([msg["content"] for msg in messages]),
+            # "prompt": "\n".join([msg["content"] for msg in messages]),
             "reasoning": reasoning,
             "answer": answer,
             "model_latency": model_latency,
-            "usage": {},
+            "usage": response.usage,
             "cost": {},
         }
 

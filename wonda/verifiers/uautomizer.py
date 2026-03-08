@@ -129,10 +129,7 @@ class UAutomizerVerifier:
                     decision_reason=err_msg,
                 )
 
-        # Build command
-        # TODO: add memory limitation constraint 16gb
-        # https://github.com/arminbiere/runlim
-    
+        # https://github.com/arminbiere/runlim (memory limitation constraint 16gb)    
         runlim_command = [
             runlim_path,
             # "-t", str(int(self.timeout_seconds)),      # CPU time limit

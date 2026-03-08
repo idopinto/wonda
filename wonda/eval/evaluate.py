@@ -96,7 +96,8 @@ def main() -> None:
         cfg = OmegaConf.create(cfg)
 
     model_label = cfg.models.get("label", "default")
-    version = str(cfg.models.ft_model.sft_version) if cfg.models.eval_ft_model else None
+    eval_ft_model = cfg.models.get("eval_ft_model", False)
+    version = str(cfg.models.ft_model.sft_version) if eval_ft_model else None
     summary_path = cfg.get("summary_output_path")
     if not summary_path:
         out_dir = Path(cfg.get("summary_output_dir", str(GC.EXPERIMENTS_DIR)))

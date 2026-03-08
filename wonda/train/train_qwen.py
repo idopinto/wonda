@@ -2,7 +2,7 @@
 SFT fine-tuning script for Qwen models on the loop-invariant generation task.
 
 Loads a pre-trained Qwen checkpoint, optionally applies LoRA, and trains it
-via supervised fine-tuning on per-marker invariant prediction data.
+via supervised fine-tuning on per loop marker invariant prediction data.
 Configuration is managed by Hydra (configs/train/).
 
 Usage:
@@ -189,8 +189,7 @@ def main(cfg: DictConfig):
             lora_kwargs["target_parameters"] = list(cfg.lora.target_parameters)
         lora_config = LoraConfig(**lora_kwargs)
         model = get_peft_model(model, lora_config)
-
-    print_trainable_parameters(model)
+        print_trainable_parameters(model)
     train(model, tokenizer, training_args, train_dataset, validation_dataset)
 
     wandb.finish()
