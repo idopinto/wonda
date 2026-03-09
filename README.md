@@ -15,6 +15,8 @@ This repository contains the code for **WONDA** (data curation pipeline) and the
 
 **Released models and datasets:** All fine-tuned models and datasets are available in the [Wonda HuggingFace collection](https://huggingface.co/collections/idopinto/wonda).
 
+![WONDA pipeline overview](figures/pipe_figure.png)
+
 ![WONDA evaluation overview](figures/vbs_figure.png)
 
 ## Installation
