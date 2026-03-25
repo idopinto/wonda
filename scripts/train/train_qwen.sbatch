@@ -41,11 +41,21 @@
 #   sbatch --job-name=train_qwen_8b_v1 scripts/train/train_qwen.sbatch qwen3_8b dataset.version=v1
 #   sbatch --job-name=train_qwen_8b_v2 scripts/train/train_qwen.sbatch qwen3_8b dataset.version=v2 dataset.min_grade=2
 #   sbatch --job-name=train_qwen_8b_v2_test scripts/train/train_qwen.sbatch qwen3_8b dataset.version=v2 dataset.min_grade=2 test_mode=true
+
+#   sbatch --job-name=train_qwen_8b_full_v2_g2 scripts/train/train_qwen.sbatch qwen3_8b_full dataset.version=v2 dataset.min_grade=2 test_mode=false
+#   sbatch --job-name=train_qwen_8b_full_v2_g3 scripts/train/train_qwen.sbatch qwen3_8b_full dataset.version=v2 dataset.min_grade=3 test_mode=false
+
+#   sbatch --job-name=train_qwen_8b_full_v2_g2_test scripts/train/train_qwen.sbatch qwen3_8b_full dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   sbatch --job-name=train_qwen_8b_full_v2_g3_test scripts/train/train_qwen.sbatch qwen3_8b_full dataset.version=v2 dataset.min_grade=3 test_mode=true
+
 #   14B
 #   sbatch --job-name=train_qwen_14b_v0 scripts/train/train_qwen.sbatch qwen3_14b dataset.version=v0
 #   sbatch --job-name=train_qwen_14b_v1 scripts/train/train_qwen.sbatch qwen3_14b dataset.version=v1
 #   sbatch --job-name=train_qwen_14b_v2 scripts/train/train_qwen.sbatch qwen3_14b dataset.version=v2 dataset.min_grade=2
 #   sbatch --job-name=train_qwen_14b_v2_test scripts/train/train_qwen.sbatch qwen3_14b dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   sbatch --job-name=train_qwen_14b_full_v2_g2 scripts/train/train_qwen.sbatch qwen3_14b_full dataset.version=v2 dataset.min_grade=2 test_mode=false
+#   sbatch --job-name=train_qwen_14b_full_v2_g3 scripts/train/train_qwen.sbatch qwen3_14b_full dataset.version=v2 dataset.min_grade=3 test_mode=false
+
 
 echo "Starting Qwen training..."
 set -e
