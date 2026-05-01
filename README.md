@@ -3,8 +3,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![arXiv](https://img.shields.io/badge/arXiv-2603.15510-b31b1b.svg)](https://arxiv.org/abs/2603.15510)
+[![ICML 2026](https://img.shields.io/badge/ICML-2026-8A2BE2.svg)](https://icml.cc/)
 
-Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** 
+Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"**
+
+> 🎉 **Accepted to ICML 2026!** Camera-ready and proceedings link coming soon — for now please cite the [arXiv preprint](https://arxiv.org/abs/2603.15510).
 
 ## Abstract
 
@@ -172,11 +175,14 @@ See **[tests/README.md](tests/README.md)** for how to run the test suite, what t
 
 ## Citation
 
+If you use this work, please cite the arXiv version for now (camera-ready ICML 2026 entry coming soon):
+
 ```bibtex
 @misc{pinto2026wonda,
   title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
   author={Pinto, Ido and Elboher, Yizhak Yisrael and Wu, Haoze and Narodytska, Nina and Katz, Guy},
   year={2026},
+  note={To appear at ICML 2026},
   eprint={2603.15510},
   archivePrefix={arXiv},
   primaryClass={cs.LG},
