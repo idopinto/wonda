@@ -1,14 +1,12 @@
-# Not All Invariants Are Equal
+# [ICML 2026] Not All Invariants Are Equal
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![arXiv](https://img.shields.io/badge/arXiv-2603.15510-b31b1b.svg)](https://arxiv.org/abs/2603.15510)
-[![ICML 2026](https://img.shields.io/badge/ICML-2026-8A2BE2.svg)](https://icml.cc/)
 
 Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"**
 
-> 🎉 **Accepted to ICML 2026!** Camera-ready and proceedings link coming soon — for now please cite the [arXiv preprint](https://arxiv.org/abs/2603.15510).
-
+> 🎉 **Accepted to ICML 2026!** Camera-ready and proceedings link coming soon.
 ## Abstract
 
 The synthesis of inductive loop invariants is a critical bottleneck in automated program verification. While Large Language Models (LLMs) show promise in mitigating this issue, they often fail on hard instances, generating invariants that are invalid or computationally ineffective. While fine-tuning is a natural route to mitigate this limitation, obtaining high-quality training data for invariant generation remains an open challenge. We present a rigorous data curation pipeline designed to extract high-quality training signals from raw verifier-generated invariants. First, we formalize the properties required for a high-quality training invariant. Second, we propose **WONDA**, a pipeline that refines noisy data via AST-based normalization, followed by LLM-driven semantic rewriting and augmentation with provable quality guarantees. We demonstrate that fine-tuning Small Language Models (SLMs) on this curated dataset result in consistent and significant performance gain. In particular, a fine-tuned 4B parameter model matches the utility of a GPT-OSS-120B baseline and approaches the state-of-the-art GPT-5.2, without incurring reasoning-time overhead. On challenging instances from the recent InvBench evaluation suite, our approach doubles the invariant correctness rate of base models; and improves their Virtual Best Performance (VBP) rates on the verification task by up to 14.2%.
