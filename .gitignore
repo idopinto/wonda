@@ -12,6 +12,9 @@ wheels/
 
 # Environment and secrets
 .env
+.qodo
+.pytest_cache
+backup/ 
 
 # Data directories (large/generated)
 tools/
@@ -20,6 +23,7 @@ eval_experiments/
 examples/
 trained_models/
 sv-benchmarks/
+Lemur-program-verification/
 
 # Generated outputs
 outputs/

@@ -46,3 +46,9 @@ dev = [
 
 [project.urls]
 Repository = "https://github.com/idopinto/wonda"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--ignore=backup",
+    "--ignore=Lemur-program-verification",
+]

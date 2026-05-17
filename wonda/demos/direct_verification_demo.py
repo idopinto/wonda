@@ -147,7 +147,7 @@ def main() -> None:
         timeout_seconds=args.timeout,
         version="25",
         memory_limit_mb=GC.MEMORY_LIMIT_MB,
-        use_semaphore=False,  # Single-threaded demo, no need for semaphore
+        # use_semaphore=False,  # Single-threaded demo, no need for semaphore
     )
     print(f"  UAutomizer:  {uautomizer_path}")
     print(f"  Property:    {property_file}")
