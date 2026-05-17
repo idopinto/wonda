@@ -4,7 +4,7 @@ test_mode: false
 wandb:
   use_wandb: true
   entity: "ip-ai"
-  project: train-wonda-rebuttel
+  project: train-wonda-qwen3-8b-full
   name: null  # auto-derived: qwen3-8b-nt-gen-inv-sft-{version}
 
 model:
@@ -34,17 +34,19 @@ dataset:
 sft:
   output_dir: null
   num_train_epochs: 2
-  per_device_train_batch_size: 16
-  gradient_accumulation_steps: 2
+  # Full 8B SFT OOMs at batch 64×1024 on a single GPU; keep max_length=1024 and scale with grad accum.
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 16
   gradient_checkpointing: True
   optimizer: "adamw_torch_fused"
   logging_steps: 1
   save_strategy: "epoch"
   save_only_model: true
-  learning_rate: 5e-4
+  learning_rate: 2e-5 
   max_length: 1024
-  max_grad_norm: 0.3
+  max_grad_norm: 1.0
   warmup_ratio: 0.03
+  weight_decay: 0.1 
   lr_scheduler_type: "cosine_with_min_lr"
   lr_scheduler_kwargs: {"min_lr_rate": 0.1}
   dataset_text_field: "text"

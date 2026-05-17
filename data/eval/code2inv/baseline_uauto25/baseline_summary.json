@@ -1,0 +1,1872 @@
+{
+  "uautomizer_version": "25",
+  "arch": "32bit",
+  "timeout": 600.0,
+  "num_trials": 3,
+  "num_programs": 133,
+  "total_elapsed_seconds": 2755.8336234092712,
+  "programs": [
+    {
+      "file": "1.c",
+      "median_timing": 9.0,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        35.31,
+        9.0,
+        8.95
+      ]
+    },
+    {
+      "file": "10.c",
+      "median_timing": 7.28,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.59,
+        7.23,
+        7.28
+      ]
+    },
+    {
+      "file": "100.c",
+      "median_timing": 7.93,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.93,
+        7.69,
+        8.01
+      ]
+    },
+    {
+      "file": "101.c",
+      "median_timing": 6.2,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.2,
+        6.17,
+        6.58
+      ]
+    },
+    {
+      "file": "102.c",
+      "median_timing": 6.43,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.33,
+        6.6,
+        6.43
+      ]
+    },
+    {
+      "file": "103.c",
+      "median_timing": 6.6,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.6,
+        6.96,
+        6.34
+      ]
+    },
+    {
+      "file": "104.c",
+      "median_timing": 6.47,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.44,
+        6.86,
+        6.47
+      ]
+    },
+    {
+      "file": "105.c",
+      "median_timing": 6.48,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.48,
+        6.29,
+        7.03
+      ]
+    },
+    {
+      "file": "106.c",
+      "median_timing": 6.9,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.98,
+        6.9,
+        6.73
+      ]
+    },
+    {
+      "file": "107.c",
+      "median_timing": 6.08,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.08,
+        5.99,
+        6.1
+      ]
+    },
+    {
+      "file": "108.c",
+      "median_timing": 6.26,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.26,
+        5.93,
+        6.67
+      ]
+    },
+    {
+      "file": "109.c",
+      "median_timing": 6.25,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.33,
+        6.1,
+        6.25
+      ]
+    },
+    {
+      "file": "11.c",
+      "median_timing": 6.81,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.81,
+        6.73,
+        7.35
+      ]
+    },
+    {
+      "file": "110.c",
+      "median_timing": 7.17,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.17,
+        7.26,
+        6.75
+      ]
+    },
+    {
+      "file": "111.c",
+      "median_timing": 6.64,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.0,
+        6.49,
+        6.64
+      ]
+    },
+    {
+      "file": "112.c",
+      "median_timing": 6.46,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.46,
+        6.74,
+        6.46
+      ]
+    },
+    {
+      "file": "113.c",
+      "median_timing": 6.99,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.07,
+        6.99,
+        6.98
+      ]
+    },
+    {
+      "file": "114.c",
+      "median_timing": 6.15,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.43,
+        5.8,
+        6.15
+      ]
+    },
+    {
+      "file": "115.c",
+      "median_timing": 6.19,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.43,
+        6.19,
+        6.03
+      ]
+    },
+    {
+      "file": "116.c",
+      "median_timing": 6.04,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.99,
+        6.04,
+        6.19
+      ]
+    },
+    {
+      "file": "117.c",
+      "median_timing": 6.17,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.17,
+        6.71,
+        6.1
+      ]
+    },
+    {
+      "file": "118.c",
+      "median_timing": 7.09,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.78,
+        7.09,
+        7.34
+      ]
+    },
+    {
+      "file": "119.c",
+      "median_timing": 6.79,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.83,
+        6.79,
+        6.51
+      ]
+    },
+    {
+      "file": "12.c",
+      "median_timing": 7.17,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.8,
+        7.33,
+        7.17
+      ]
+    },
+    {
+      "file": "120.c",
+      "median_timing": 7.98,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.98,
+        8.2,
+        7.91
+      ]
+    },
+    {
+      "file": "121.c",
+      "median_timing": 7.83,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        8.03,
+        7.57,
+        7.83
+      ]
+    },
+    {
+      "file": "122.c",
+      "median_timing": 6.63,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.96,
+        6.49,
+        6.63
+      ]
+    },
+    {
+      "file": "123.c",
+      "median_timing": 6.59,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.59,
+        7.03,
+        6.54
+      ]
+    },
+    {
+      "file": "124.c",
+      "median_timing": 7.07,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.64,
+        7.37,
+        7.07
+      ]
+    },
+    {
+      "file": "125.c",
+      "median_timing": 6.74,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        8.14,
+        6.73,
+        6.74
+      ]
+    },
+    {
+      "file": "126.c",
+      "median_timing": 6.89,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.89,
+        6.77,
+        6.93
+      ]
+    },
+    {
+      "file": "127.c",
+      "median_timing": 7.2,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.2,
+        7.25,
+        6.6
+      ]
+    },
+    {
+      "file": "128.c",
+      "median_timing": 5.87,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.23,
+        5.86,
+        5.87
+      ]
+    },
+    {
+      "file": "129.c",
+      "median_timing": 6.24,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.99,
+        6.24,
+        6.57
+      ]
+    },
+    {
+      "file": "13.c",
+      "median_timing": 7.43,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.43,
+        7.43,
+        7.78
+      ]
+    },
+    {
+      "file": "130.c",
+      "median_timing": 6.97,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.93,
+        7.03,
+        6.97
+      ]
+    },
+    {
+      "file": "131.c",
+      "median_timing": 7.0,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.3,
+        6.75,
+        7.0
+      ]
+    },
+    {
+      "file": "132.c",
+      "median_timing": 6.48,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.73,
+        6.18,
+        6.48
+      ]
+    },
+    {
+      "file": "133.c",
+      "median_timing": 6.73,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.33,
+        6.73,
+        6.73
+      ]
+    },
+    {
+      "file": "14.c",
+      "median_timing": 7.08,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.7,
+        7.08,
+        6.88
+      ]
+    },
+    {
+      "file": "15.c",
+      "median_timing": 7.09,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.09,
+        7.18,
+        6.87
+      ]
+    },
+    {
+      "file": "16.c",
+      "median_timing": 6.69,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.69,
+        7.39,
+        6.64
+      ]
+    },
+    {
+      "file": "17.c",
+      "median_timing": 7.18,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.15,
+        7.18,
+        7.23
+      ]
+    },
+    {
+      "file": "18.c",
+      "median_timing": 6.79,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.79,
+        6.5,
+        6.88
+      ]
+    },
+    {
+      "file": "19.c",
+      "median_timing": 6.83,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.04,
+        6.77,
+        6.83
+      ]
+    },
+    {
+      "file": "2.c",
+      "median_timing": 8.68,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        8.68,
+        8.73,
+        8.5
+      ]
+    },
+    {
+      "file": "20.c",
+      "median_timing": 6.48,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.6,
+        6.3,
+        6.48
+      ]
+    },
+    {
+      "file": "21.c",
+      "median_timing": 7.05,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.83,
+        7.28,
+        7.05
+      ]
+    },
+    {
+      "file": "22.c",
+      "median_timing": 7.05,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.63,
+        7.05,
+        6.33
+      ]
+    },
+    {
+      "file": "23.c",
+      "median_timing": 8.01,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.93,
+        8.01,
+        8.23
+      ]
+    },
+    {
+      "file": "24.c",
+      "median_timing": 7.64,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.75,
+        7.64,
+        7.41
+      ]
+    },
+    {
+      "file": "25.c",
+      "median_timing": 6.56,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.56,
+        6.54,
+        6.63
+      ]
+    },
+    {
+      "file": "26.c",
+      "median_timing": 6.27,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.53,
+        6.27,
+        6.06
+      ]
+    },
+    {
+      "file": "27.c",
+      "median_timing": 6.27,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.16,
+        6.53,
+        6.27
+      ]
+    },
+    {
+      "file": "28.c",
+      "median_timing": 6.13,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.81,
+        6.13,
+        6.24
+      ]
+    },
+    {
+      "file": "29.c",
+      "median_timing": 6.31,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.31,
+        6.97,
+        6.23
+      ]
+    },
+    {
+      "file": "3.c",
+      "median_timing": 6.37,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.35,
+        6.8,
+        6.37
+      ]
+    },
+    {
+      "file": "30.c",
+      "median_timing": 6.86,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.86,
+        6.63,
+        7.06
+      ]
+    },
+    {
+      "file": "31.c",
+      "median_timing": 5.93,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.39,
+        5.69,
+        5.93
+      ]
+    },
+    {
+      "file": "32.c",
+      "median_timing": 6.05,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        5.64,
+        6.05,
+        6.13
+      ]
+    },
+    {
+      "file": "33.c",
+      "median_timing": 6.63,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.63,
+        6.86,
+        6.63
+      ]
+    },
+    {
+      "file": "34.c",
+      "median_timing": 7.04,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.04,
+        7.18,
+        7.04
+      ]
+    },
+    {
+      "file": "35.c",
+      "median_timing": 6.25,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.25,
+        6.2,
+        6.27
+      ]
+    },
+    {
+      "file": "36.c",
+      "median_timing": 6.43,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.23,
+        6.43,
+        6.43
+      ]
+    },
+    {
+      "file": "37.c",
+      "median_timing": 5.91,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.9,
+        5.94,
+        5.91
+      ]
+    },
+    {
+      "file": "38.c",
+      "median_timing": 6.04,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.04,
+        6.08,
+        5.96
+      ]
+    },
+    {
+      "file": "39.c",
+      "median_timing": 5.89,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.89,
+        5.89,
+        5.73
+      ]
+    },
+    {
+      "file": "4.c",
+      "median_timing": 6.68,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.48,
+        6.68,
+        7.23
+      ]
+    },
+    {
+      "file": "40.c",
+      "median_timing": 7.37,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        8.25,
+        7.37,
+        6.36
+      ]
+    },
+    {
+      "file": "41.c",
+      "median_timing": 6.34,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.34,
+        6.24,
+        6.57
+      ]
+    },
+    {
+      "file": "42.c",
+      "median_timing": 6.38,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.17,
+        6.38,
+        6.81
+      ]
+    },
+    {
+      "file": "43.c",
+      "median_timing": 6.16,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.5,
+        6.16,
+        6.13
+      ]
+    },
+    {
+      "file": "44.c",
+      "median_timing": 6.35,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.83,
+        6.33,
+        6.35
+      ]
+    },
+    {
+      "file": "45.c",
+      "median_timing": 6.07,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.07,
+        5.93,
+        6.43
+      ]
+    },
+    {
+      "file": "46.c",
+      "median_timing": 7.49,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.37,
+        7.49,
+        8.06
+      ]
+    },
+    {
+      "file": "47.c",
+      "median_timing": 5.99,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.99,
+        6.37,
+        5.9
+      ]
+    },
+    {
+      "file": "48.c",
+      "median_timing": 6.01,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.01,
+        6.0,
+        6.04
+      ]
+    },
+    {
+      "file": "49.c",
+      "median_timing": 6.53,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.53,
+        6.34,
+        6.69
+      ]
+    },
+    {
+      "file": "5.c",
+      "median_timing": 6.66,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.18,
+        6.66,
+        6.73
+      ]
+    },
+    {
+      "file": "50.c",
+      "median_timing": 6.19,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.95,
+        6.44,
+        6.19
+      ]
+    },
+    {
+      "file": "51.c",
+      "median_timing": 6.29,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        5.86,
+        6.29,
+        6.53
+      ]
+    },
+    {
+      "file": "52.c",
+      "median_timing": 6.47,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.47,
+        6.73,
+        5.93
+      ]
+    },
+    {
+      "file": "53.c",
+      "median_timing": 6.47,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.61,
+        6.47,
+        6.33
+      ]
+    },
+    {
+      "file": "54.c",
+      "median_timing": 6.23,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.63,
+        6.07,
+        6.23
+      ]
+    },
+    {
+      "file": "55.c",
+      "median_timing": 6.28,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.45,
+        6.09,
+        6.28
+      ]
+    },
+    {
+      "file": "56.c",
+      "median_timing": 6.26,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.26,
+        6.41,
+        6.25
+      ]
+    },
+    {
+      "file": "57.c",
+      "median_timing": 6.54,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.43,
+        6.83,
+        6.54
+      ]
+    },
+    {
+      "file": "58.c",
+      "median_timing": 6.7,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.88,
+        6.7,
+        6.47
+      ]
+    },
+    {
+      "file": "59.c",
+      "median_timing": 7.85,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        8.19,
+        7.63,
+        7.85
+      ]
+    },
+    {
+      "file": "6.c",
+      "median_timing": 6.36,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.17,
+        6.69,
+        6.36
+      ]
+    },
+    {
+      "file": "60.c",
+      "median_timing": 6.24,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.86,
+        6.24,
+        6.2
+      ]
+    },
+    {
+      "file": "61.c",
+      "median_timing": 6.13,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.16,
+        6.13,
+        6.08
+      ]
+    },
+    {
+      "file": "62.c",
+      "median_timing": 6.73,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.51,
+        6.73,
+        7.65
+      ]
+    },
+    {
+      "file": "63.c",
+      "median_timing": 6.58,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.58,
+        6.64,
+        6.55
+      ]
+    },
+    {
+      "file": "64.c",
+      "median_timing": 8.25,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        10.8,
+        8.25,
+        8.03
+      ]
+    },
+    {
+      "file": "65.c",
+      "median_timing": 7.33,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.53,
+        7.33,
+        6.63
+      ]
+    },
+    {
+      "file": "66.c",
+      "median_timing": 7.45,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.45,
+        7.18,
+        7.61
+      ]
+    },
+    {
+      "file": "67.c",
+      "median_timing": 6.47,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.47,
+        6.47,
+        6.53
+      ]
+    },
+    {
+      "file": "68.c",
+      "median_timing": 6.66,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.48,
+        7.2,
+        6.66
+      ]
+    },
+    {
+      "file": "69.c",
+      "median_timing": 6.77,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.1,
+        6.77,
+        6.6
+      ]
+    },
+    {
+      "file": "7.c",
+      "median_timing": 7.19,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.43,
+        6.94,
+        7.19
+      ]
+    },
+    {
+      "file": "70.c",
+      "median_timing": 6.59,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.59,
+        6.74,
+        6.38
+      ]
+    },
+    {
+      "file": "71.c",
+      "median_timing": 6.76,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.76,
+        6.56,
+        6.91
+      ]
+    },
+    {
+      "file": "72.c",
+      "median_timing": 6.83,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        5.75,
+        6.83,
+        6.87
+      ]
+    },
+    {
+      "file": "73.c",
+      "median_timing": 6.55,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.55,
+        6.67,
+        6.45
+      ]
+    },
+    {
+      "file": "74.c",
+      "median_timing": 7.09,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.68,
+        7.1,
+        7.09
+      ]
+    },
+    {
+      "file": "75.c",
+      "median_timing": 6.25,
+      "decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "all_times": [
+        6.13,
+        6.44,
+        6.25
+      ]
+    },
+    {
+      "file": "76.c",
+      "median_timing": 6.54,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.33,
+        6.54,
+        6.63
+      ]
+    },
+    {
+      "file": "77.c",
+      "median_timing": 6.44,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.44,
+        6.09,
+        6.57
+      ]
+    },
+    {
+      "file": "78.c",
+      "median_timing": 6.49,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.03,
+        6.91,
+        6.49
+      ]
+    },
+    {
+      "file": "79.c",
+      "median_timing": 6.65,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.65,
+        6.43,
+        6.73
+      ]
+    },
+    {
+      "file": "8.c",
+      "median_timing": 7.87,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.28,
+        7.87,
+        8.34
+      ]
+    },
+    {
+      "file": "80.c",
+      "median_timing": 6.33,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.57,
+        6.33,
+        6.33
+      ]
+    },
+    {
+      "file": "81.c",
+      "median_timing": 6.29,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.15,
+        6.29,
+        6.07
+      ]
+    },
+    {
+      "file": "82.c",
+      "median_timing": 6.86,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.37,
+        6.86,
+        7.99
+      ]
+    },
+    {
+      "file": "83.c",
+      "median_timing": 6.59,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.53,
+        6.6,
+        6.59
+      ]
+    },
+    {
+      "file": "84.c",
+      "median_timing": 6.63,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.53,
+        6.63,
+        6.9
+      ]
+    },
+    {
+      "file": "85.c",
+      "median_timing": 6.96,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.96,
+        6.83,
+        7.19
+      ]
+    },
+    {
+      "file": "86.c",
+      "median_timing": 6.94,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.93,
+        7.79,
+        6.94
+      ]
+    },
+    {
+      "file": "87.c",
+      "median_timing": 6.36,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.46,
+        6.26,
+        6.36
+      ]
+    },
+    {
+      "file": "88.c",
+      "median_timing": 6.6,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.6,
+        5.96,
+        6.87
+      ]
+    },
+    {
+      "file": "89.c",
+      "median_timing": 6.16,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.16,
+        6.33,
+        5.7
+      ]
+    },
+    {
+      "file": "9.c",
+      "median_timing": 7.27,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.79,
+        7.57,
+        7.27
+      ]
+    },
+    {
+      "file": "90.c",
+      "median_timing": 6.34,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.07,
+        6.58,
+        6.34
+      ]
+    },
+    {
+      "file": "91.c",
+      "median_timing": 6.88,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.88,
+        6.88,
+        6.83
+      ]
+    },
+    {
+      "file": "92.c",
+      "median_timing": 7.08,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.08,
+        7.44,
+        6.9
+      ]
+    },
+    {
+      "file": "93.c",
+      "median_timing": 8.13,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        8.23,
+        8.13,
+        7.94
+      ]
+    },
+    {
+      "file": "94.c",
+      "median_timing": 8.73,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        9.01,
+        8.73,
+        8.56
+      ]
+    },
+    {
+      "file": "95.c",
+      "median_timing": 6.93,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.28,
+        6.93,
+        6.9
+      ]
+    },
+    {
+      "file": "96.c",
+      "median_timing": 6.89,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.96,
+        6.66,
+        6.89
+      ]
+    },
+    {
+      "file": "97.c",
+      "median_timing": 6.1,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.28,
+        5.93,
+        6.1
+      ]
+    },
+    {
+      "file": "98.c",
+      "median_timing": 6.36,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        6.13,
+        6.76,
+        6.36
+      ]
+    },
+    {
+      "file": "99.c",
+      "median_timing": 7.13,
+      "decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "all_times": [
+        7.75,
+        6.94,
+        7.13
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+- entry_type: invariant_set
+  metadata:
+    format_version: '2.0'
+    uuid: 19642663-734e-40fa-bc18-24a1fe205993
+    creation_time: '2026-03-27T03:42:42+03:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/113.c
+      input_file_hashes:
+        /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/113.c: 09d51f771e0facafc8c6b76907b0fa58933867de0c715a32b0b7929474bcadcc
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content:
+  - invariant:
+      type: loop_invariant
+      location:
+        file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/113.c
+        file_hash: 09d51f771e0facafc8c6b76907b0fa58933867de0c715a32b0b7929474bcadcc
+        line: 12
+        column: 1
+        function: main
+      value: (((sn <= n) && (((long long) sn + 1) == i)) || ((i == 1) && (sn == 0)))
+      format: c_expression

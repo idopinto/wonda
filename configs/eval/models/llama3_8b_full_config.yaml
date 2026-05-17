@@ -1,0 +1,20 @@
+label: llama3_8b_full
+client: hf
+eval_ft_model: true
+
+base_model:
+  id: "meta-llama/Llama-3.1-8B-Instruct"
+  attn_implementation: "flash_attention_2"
+  sampling_params:
+    max_new_tokens: 1024
+    temperature: 0.6
+    top_p: 0.9
+    do_sample: true
+
+ft_model:
+  sft_version: "v2-g2-e3"
+  id: "idopinto/llama3-8b-full-gen-inv-sft-${.sft_version}"
+  is_lora: false
+
+# Full SFT (v2, min_grade=2, 3 epochs), non-LoRA — loads merged weights from Hub.
+#   sbatch --job-name=me_llama38b_full_v2g2 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=llama3_8b_full_config dataset.split=hard weave.project_name=eval-wonda-llama

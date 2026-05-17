@@ -1,0 +1,30 @@
+- entry_type: invariant_set
+  metadata:
+    format_version: '2.0'
+    uuid: c58e5501-5f5f-4138-9c57-88dd8ffeac6a
+    creation_time: '2026-03-26T17:50:11+02:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/lemur_sv_comp/orig_programs/loops-crafted-1_mono-crafted_11_assertion0.c
+      input_file_hashes:
+        ? /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/lemur_sv_comp/orig_programs/loops-crafted-1_mono-crafted_11_assertion0.c
+        : b2db2b1c786038da9c9a9b82b0f743ef56847b4b27492e9a8c1e345d5afe4dde
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content:
+  - invariant:
+      type: loop_invariant
+      location:
+        file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/lemur_sv_comp/orig_programs/loops-crafted-1_mono-crafted_11_assertion0.c
+        file_hash: b2db2b1c786038da9c9a9b82b0f743ef56847b4b27492e9a8c1e345d5afe4dde
+        line: 5
+        column: 1
+        function: main
+      value: ((((((unsigned long long) 4294967295 * x) + 10000000) % 4294967296) <= 9999999) || ((x <= (50000000 + (x / 2))) && ((x % 2) == 0)))
+      format: c_expression

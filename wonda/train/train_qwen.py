@@ -56,15 +56,23 @@ def derive_run_names(cfg: DictConfig) -> tuple[str, str | None, str]:
     version = cfg.dataset.get("version") or "v2"
     min_grade = cfg.dataset.get("min_grade")
     hf_org = cfg.dataset.get("hf_organization")
+    tune_mode = "lora" if cfg.use_peft else "full"
+    grade_suffix = ""
+    if version == "v2":
+        # Keep v2 naming explicit by always encoding the effective minimum quality grade.
+        effective_min_grade = min_grade if min_grade is not None else 2
+        grade_suffix = f"-g{effective_min_grade}"
+
+    epochs = cfg.sft.get("num_train_epochs") or 2
+    epoch_suffix = f"-e{epochs}"
 
     size_slug = _model_name_to_size_slug(base)
-    wandb_name = f"qwen3-{size_slug}-nt-gen-inv-sft-{version}"
-    output_dir = f"trained_models/qwen3-{size_slug}-nt-gen-inv-sft-{version}"
-
+    wandb_name = f"qwen3-{size_slug}-{tune_mode}-nt-gen-inv-sft-{version}{grade_suffix}{epoch_suffix}"
+    output_dir = f"trained_models/qwen3-{size_slug}-{tune_mode}-nt-gen-inv-sft-{version}{grade_suffix}{epoch_suffix}"
     if hf_org:
         if version == "v2":
-            grade_suffix = f"-g{min_grade}" if min_grade is not None else "-g2"
-            hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}{grade_suffix}"
+            # Always load the g2 base dataset; runtime min_grade filtering handles stricter thresholds.
+            hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}-g2"
         else:
             hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}"
     else:
@@ -153,6 +161,7 @@ def main(cfg: DictConfig):
         warmup_ratio=cfg.sft.warmup_ratio,
         lr_scheduler_type=cfg.sft.lr_scheduler_type,
         lr_scheduler_kwargs=cfg.sft.lr_scheduler_kwargs,
+        weight_decay=cfg.sft.get("weight_decay", 0.0),
         dataset_text_field=cfg.sft.dataset_text_field,
         eval_strategy=cfg.sft.eval_strategy,
         eval_steps=cfg.sft.eval_steps,
@@ -205,3 +214,5 @@ def main(cfg: DictConfig):
 
 if __name__ == "__main__":
     main()
+
+# sbatch --job-name=train_qwen_14b_full_v2_g3_test scripts/train/train_qwen.sbatch qwen3_14b_full dataset.version=v2 dataset.min_grade=3 test_mode=false wandb.project="train-wonda-rebuttal" test_mode=true sft.num_train_epochs=3

@@ -5,7 +5,7 @@ wandb:
   use_wandb: true
   entity: "ip-ai"
   project: train-qwen-for-inv-gen-latest
-  name: null  # auto-derived: qwen3-14b-nt-gen-inv-sft-{version}
+  name: null  # auto-derived: qwen3-14b-{tune_mode}-nt-gen-inv-sft-{version}-{min_grade}
 
 model:
   base_model_name: "Qwen/Qwen3-14B"

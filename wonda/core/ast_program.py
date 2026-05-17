@@ -56,6 +56,7 @@ def _rewrite_verifier_builtins(code: str) -> str:
 
     code = code.replace("__VERIFIER_assert", "assert")
     code = code.replace("assume_abort_if_not", "assume")
+    code = re.sub(r"\bunknown\s*\(\s*\)", "__VERIFIER_nondet_int()", code)
     code = re.sub(r"\n\s*\n\s*\n+", "\n\n", code).strip()
     return code
 

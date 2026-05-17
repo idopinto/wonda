@@ -1,0 +1,29 @@
+- entry_type: invariant_set
+  metadata:
+    format_version: '2.0'
+    uuid: de5fdea4-8529-47c7-aa53-620d8d13d4f6
+    creation_time: '2026-03-27T03:37:45+03:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/100.c
+      input_file_hashes:
+        /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/100.c: 70d19247567e11a23c282936e12d79561f9e4546d5034dbe43fa75035213dc49
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content:
+  - invariant:
+      type: loop_invariant
+      location:
+        file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/100.c
+        file_hash: 70d19247567e11a23c282936e12d79561f9e4546d5034dbe43fa75035213dc49
+        line: 11
+        column: 1
+        function: main
+      value: (((y <= n) && (n == ((long long) x + y))) && ((0 < n) || (n == 0)))
+      format: c_expression

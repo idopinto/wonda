@@ -1,0 +1,20 @@
+- entry_type: invariant_set
+  metadata:
+    format_version: '2.0'
+    uuid: 51ff7b9e-a5a4-4b41-b299-2615c36a8c42
+    creation_time: '2026-03-26T19:51:17+02:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/lemur_sv_comp/orig_programs/nla-digbench_cohencu-ll_assertion6.c
+      input_file_hashes:
+        /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/lemur_sv_comp/orig_programs/nla-digbench_cohencu-ll_assertion6.c: ece940e454ad3da653f9835c9c20a570e59440ce8d767492a6790bcb2f3ec60e
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content: [
+    ]

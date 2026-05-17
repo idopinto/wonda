@@ -36,6 +36,8 @@
 #   sbatch --job-name=train_qwen_4b_v1 scripts/train/train_qwen.sbatch qwen3_4b dataset.version=v1
 #   sbatch --job-name=train_qwen_4b_v2 scripts/train/train_qwen.sbatch qwen3_4b dataset.version=v2 dataset.min_grade=2
 #   sbatch --job-name=train_qwen_4b_v2_test scripts/train/train_qwen.sbatch qwen3_4b dataset.version=v2 dataset.min_grade=2 test_mode=true
+#   4B continued: v2.2 checkpoint, train 1 epoch on grade>=3 only, low LR
+#   sbatch --job-name=train_qwen_4b_g3_from_v22 scripts/train/train_qwen.sbatch qwen3_4b use_peft=false model.base_model_name=idopinto/qwen3-4b-instruct-2507-nt-gen-inv-sft-v2.2-latest dataset.hf_repo=idopinto/wonda-qwen-nt-sft-v2-g2 dataset.version=v2 dataset.min_grade=3 sft.num_train_epochs=1 sft.learning_rate=2e-5 wandb.name=qwen3-4b-nt-g3-stage-from-v22-e1 sft.output_dir=trained_models/qwen3-4b-nt-g3-stage-from-v22-e1 sft.push_to_hub=false
 #   8B
 #   sbatch --job-name=train_qwen_8b_v0 scripts/train/train_qwen.sbatch qwen3_8b dataset.version=v0
 #   sbatch --job-name=train_qwen_8b_v1 scripts/train/train_qwen.sbatch qwen3_8b dataset.version=v1
@@ -56,7 +58,7 @@
 #   sbatch --job-name=train_qwen_14b_full_v2_g2 scripts/train/train_qwen.sbatch qwen3_14b_full dataset.version=v2 dataset.min_grade=2 test_mode=false
 #   sbatch --job-name=train_qwen_14b_full_v2_g3 scripts/train/train_qwen.sbatch qwen3_14b_full dataset.version=v2 dataset.min_grade=3 test_mode=false
 
-
+# sbatch --job-name=train_qwen_14b_full_v2_g3 scripts/train/train_qwen.sbatch qwen3_14b_full dataset.version=v2 dataset.min_grade=3 test_mode=false 
 echo "Starting Qwen training..."
 set -e
 

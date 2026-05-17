@@ -30,6 +30,9 @@ dataset:
   split: "hard" # split to evaluate on
   re_split: true # re-split the dataset by difficultiy threshold
   difficulty_threshold: 15 # difficulty threshold for easy/hard split in seconds
+  local_dir: null # path to a directory of .c files for local evaluation (e.g. "data/eval/lemur_sv_comp/orig_programs")
+  baseline_json: null # path to baseline_dataset.json with per-program median_timing (e.g. "data/eval/lemur_sv_comp/baseline_uauto25/baseline_dataset.json")
+  default_median_timing: 600.0 # fallback median_timing when loading local files (no baseline available)
 
 # Scorer configuration
 scorer:

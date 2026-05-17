@@ -69,9 +69,11 @@
 #   sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
 # Fine-tuned v2.3 (LoRA)
 #   sbatch --job-name=me_qwen8b_v23 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.3" models.ft_model.is_lora=true
+# Fine-tuned v2.2 (full, no LoRA)
+#   sbatch --job-name=me_qwen8b_full_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_8b_full_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=false weave.project_name="eval-wonda-rebuttal"
 #
 # --- Qwen3-14B ---
-# Base model (no-t sbatch --job-name=me_qwen14b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=truehink)
+# Base model (no-think)
 #   sbatch --job-name=me_qwen14b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config
 # Base model (think)
 #   sbatch --job-name=me_qwen14b_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_t_config
@@ -79,8 +81,14 @@
 #   sbatch --job-name=me_qwen14b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v0" models.ft_model.is_lora=true
 # Fine-tuned v1 (LoRA)
 #   sbatch --job-name=me_qwen14b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v1" models.ft_model.is_lora=true
-# Fine-tuned v2.2 (LoRA)
-#  
+# Fine-tuned v2.2 (full, no LoRA; Weave project eval-wonda-rebuttal; only v2.2 weights available)
+#   sbatch --job-name=me_qwen14b_full_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_full_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=false weave.project_name="eval-wonda-rebuttal"
+#
+# --- Meta Llama 3.1 ---
+# Base model (hard split)
+#   sbatch --job-name=me_llama38b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=llama3_8b_config dataset.split=hard weave.project_name=eval-wonda-baselines
+# Full fine-tuned v2 g2 (3 epochs; merged weights on Hub)
+#   sbatch --job-name=me_llama38b_full_v2g2 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=1 dataset.limit=-1 models=llama3_8b_full_config dataset.split=hard weave.project_name=eval-wonda-llama
 #
 # --- OpenAI / external baselines ---
 # GPT-5.2
@@ -91,6 +99,7 @@
 #   sbatch --job-name=me_oss120 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_oss_120b_config
 # Qwen3-80B
 #   sbatch --job-name=me_qwen80b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_80b_nt_config
+
 
 echo "Starting multi-run evaluation..."
 set -e
@@ -124,3 +133,5 @@ echo "=========================================="
 echo "Multi-run evaluation completed!"
 echo "End time: $(date)"
 echo "=========================================="
+
+

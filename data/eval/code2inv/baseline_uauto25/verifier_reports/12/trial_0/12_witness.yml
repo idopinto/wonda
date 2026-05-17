@@ -1,0 +1,29 @@
+- entry_type: invariant_set
+  metadata:
+    format_version: '2.0'
+    uuid: 5acb3323-9fd3-4250-8437-64204d64d7f5
+    creation_time: '2026-03-27T03:44:47+03:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/12.c
+      input_file_hashes:
+        /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/12.c: a70d992ca5020896042ca0a51025905be3804e1fb22c2b11ebf7ac468c695eba
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content:
+  - invariant:
+      type: loop_invariant
+      location:
+        file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/12.c
+        file_hash: a70d992ca5020896042ca0a51025905be3804e1fb22c2b11ebf7ac468c695eba
+        line: 14
+        column: 1
+        function: main
+      value: ((9 < y) || ((0 <= y) && (x <= 10)))
+      format: c_expression

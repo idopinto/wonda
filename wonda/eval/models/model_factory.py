@@ -1,6 +1,7 @@
 import weave
 from omegaconf import DictConfig
 
+from wonda.eval.models.llama_model import InvariantGeneratorLlamaModel
 from wonda.eval.models.open_router_model import InvariantGeneratorOpenRouterModel
 from wonda.eval.models.oss_model import InvariantGeneratorOssModel
 from wonda.eval.models.qwen_model import InvariantGeneratorQwenModel
@@ -49,6 +50,14 @@ class ModelFactory:
                     user_prompt_template=user_prompt_template,
                     sampling_params=cfg.base_model.sampling_params,
                     reasoning_effort=cfg.base_model.reasoning_effort,
+                    eval_ft_model=eval_ft_model,
+                )
+            elif "llama" in cfg.base_model.id.lower():
+                return InvariantGeneratorLlamaModel(
+                    model_cfg=cfg,
+                    system_prompt=system_prompt,
+                    user_prompt_template=user_prompt_template,
+                    sampling_params=cfg.base_model.sampling_params,
                     eval_ft_model=eval_ft_model,
                 )
             else:

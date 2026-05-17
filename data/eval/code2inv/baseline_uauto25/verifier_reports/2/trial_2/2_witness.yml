@@ -1,0 +1,29 @@
+- entry_type: invariant_set
+  metadata:
+    format_version: '2.0'
+    uuid: e0eabd4d-4d66-404c-ba01-6c409b38f690
+    creation_time: '2026-03-27T03:52:51+03:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/2.c
+      input_file_hashes:
+        /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/2.c: 8969532fb48e75c5b05f550a84598bdd62888fe44bfb5e718d365c9f16f5539d
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content:
+  - invariant:
+      type: loop_invariant
+      location:
+        file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/2.c
+        file_hash: 8969532fb48e75c5b05f550a84598bdd62888fe44bfb5e718d365c9f16f5539d
+        line: 8
+        column: 1
+        function: main
+      value: ((((((((((((y == 4) && (7 <= x)) || ((2 <= x) && (2 == y))) || (((4 <= y) && (y <= 7)) && ((((long long) 2 * y) + 8) <= x))) || ((y == 0) && (1 <= x))) || (((4 <= y) && ((((long long) y * 4) + 1) <= x)) && (y <= 9))) || ((y == 1) && (1 <= x))) || ((4 <= y) && (((long long) 5 * y) <= ((long long) x + 4)))) || (((4 <= y) && (y <= 6)) && (((long long) y + 10) <= x))) || ((3 == y) && (4 <= x))) || (((4 <= y) && ((5 + ((long long) 3 * y)) <= x)) && (y <= 8))) || (((4 <= y) && (y <= 5)) && (11 <= x)))
+      format: c_expression

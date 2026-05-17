@@ -1,0 +1,75 @@
+- entry_type: violation_sequence
+  metadata:
+    format_version: '2.0'
+    uuid: 956943e6-9f72-4e4d-9ae4-e44613cea574
+    creation_time: '2026-03-27T03:55:32+03:00'
+    producer:
+      name: Automizer
+      version: 0.3.0-dev-d790fec
+    task:
+      input_files:
+      - /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c
+      input_file_hashes:
+        /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c: 237b74c7f08bb1739ac5c04492bd0573cbd9fead0f1cc27582da0a31627f1557
+      specification: |+
+        CHECK( init(main()), LTL(G ! call(reach_error())) )
+
+      data_model: ILP32
+      language: C
+  content:
+  - segment:
+    - waypoint:
+        type: branching
+        action: follow
+        constraint:
+          value: 'false'
+        location:
+          file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c
+          file_hash: 237b74c7f08bb1739ac5c04492bd0573cbd9fead0f1cc27582da0a31627f1557
+          line: 7
+          column: 1
+          function: main
+  - segment:
+    - waypoint:
+        type: branching
+        action: follow
+        constraint:
+          value: 'true'
+        location:
+          file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c
+          file_hash: 237b74c7f08bb1739ac5c04492bd0573cbd9fead0f1cc27582da0a31627f1557
+          line: 12
+          column: 1
+          function: main
+  - segment:
+    - waypoint:
+        type: function_enter
+        action: follow
+        location:
+          file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c
+          file_hash: 237b74c7f08bb1739ac5c04492bd0573cbd9fead0f1cc27582da0a31627f1557
+          line: 13
+          column: 16
+          function: main
+  - segment:
+    - waypoint:
+        type: branching
+        action: follow
+        constraint:
+          value: 'true'
+        location:
+          file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c
+          file_hash: 237b74c7f08bb1739ac5c04492bd0573cbd9fead0f1cc27582da0a31627f1557
+          line: 1
+          column: 25
+          function: assert
+  - segment:
+    - waypoint:
+        type: target
+        action: follow
+        location:
+          file_name: /cs/labs/guykatz/idopinto12/projects/wonda/data/eval/code2inv/orig_programs/27.c
+          file_hash: 237b74c7f08bb1739ac5c04492bd0573cbd9fead0f1cc27582da0a31627f1557
+          line: 1
+          column: 50
+          function: assert

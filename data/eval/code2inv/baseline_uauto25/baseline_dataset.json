@@ -1,0 +1,2928 @@
+[
+  {
+    "file": "1.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\n(x = 1);\n(y = 0);\nwhile ((y < 100000)) {\n{\n(x = (x + y));\n(y = (y + 1));\n}\n}\nassert((x >= y));\n}",
+    "median_timing": 9.0,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        35.31,
+        9.0,
+        8.95
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 9.0,
+      "mean_time": 17.753333333333334
+    }
+  },
+  {
+    "file": "10.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nassume((x >= 0));\nassume((x <= 2));\nassume((y <= 2));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 2));\n(y = (y + 2));\n}\n}\nif ((y == 0)) {\nassert((x != 4));\n}\n}",
+    "median_timing": 7.28,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.59,
+        7.23,
+        7.28
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.28,
+      "mean_time": 7.366666666666667
+    }
+  },
+  {
+    "file": "100.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\nint y;\nassume((n >= 0));\n(x = n);\n(y = 0);\n//assume((x + y) == n);\nwhile ((x > 0)) {\n  //assume((x + y) == n);\n{\n(y = (y + 1));\n(x = (x - 1));\n}\n}\n\nassert((y == n));\n}",
+    "median_timing": 7.93,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.93,
+        7.69,
+        8.01
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.93,
+      "mean_time": 7.876666666666667
+    }
+  },
+  {
+    "file": "101.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = 0);\nwhile ((x < n)) {\n{\n(x = (x + 1));\n}\n}\nif ((x != n)) {\nassert((n < 0));\n}\n}",
+    "median_timing": 6.2,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.2,
+        6.17,
+        6.58
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.2,
+      "mean_time": 6.316666666666666
+    }
+  },
+  {
+    "file": "102.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = 0);\nwhile ((x < n)) {\n{\n(x = (x + 1));\n}\n}\nif ((n >= 0)) {\nassert((x == n));\n}\n}",
+    "median_timing": 6.43,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.33,
+        6.6,
+        6.43
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.43,
+      "mean_time": 6.453333333333333
+    }
+  },
+  {
+    "file": "103.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\n(x = 0);\nwhile ((x < 100)) {\n{\n(x = (x + 1));\n}\n}\nassert((x == 100));\n}",
+    "median_timing": 6.6,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.6,
+        6.96,
+        6.34
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.6,
+      "mean_time": 6.633333333333333
+    }
+  },
+  {
+    "file": "104.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint v1;\nint v2;\nint v3;\nint x;\n(x = 0);\nwhile ((x < n)) {\n{\n(x = (x + 1));\n}\n}\nif ((x != n)) {\nassert((n < 0));\n}\n}",
+    "median_timing": 6.47,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.44,
+        6.86,
+        6.47
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.47,
+      "mean_time": 6.59
+    }
+  },
+  {
+    "file": "105.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint v1;\nint v2;\nint v3;\nint x;\n(x = 0);\nwhile ((x < n)) {\n{\n(x = (x + 1));\n}\n}\nif ((n >= 0)) {\nassert((x == n));\n}\n}",
+    "median_timing": 6.48,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.48,
+        6.29,
+        7.03
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.48,
+      "mean_time": 6.6000000000000005
+    }
+  },
+  {
+    "file": "106.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint a, m, j, k;\nassume(a <= m);\nassume(j < 1);\nk = 0;\nwhile (k < 1) {\nif (m < a) {\nm = a;\n}\nk = k + 1;\n}\nassert(a >= m);\n}",
+    "median_timing": 6.9,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.98,
+        6.9,
+        6.73
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.9,
+      "mean_time": 6.87
+    }
+  },
+  {
+    "file": "107.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint a, m, j, k;\nj = 0;\nk = 0;\nwhile (k < 1) {\nif (m < a) {\nm = a;\n}\nk = k + 1;\n}\nassert(a <= m);\n}",
+    "median_timing": 6.08,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.08,
+        5.99,
+        6.1
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.08,
+      "mean_time": 6.056666666666667
+    }
+  },
+  {
+    "file": "108.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint a, c, m, j, k;\nassume(a <= m);\nj = 0;\nk = 0;\nwhile (k < c) {\nif (m < a) {\nm = a;\n}\nk = k + 1;\n}\nassert(a <= m);\n}",
+    "median_timing": 6.26,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.26,
+        5.93,
+        6.67
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.26,
+      "mean_time": 6.286666666666666
+    }
+  },
+  {
+    "file": "109.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint a, c, m, j, k;\nj = 0;\nk = 0;\nwhile (k < c) {\nif (m < a) {\nm = a;\n}\nk = k + 1;\n}\nif (c > 0) {\nassert(a <= m);\n}\n}",
+    "median_timing": 6.25,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.33,
+        6.1,
+        6.25
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.25,
+      "mean_time": 6.56
+    }
+  },
+  {
+    "file": "11.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\nassume((x >= 0));\nassume((x <= 10));\nassume((y <= 10));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 10));\n(y = (y + 10));\n}\n}\nif ((x == 20)) {\nassert((y != 0));\n}\n}",
+    "median_timing": 6.81,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.81,
+        6.73,
+        7.35
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.81,
+      "mean_time": 6.963333333333333
+    }
+  },
+  {
+    "file": "110.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint n;\nint sn;\n(sn = 0);\n(i = 1);\nwhile ((i <= n)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != n)) {\nassert((sn == 0));\n}\n}",
+    "median_timing": 7.17,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.17,
+        7.26,
+        6.75
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.17,
+      "mean_time": 7.06
+    }
+  },
+  {
+    "file": "111.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint n;\nint sn;\n(sn = 0);\n(i = 1);\nwhile ((i <= n)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != 0)) {\nassert((sn == n));\n}\n}",
+    "median_timing": 6.64,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.0,
+        6.49,
+        6.64
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.64,
+      "mean_time": 6.71
+    }
+  },
+  {
+    "file": "112.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint n;\nint sn;\nint v1;\nint v2;\nint v3;\n(sn = 0);\n(i = 1);\nwhile ((i <= n)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != n)) {\nassert((sn == 0));\n}\n}",
+    "median_timing": 6.46,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.46,
+        6.74,
+        6.46
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.46,
+      "mean_time": 6.553333333333334
+    }
+  },
+  {
+    "file": "113.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint n;\nint sn;\nint v1;\nint v2;\nint v3;\n(sn = 0);\n(i = 1);\nwhile ((i <= n)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != 0)) {\nassert((sn == n));\n}\n}",
+    "median_timing": 6.99,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.07,
+        6.99,
+        6.98
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.99,
+      "mean_time": 7.013333333333334
+    }
+  },
+  {
+    "file": "114.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint sn;\nint x;\n(sn = 0);\n(x = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != x)) {\nassert((sn == -1));\n}\n}",
+    "median_timing": 6.15,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.43,
+        5.8,
+        6.15
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.15,
+      "mean_time": 6.126666666666667
+    }
+  },
+  {
+    "file": "115.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint sn;\nint x;\n(sn = 0);\n(x = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != -1)) {\nassert((sn == x));\n}\n}",
+    "median_timing": 6.19,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.43,
+        6.19,
+        6.03
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.19,
+      "mean_time": 6.216666666666667
+    }
+  },
+  {
+    "file": "116.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint sn;\nint v1;\nint v2;\nint v3;\nint x;\n(sn = 0);\n(x = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != x)) {\nassert((sn == -1));\n}\n}",
+    "median_timing": 6.04,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.99,
+        6.04,
+        6.19
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.04,
+      "mean_time": 6.073333333333333
+    }
+  },
+  {
+    "file": "117.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint sn;\nint v1;\nint v2;\nint v3;\nint x;\n(sn = 0);\n(x = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != -1)) {\nassert((sn == x));\n}\n}",
+    "median_timing": 6.17,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.17,
+        6.71,
+        6.1
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.17,
+      "mean_time": 6.326666666666666
+    }
+  },
+  {
+    "file": "118.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint size;\nint sn;\n(sn = 0);\n(i = 1);\nwhile ((i <= size)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != size)) {\nassert((sn == 0));\n}\n}",
+    "median_timing": 7.09,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.78,
+        7.09,
+        7.34
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.09,
+      "mean_time": 7.07
+    }
+  },
+  {
+    "file": "119.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint size;\nint sn;\n(sn = 0);\n(i = 1);\nwhile ((i <= size)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != 0)) {\nassert((sn == size));\n}\n}",
+    "median_timing": 6.79,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.83,
+        6.79,
+        6.51
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.79,
+      "mean_time": 7.043333333333333
+    }
+  },
+  {
+    "file": "12.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\nassume((x >= 0));\nassume((x <= 10));\nassume((y <= 10));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 10));\n(y = (y + 10));\n}\n}\nif ((y == 0)) {\nassert((x != 20));\n}\n}",
+    "median_timing": 7.17,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.8,
+        7.33,
+        7.17
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.17,
+      "mean_time": 7.1
+    }
+  },
+  {
+    "file": "120.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint sn;\n(sn = 0);\n(i = 1);\nwhile ((i <= 8)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != 8)) {\nassert((sn == 0));\n}\n}",
+    "median_timing": 7.98,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.98,
+        8.2,
+        7.91
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.98,
+      "mean_time": 8.03
+    }
+  },
+  {
+    "file": "121.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint sn;\n(sn = 0);\n(i = 1);\nwhile ((i <= 8)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != 0)) {\nassert((sn == 8));\n}\n}",
+    "median_timing": 7.83,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        8.03,
+        7.57,
+        7.83
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.83,
+      "mean_time": 7.81
+    }
+  },
+  {
+    "file": "122.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint size;\nint sn;\nint v1;\nint v2;\nint v3;\n(sn = 0);\n(i = 1);\nwhile ((i <= size)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != size)) {\nassert((sn == 0));\n}\n}",
+    "median_timing": 6.63,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.96,
+        6.49,
+        6.63
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.63,
+      "mean_time": 6.693333333333333
+    }
+  },
+  {
+    "file": "123.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint size;\nint sn;\nint v1;\nint v2;\nint v3;\n(sn = 0);\n(i = 1);\nwhile ((i <= size)) {\n{\n(i = (i + 1));\n(sn = (sn + 1));\n}\n}\nif ((sn != 0)) {\nassert((sn == size));\n}\n}",
+    "median_timing": 6.59,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.59,
+        7.03,
+        6.54
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.59,
+      "mean_time": 6.72
+    }
+  },
+  {
+    "file": "124.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\n(i = x);\n(j = y);\nwhile ((x != 0)) {\n{\n(x = (x - 1));\n(y = (y - 1));\n}\n}\nif ((i == j)) {\nassert((y == 0));\n}\n}",
+    "median_timing": 7.07,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.64,
+        7.37,
+        7.07
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.07,
+      "mean_time": 7.026666666666666
+    }
+  },
+  {
+    "file": "125.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\n(i = x);\n(j = y);\nwhile ((x != 0)) {\n{\n(x = (x - 1));\n(y = (y - 1));\n}\n}\nif ((y != 0)) {\nassert((i != j));\n}\n}",
+    "median_timing": 6.74,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        8.14,
+        6.73,
+        6.74
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.74,
+      "mean_time": 7.203333333333334
+    }
+  },
+  {
+    "file": "126.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(i = x);\n(j = y);\nwhile ((x != 0)) {\n{\n(x = (x - 1));\n(y = (y - 1));\n}\n}\nif ((i == j)) {\nassert((y == 0));\n}\n}",
+    "median_timing": 6.89,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.89,
+        6.77,
+        6.93
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.89,
+      "mean_time": 6.863333333333333
+    }
+  },
+  {
+    "file": "127.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(i = x);\n(j = y);\nwhile ((x != 0)) {\n{\n(x = (x - 1));\n(y = (y - 1));\n}\n}\nif ((y != 0)) {\nassert((i != j));\n}\n}",
+    "median_timing": 7.2,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.2,
+        7.25,
+        6.6
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.2,
+      "mean_time": 7.016666666666667
+    }
+  },
+  {
+    "file": "128.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\n(x = 1);\nwhile ((x < y)) {\n{\n(x = (x + x));\n}\n}\nassert((x >= 1));\n}",
+    "median_timing": 5.87,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.23,
+        5.86,
+        5.87
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 5.87,
+      "mean_time": 5.986666666666667
+    }
+  },
+  {
+    "file": "129.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(x = 1);\nwhile ((x < y)) {\n{\n(x = (x + x));\n}\n}\nassert((x >= 1));\n}",
+    "median_timing": 6.24,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.99,
+        6.24,
+        6.57
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.24,
+      "mean_time": 6.266666666666667
+    }
+  },
+  {
+    "file": "13.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\nassume((x >= 0));\nassume((x <= 2));\nassume((y <= 2));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 2));\n(y = (y + 2));\n}\n}\nif ((x == 4)) {\nassert((y != 0));\n}\n}",
+    "median_timing": 7.43,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.43,
+        7.43,
+        7.78
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.43,
+      "mean_time": 7.546666666666667
+    }
+  },
+  {
+    "file": "130.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint d1 = 1;\nint d2 = 1;\nint d3 = 1;\nint x1 = 1;\nint x2, x3;\nwhile (x1 > 0) {\nif (x2 > 0) {\nif (x3 > 0) {\nx1 = x1 - d1;\nx2 = x2 - d2;\nx3 = x3 - d3;\n}\n}\n}\nassert(x2 >= 0);\n}",
+    "median_timing": 6.97,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.93,
+        7.03,
+        6.97
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.97,
+      "mean_time": 6.976666666666667
+    }
+  },
+  {
+    "file": "131.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint d1 = 1;\nint d2 = 1;\nint d3 = 1;\nint x1 = 1;\nint x2, x3;\nwhile (x1 > 0) {\nif (x2 > 0) {\nif (x3 > 0) {\nx1 = x1 - d1;\nx2 = x2 - d2;\nx3 = x3 - d3;\n}\n}\n}\nassert(x3 >= 0);\n}",
+    "median_timing": 7.0,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.3,
+        6.75,
+        7.0
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.0,
+      "mean_time": 7.016666666666667
+    }
+  },
+  {
+    "file": "132.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i = 0;\nint j, c, t;\nwhile (__VERIFIER_nondet_int()) {\nif (c > 48) {\nif (c < 57) {\nj = i + i;\nt = c - 48;\ni = j + t;\n}\n}\n}\nassert(i >= 0);\n}",
+    "median_timing": 6.48,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.73,
+        6.18,
+        6.48
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.48,
+      "mean_time": 6.463333333333334
+    }
+  },
+  {
+    "file": "133.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = 0);\nassume((n >= 0));\nwhile ((x < n)) {\n{\n(x = (x + 1));\n}\n}\nassert((x == n));\n}",
+    "median_timing": 6.73,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.33,
+        6.73,
+        6.73
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.73,
+      "mean_time": 6.596666666666667
+    }
+  },
+  {
+    "file": "14.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\nassume((x >= 0));\nassume((x <= 2));\nassume((y <= 2));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 2));\n(y = (y + 2));\n}\n}\nif ((y == 0)) {\nassert((x != 4));\n}\n}",
+    "median_timing": 7.08,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.7,
+        7.08,
+        6.88
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.08,
+      "mean_time": 7.22
+    }
+  },
+  {
+    "file": "15.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x = 0;\nint m = 0;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 0) {\nassert(m < n);\n}\n}",
+    "median_timing": 7.09,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.09,
+        7.18,
+        6.87
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.09,
+      "mean_time": 7.046666666666667
+    }
+  },
+  {
+    "file": "16.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x = 0;\nint m = 0;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 0) {\nassert(m >= 0);\n}\n}",
+    "median_timing": 6.69,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.69,
+        7.39,
+        6.64
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.69,
+      "mean_time": 6.906666666666666
+    }
+  },
+  {
+    "file": "17.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x = 1;\nint m = 1;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 1) {\nassert(m < n);\n}\n}",
+    "median_timing": 7.18,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.15,
+        7.18,
+        7.23
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.18,
+      "mean_time": 7.1866666666666665
+    }
+  },
+  {
+    "file": "18.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x = 1;\nint m = 1;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 1) {\nassert(m >= 1);\n}\n}",
+    "median_timing": 6.79,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.79,
+        6.5,
+        6.88
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.79,
+      "mean_time": 6.723333333333334
+    }
+  },
+  {
+    "file": "19.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint z1, z2, z3;\nint x = 0;\nint m = 0;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 0) {\nassert(m < n);\n}\n}",
+    "median_timing": 6.83,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.04,
+        6.77,
+        6.83
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.83,
+      "mean_time": 6.88
+    }
+  },
+  {
+    "file": "2.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\n(x = 1);\n(y = 0);\nwhile ((y < 1000)) {\n{\n(x = (x + y));\n(y = (y + 1));\n}\n}\nassert((x >= y));\n}",
+    "median_timing": 8.68,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        8.68,
+        8.73,
+        8.5
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 8.68,
+      "mean_time": 8.636666666666667
+    }
+  },
+  {
+    "file": "20.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint z1, z2, z3;\nint x = 0;\nint m = 0;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 0) {\nassert(m >= 0);\n}\n}",
+    "median_timing": 6.48,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.6,
+        6.3,
+        6.48
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.48,
+      "mean_time": 6.46
+    }
+  },
+  {
+    "file": "21.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint z1, z2, z3;\nint x = 1;\nint m = 1;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 1) {\nassert(m < n);\n}\n}",
+    "median_timing": 7.05,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.83,
+        7.28,
+        7.05
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.05,
+      "mean_time": 7.053333333333334
+    }
+  },
+  {
+    "file": "22.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint z1, z2, z3;\nint x = 1;\nint m = 1;\nint n;\nwhile (x < n) {\nif (__VERIFIER_nondet_int()) {\nm = x;\n}\nx = x + 1;\n}\nif (n > 1) {\nassert(m >= 1);\n}\n}",
+    "median_timing": 7.05,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.63,
+        7.05,
+        6.33
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.05,
+      "mean_time": 7.003333333333333
+    }
+  },
+  {
+    "file": "23.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\n(i = 1);\n(j = 20);\nwhile ((j >= i)) {\n{\n(i = (i + 2));\n(j = (j - 1));\n}\n}\nassert((j == 13));\n}",
+    "median_timing": 8.01,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.93,
+        8.01,
+        8.23
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 8.01,
+      "mean_time": 8.056666666666667
+    }
+  },
+  {
+    "file": "24.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\n(i = 1);\n(j = 10);\nwhile ((j >= i)) {\n{\n(i = (i + 2));\n(j = (j - 1));\n}\n}\nassert((j == 6));\n}",
+    "median_timing": 7.64,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.75,
+        7.64,
+        7.41
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.64,
+      "mean_time": 7.6
+    }
+  },
+  {
+    "file": "25.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\n(x = 10000);\nwhile ((x > 0)) {\n{\n(x = (x - 1));\n}\n}\nassert((x == 0));\n}",
+    "median_timing": 6.56,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.56,
+        6.54,
+        6.63
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.56,
+      "mean_time": 6.576666666666666
+    }
+  },
+  {
+    "file": "26.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = n);\nwhile ((x > 1)) {\n{\n(x = (x - 1));\n}\n}\nif ((x != 1)) {\nassert((n < 0));\n}\n}",
+    "median_timing": 6.27,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.53,
+        6.27,
+        6.06
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.27,
+      "mean_time": 6.286666666666666
+    }
+  },
+  {
+    "file": "27.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = n);\nwhile ((x > 1)) {\n{\n(x = (x - 1));\n}\n}\nif ((n >= 0)) {\nassert((x == 1));\n}\n}",
+    "median_timing": 6.27,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.16,
+        6.53,
+        6.27
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.27,
+      "mean_time": 6.32
+    }
+  },
+  {
+    "file": "28.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = n);\nwhile ((x > 0)) {\n{\n(x = (x - 1));\n}\n}\nif ((x != 0)) {\nassert((n < 0));\n}\n}",
+    "median_timing": 6.13,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.81,
+        6.13,
+        6.24
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.13,
+      "mean_time": 6.06
+    }
+  },
+  {
+    "file": "29.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\n(x = n);\nwhile ((x > 0)) {\n{\n(x = (x - 1));\n}\n}\nif ((n >= 0)) {\nassert((x == 0));\n}\n}",
+    "median_timing": 6.31,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.31,
+        6.97,
+        6.23
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.31,
+      "mean_time": 6.503333333333333
+    }
+  },
+  {
+    "file": "3.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 0;\nint y, z;\nwhile (x < 5) {\nx += 1;\nif (z <= y) {\ny = z;\n}\n}\nassert(z >= y);\n}",
+    "median_timing": 6.37,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.35,
+        6.8,
+        6.37
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.37,
+      "mean_time": 6.506666666666667
+    }
+  },
+  {
+    "file": "30.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\n(x = 100);\nwhile ((x > 0)) {\n{\n(x = (x - 1));\n}\n}\nassert((x == 0));\n}",
+    "median_timing": 6.86,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.86,
+        6.63,
+        7.06
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.86,
+      "mean_time": 6.85
+    }
+  },
+  {
+    "file": "31.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint v1;\nint v2;\nint v3;\nint x;\n(x = n);\nwhile ((x > 1)) {\n{\n(x = (x - 1));\n}\n}\nif ((x != 1)) {\nassert((n < 0));\n}\n}",
+    "median_timing": 5.93,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.39,
+        5.69,
+        5.93
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 5.93,
+      "mean_time": 6.003333333333333
+    }
+  },
+  {
+    "file": "32.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint v1;\nint v2;\nint v3;\nint x;\n(x = n);\nwhile ((x > 1)) {\n{\n(x = (x - 1));\n}\n}\nif ((n >= 0)) {\nassert((x == 1));\n}\n}",
+    "median_timing": 6.05,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.64,
+        6.05,
+        6.13
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.05,
+      "mean_time": 5.9399999999999995
+    }
+  },
+  {
+    "file": "33.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint v1;\nint v2;\nint v3;\nint x;\n(x = n);\nwhile ((x > 0)) {\n{\n(x = (x - 1));\n}\n}\nif ((x != 0)) {\nassert((n < 0));\n}\n}",
+    "median_timing": 6.63,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.63,
+        6.86,
+        6.63
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.63,
+      "mean_time": 6.706666666666667
+    }
+  },
+  {
+    "file": "34.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint v1;\nint v2;\nint v3;\nint x;\n(x = n);\nwhile ((x > 0)) {\n{\n(x = (x - 1));\n}\n}\nif ((n >= 0)) {\nassert((x == 0));\n}\n}",
+    "median_timing": 7.04,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.04,
+        7.18,
+        7.04
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.04,
+      "mean_time": 7.086666666666667
+    }
+  },
+  {
+    "file": "35.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\n(c = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != 40)) {\n(c = (c + 1));\n}\n} else {\nif ((c == 40)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != 40)) {\nassert((c >= 0));\n}\n}",
+    "median_timing": 6.25,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.25,
+        6.2,
+        6.27
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.25,
+      "mean_time": 6.24
+    }
+  },
+  {
+    "file": "36.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\n(c = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != 40)) {\n(c = (c + 1));\n}\n} else {\nif ((c == 40)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != 40)) {\nassert((c <= 40));\n}\n}",
+    "median_timing": 6.43,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.23,
+        6.43,
+        6.43
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.43,
+      "mean_time": 6.363333333333333
+    }
+  },
+  {
+    "file": "37.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\n(c = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != 40)) {\n(c = (c + 1));\n}\n} else {\nif ((c == 40)) {\n(c = 1);\n}\n}\n}\n}\nif ((c < 0)) {\nif ((c > 40)) {\nassert((c == 40));\n}\n}\n}",
+    "median_timing": 5.91,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.9,
+        5.94,
+        5.91
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 5.91,
+      "mean_time": 5.916666666666667
+    }
+  },
+  {
+    "file": "38.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint n;\nint c = 0;\nassume(n > 0);\nwhile (__VERIFIER_nondet_int()) {\nif (c == n) {\nc = 1;\n} else {\nc = c + 1;\n}\n}\nif (c == n) {\nassert(c >= 0);\n}\n}",
+    "median_timing": 6.04,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.04,
+        6.08,
+        5.96
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.04,
+      "mean_time": 6.026666666666666
+    }
+  },
+  {
+    "file": "39.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint n;\nint c = 0;\nassume(n > 0);\nwhile (__VERIFIER_nondet_int()) {\nif (c == n) {\nc = 1;\n} else {\nc = c + 1;\n}\n}\nif (c == n) {\nassert(c <= n);\n}\n}",
+    "median_timing": 5.89,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.89,
+        5.89,
+        5.73
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 5.89,
+      "mean_time": 5.836666666666667
+    }
+  },
+  {
+    "file": "4.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 0;\nint y, z;\nwhile (x < 500) {\nx += 1;\nif (z <= y) {\ny = z;\n}\n}\nassert(z >= y);\n}",
+    "median_timing": 6.68,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.48,
+        6.68,
+        7.23
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.68,
+      "mean_time": 6.796666666666667
+    }
+  },
+  {
+    "file": "40.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c >= 0));\n}\n}",
+    "median_timing": 7.37,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        8.25,
+        7.37,
+        6.36
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.37,
+      "mean_time": 7.326666666666667
+    }
+  },
+  {
+    "file": "41.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c <= n));\n}\n}",
+    "median_timing": 6.34,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.34,
+        6.24,
+        6.57
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.34,
+      "mean_time": 6.383333333333334
+    }
+  },
+  {
+    "file": "42.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c < 0)) {\nif ((c > n)) {\nassert((c == n));\n}\n}\n}",
+    "median_timing": 6.38,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.17,
+        6.38,
+        6.81
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.38,
+      "mean_time": 6.453333333333333
+    }
+  },
+  {
+    "file": "43.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c == n)) {\nassert((n > -1));\n}\n}",
+    "median_timing": 6.16,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.5,
+        6.16,
+        6.13
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.16,
+      "mean_time": 6.263333333333334
+    }
+  },
+  {
+    "file": "44.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((n <= -1)) {\nassert((c != n));\n}\n}",
+    "median_timing": 6.35,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.83,
+        6.33,
+        6.35
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.35,
+      "mean_time": 6.503333333333333
+    }
+  },
+  {
+    "file": "45.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c >= 0));\n}\n}",
+    "median_timing": 6.07,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.07,
+        5.93,
+        6.43
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.07,
+      "mean_time": 6.1433333333333335
+    }
+  },
+  {
+    "file": "46.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c <= n));\n}\n}",
+    "median_timing": 7.49,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.37,
+        7.49,
+        8.06
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.49,
+      "mean_time": 7.640000000000001
+    }
+  },
+  {
+    "file": "47.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c < 0)) {\nif ((c > n)) {\nassert((c == n));\n}\n}\n}",
+    "median_timing": 5.99,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.99,
+        6.37,
+        5.9
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 5.99,
+      "mean_time": 6.086666666666667
+    }
+  },
+  {
+    "file": "48.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c == n)) {\nassert((n > -1));\n}\n}",
+    "median_timing": 6.01,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.01,
+        6.0,
+        6.04
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.01,
+      "mean_time": 6.016666666666667
+    }
+  },
+  {
+    "file": "49.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((n <= -1)) {\nassert((c != n));\n}\n}",
+    "median_timing": 6.53,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.53,
+        6.34,
+        6.69
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.53,
+      "mean_time": 6.5200000000000005
+    }
+  },
+  {
+    "file": "5.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 0;\nint size;\nint y, z;\nwhile (x < size) {\nx += 1;\nif (z <= y) {\ny = z;\n}\n}\nif (size > 0) {\nassert(z >= y);\n}\n}",
+    "median_timing": 6.66,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.18,
+        6.66,
+        6.73
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.66,
+      "mean_time": 6.523333333333333
+    }
+  },
+  {
+    "file": "50.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\n(c = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != 4)) {\n(c = (c + 1));\n}\n} else {\nif ((c == 4)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != 4)) {\nassert((c >= 0));\n}\n}",
+    "median_timing": 6.19,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.95,
+        6.44,
+        6.19
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.19,
+      "mean_time": 6.193333333333333
+    }
+  },
+  {
+    "file": "51.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\n(c = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != 4)) {\n(c = (c + 1));\n}\n} else {\nif ((c == 4)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != 4)) {\nassert((c <= 4));\n}\n}",
+    "median_timing": 6.29,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.86,
+        6.29,
+        6.53
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.29,
+      "mean_time": 6.226666666666667
+    }
+  },
+  {
+    "file": "52.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\n(c = 0);\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != 4)) {\n(c = (c + 1));\n}\n} else {\nif ((c == 4)) {\n(c = 1);\n}\n}\n}\n}\nif ((c < 0)) {\nif ((c > 4)) {\nassert((c == 4));\n}\n}\n}",
+    "median_timing": 6.47,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.47,
+        6.73,
+        5.93
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.47,
+      "mean_time": 6.376666666666667
+    }
+  },
+  {
+    "file": "53.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c >= 0));\n}\n}",
+    "median_timing": 6.47,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.61,
+        6.47,
+        6.33
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.47,
+      "mean_time": 6.47
+    }
+  },
+  {
+    "file": "54.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c <= n));\n}\n}",
+    "median_timing": 6.23,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.63,
+        6.07,
+        6.23
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.23,
+      "mean_time": 6.3100000000000005
+    }
+  },
+  {
+    "file": "55.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c < 0)) {\nif ((c > n)) {\nassert((c == n));\n}\n}\n}",
+    "median_timing": 6.28,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.45,
+        6.09,
+        6.28
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.28,
+      "mean_time": 6.273333333333333
+    }
+  },
+  {
+    "file": "56.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c == n)) {\nassert((n <= -1));\n}\n}",
+    "median_timing": 6.26,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.26,
+        6.41,
+        6.25
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.26,
+      "mean_time": 6.306666666666667
+    }
+  },
+  {
+    "file": "57.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c > n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((n > -1)) {\nassert((c != n));\n}\n}",
+    "median_timing": 6.54,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.43,
+        6.83,
+        6.54
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.54,
+      "mean_time": 6.6
+    }
+  },
+  {
+    "file": "58.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c >= 0));\n}\n}",
+    "median_timing": 6.7,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.88,
+        6.7,
+        6.47
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.7,
+      "mean_time": 6.683333333333334
+    }
+  },
+  {
+    "file": "59.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c != n)) {\nassert((c <= n));\n}\n}",
+    "median_timing": 7.85,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        8.19,
+        7.63,
+        7.85
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.85,
+      "mean_time": 7.89
+    }
+  },
+  {
+    "file": "6.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint v1, v2, v3;\nint x = 0;\nint size;\nint y, z;\nwhile (x < size) {\nx += 1;\nif (z <= y) {\ny = z;\n}\n}\nif (size > 0) {\nassert(z >= y);\n}\n}",
+    "median_timing": 6.36,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.17,
+        6.69,
+        6.36
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.36,
+      "mean_time": 6.406666666666667
+    }
+  },
+  {
+    "file": "60.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c < 0)) {\nif ((c > n)) {\nassert((c == n));\n}\n}\n}",
+    "median_timing": 6.24,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.86,
+        6.24,
+        6.2
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.24,
+      "mean_time": 6.433333333333334
+    }
+  },
+  {
+    "file": "61.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((c == n)) {\nassert((n <= -1));\n}\n}",
+    "median_timing": 6.13,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.16,
+        6.13,
+        6.08
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.13,
+      "mean_time": 6.123333333333333
+    }
+  },
+  {
+    "file": "62.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint n;\nint v1;\nint v2;\nint v3;\n(c = 0);\nassume((n > 0));\nwhile (__VERIFIER_nondet_int()) {\n{\nif (__VERIFIER_nondet_int()) {\nif ((c != n)) {\n(c = (c + 1));\n}\n} else {\nif ((c == n)) {\n(c = 1);\n}\n}\n}\n}\nif ((n > -1)) {\nassert((c != n));\n}\n}",
+    "median_timing": 6.73,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.51,
+        6.73,
+        7.65
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.73,
+      "mean_time": 6.963333333333334
+    }
+  },
+  {
+    "file": "63.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 1;\nint y;\nwhile (x <= 10) {\ny = 10 - x;\nx = x + 1;\n}\nassert(y >= 0);\n}",
+    "median_timing": 6.58,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.58,
+        6.64,
+        6.55
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.58,
+      "mean_time": 6.59
+    }
+  },
+  {
+    "file": "64.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 1;\nint y;\nwhile (x <= 10) {\ny = 10 - x;\nx = x + 1;\n}\nassert(y < 10);\n}",
+    "median_timing": 8.25,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        10.8,
+        8.25,
+        8.03
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 8.25,
+      "mean_time": 9.026666666666667
+    }
+  },
+  {
+    "file": "65.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 1;\nint y;\nwhile (x <= 100) {\ny = 100 - x;\nx = x + 1;\n}\nassert(y >= 0);\n}",
+    "median_timing": 7.33,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.53,
+        7.33,
+        6.63
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.33,
+      "mean_time": 7.163333333333333
+    }
+  },
+  {
+    "file": "66.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 1;\nint y;\nwhile (x <= 100) {\ny = 100 - x;\nx = x + 1;\n}\nassert(y < 100);\n}",
+    "median_timing": 7.45,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.45,
+        7.18,
+        7.61
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.45,
+      "mean_time": 7.413333333333333
+    }
+  },
+  {
+    "file": "67.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n, y;\nint x = 1;\nassume(n > 0);\nwhile (x <= n) {\ny = n - x;\nx = x + 1;\n}\nassert(y >= 0);\n}",
+    "median_timing": 6.47,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.47,
+        6.47,
+        6.53
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.47,
+      "mean_time": 6.49
+    }
+  },
+  {
+    "file": "68.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n, y;\nint x = 1;\nwhile (x <= n) {\ny = n - x;\nx = x + 1;\n}\nif (n > 0) {\nassert(y <= n);\n}\n}",
+    "median_timing": 6.66,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.48,
+        7.2,
+        6.66
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.66,
+      "mean_time": 6.78
+    }
+  },
+  {
+    "file": "69.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n, v1, v2, v3;\nint x = 1;\nint y;\nwhile (x <= n) {\ny = n - x;\nx = x + 1;\n}\nif (n > 0) {\nassert(y >= 0);\n}\n}",
+    "median_timing": 6.77,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.1,
+        6.77,
+        6.6
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.77,
+      "mean_time": 6.823333333333333
+    }
+  },
+  {
+    "file": "7.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nassume((x >= 0));\nassume((x <= 10));\nassume((y <= 10));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 10));\n(y = (y + 10));\n}\n}\nif ((x == 20)) {\nassert((y != 0));\n}\n}",
+    "median_timing": 7.19,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.43,
+        6.94,
+        7.19
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.19,
+      "mean_time": 7.1866666666666665
+    }
+  },
+  {
+    "file": "70.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n, v1, v2, v3;\nint x = 1;\nint y;\nwhile (x <= n) {\ny = n - x;\nx = x + 1;\n}\nif (n > 0) {\nassert(y < n);\n}\n}",
+    "median_timing": 6.59,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.59,
+        6.74,
+        6.38
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.59,
+      "mean_time": 6.57
+    }
+  },
+  {
+    "file": "71.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint y;\nint z;\n(c = 0);\nassume((y >= 0));\nassume((y >= 127));\n(z = (36 * y));\nwhile (__VERIFIER_nondet_int()) {\nif ((c < 36)) {\n(z = (z + 1));\n(c = (c + 1));\n}\n}\nif ((c < 36)) {\nassert((z >= 0));\n}\n}",
+    "median_timing": 6.76,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.76,
+        6.56,
+        6.91
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.76,
+      "mean_time": 6.743333333333333
+    }
+  },
+  {
+    "file": "72.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint y;\nint z;\n(c = 0);\nassume((y >= 0));\nassume((y >= 127));\n(z = (36 * y));\nwhile (__VERIFIER_nondet_int()) {\nif ((c < 36)) {\n(z = (z + 1));\n(c = (c + 1));\n}\n}\nif ((c < 36)) {\nassert((z < 4608));\n}\n}",
+    "median_timing": 6.83,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        5.75,
+        6.83,
+        6.87
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.83,
+      "mean_time": 6.483333333333333
+    }
+  },
+  {
+    "file": "73.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint y;\nint z;\n(c = 0);\nassume((y >= 0));\nassume((y >= 127));\n(z = (36 * y));\nwhile (__VERIFIER_nondet_int()) {\nif ((c < 36)) {\n(z = (z + 1));\n(c = (c + 1));\n}\n}\nif ((z < 0)) {\nif ((z >= 4608)) {\nassert((c >= 36));\n}\n}\n}",
+    "median_timing": 6.55,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.55,
+        6.67,
+        6.45
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.55,
+      "mean_time": 6.556666666666667
+    }
+  },
+  {
+    "file": "74.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint x1;\nint x2;\nint x3;\nint y;\nint z;\n(c = 0);\nassume((y >= 0));\nassume((y >= 127));\n(z = (36 * y));\nwhile (__VERIFIER_nondet_int()) {\nif ((c < 36)) {\n(z = (z + 1));\n(c = (c + 1));\n}\n}\nif ((c < 36)) {\nassert((z >= 0));\n}\n}",
+    "median_timing": 7.09,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.68,
+        7.1,
+        7.09
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.09,
+      "mean_time": 6.956666666666666
+    }
+  },
+  {
+    "file": "75.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint x1;\nint x2;\nint x3;\nint y;\nint z;\n(c = 0);\nassume((y >= 0));\nassume((y >= 127));\n(z = (36 * y));\nwhile (__VERIFIER_nondet_int()) {\nif ((c < 36)) {\n(z = (z + 1));\n(c = (c + 1));\n}\n}\nif ((c < 36)) {\nassert((z < 4608));\n}\n}",
+    "median_timing": 6.25,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.13,
+        6.44,
+        6.25
+      ],
+      "all_decisions": [
+        "FALSE",
+        "FALSE",
+        "FALSE"
+      ],
+      "median_time": 6.25,
+      "mean_time": 6.273333333333333
+    }
+  },
+  {
+    "file": "76.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint c;\nint x1;\nint x2;\nint x3;\nint y;\nint z;\n(c = 0);\nassume((y >= 0));\nassume((y >= 127));\n(z = (36 * y));\nwhile (__VERIFIER_nondet_int()) {\nif ((c < 36)) {\n(z = (z + 1));\n(c = (c + 1));\n}\n}\nif ((z < 0)) {\nif ((z >= 4608)) {\nassert((c >= 36));\n}\n}\n}",
+    "median_timing": 6.54,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.33,
+        6.54,
+        6.63
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.54,
+      "mean_time": 6.5
+    }
+  },
+  {
+    "file": "77.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint x;\nint y;\n(i = 0);\nassume((x >= 0));\nassume((y >= 0));\nassume((x >= y));\nwhile (__VERIFIER_nondet_int()) {\nif ((i < y)) {\n(i = (i + 1));\n}\n}\nif ((i < y)) {\nassert((i < x));\n}\n}",
+    "median_timing": 6.44,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.44,
+        6.09,
+        6.57
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.44,
+      "mean_time": 6.366666666666667
+    }
+  },
+  {
+    "file": "78.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint x;\nint y;\n(i = 0);\nassume((x >= 0));\nassume((y >= 0));\nassume((x >= y));\nwhile (__VERIFIER_nondet_int()) {\nif ((i < y)) {\n(i = (i + 1));\n}\n}\nif ((i < y)) {\nassert((0 <= i));\n}\n}",
+    "median_timing": 6.49,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.03,
+        6.91,
+        6.49
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.49,
+      "mean_time": 6.476666666666667
+    }
+  },
+  {
+    "file": "79.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint x;\nint y;\n(i = 0);\nassume((x >= 0));\nassume((y >= 0));\nassume((x >= y));\nwhile (__VERIFIER_nondet_int()) {\nif ((i < y)) {\n(i = (i + 1));\n}\n}\nif ((i >= x)) {\nif ((0 > i)) {\nassert((i >= y));\n}\n}\n}",
+    "median_timing": 6.65,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.65,
+        6.43,
+        6.73
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.65,
+      "mean_time": 6.6033333333333335
+    }
+  },
+  {
+    "file": "8.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nassume((x >= 0));\nassume((x <= 10));\nassume((y <= 10));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 10));\n(y = (y + 10));\n}\n}\nif ((y == 0)) {\nassert((x != 20));\n}\n}",
+    "median_timing": 7.87,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.28,
+        7.87,
+        8.34
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.87,
+      "mean_time": 7.83
+    }
+  },
+  {
+    "file": "80.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(i = 0);\nassume((x >= 0));\nassume((y >= 0));\nassume((x >= y));\nwhile (__VERIFIER_nondet_int()) {\nif ((i < y)) {\n(i = (i + 1));\n}\n}\nif ((i < y)) {\nassert((i < x));\n}\n}",
+    "median_timing": 6.33,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.57,
+        6.33,
+        6.33
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.33,
+      "mean_time": 6.41
+    }
+  },
+  {
+    "file": "81.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(i = 0);\nassume((x >= 0));\nassume((y >= 0));\nassume((x >= y));\nwhile (__VERIFIER_nondet_int()) {\nif ((i < y)) {\n(i = (i + 1));\n}\n}\nif ((i < y)) {\nassert((0 <= i));\n}\n}",
+    "median_timing": 6.29,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.15,
+        6.29,
+        6.07
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.29,
+      "mean_time": 6.503333333333334
+    }
+  },
+  {
+    "file": "82.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(i = 0);\nassume((x >= 0));\nassume((y >= 0));\nassume((x >= y));\nwhile (__VERIFIER_nondet_int()) {\nif ((i < y)) {\n(i = (i + 1));\n}\n}\nif ((i >= x)) {\nif ((0 > i)) {\nassert((i >= y));\n}\n}\n}",
+    "median_timing": 6.86,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.37,
+        6.86,
+        7.99
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.86,
+      "mean_time": 7.073333333333333
+    }
+  },
+  {
+    "file": "83.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\n(x = -5000);\nwhile ((x < 0)) {\n{\n(x = (x + y));\n(y = (y + 1));\n}\n}\nassert((y > 0));\n}",
+    "median_timing": 6.59,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.53,
+        6.6,
+        6.59
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.59,
+      "mean_time": 6.573333333333333
+    }
+  },
+  {
+    "file": "84.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\n(x = -50);\nwhile ((x < 0)) {\n{\n(x = (x + y));\n(y = (y + 1));\n}\n}\nassert((y > 0));\n}",
+    "median_timing": 6.63,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.53,
+        6.63,
+        6.9
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.63,
+      "mean_time": 6.6866666666666665
+    }
+  },
+  {
+    "file": "85.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(x = -15000);\nwhile ((x < 0)) {\n{\n(x = (x + y));\n(y = (y + 1));\n}\n}\nassert((y > 0));\n}",
+    "median_timing": 6.96,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.96,
+        6.83,
+        7.19
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.96,
+      "mean_time": 6.993333333333333
+    }
+  },
+  {
+    "file": "86.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x;\nint y;\nint z1;\nint z2;\nint z3;\n(x = -50);\nwhile ((x < 0)) {\n{\n(x = (x + y));\n(y = (y + 1));\n}\n}\nassert((y > 0));\n}",
+    "median_timing": 6.94,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.93,
+        7.79,
+        6.94
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.94,
+      "mean_time": 7.22
+    }
+  },
+  {
+    "file": "87.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint lock;\nint x;\nint y;\n(x = y);\n(lock = 1);\nwhile ((x != y)) {\n{\nif (__VERIFIER_nondet_int()) {\n{\n(lock = 1);\n(x = y);\n}\n} else {\n{\n(lock = 0);\n(x = y);\n(y = (y + 1));\n}\n}\n}\n}\nassert((lock == 1));\n}",
+    "median_timing": 6.36,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.46,
+        6.26,
+        6.36
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.36,
+      "mean_time": 6.36
+    }
+  },
+  {
+    "file": "88.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint lock;\nint x;\nint y;\n(y = (x + 1));\n(lock = 0);\nwhile ((x != y)) {\n{\nif (__VERIFIER_nondet_int()) {\n{\n(lock = 1);\n(x = y);\n}\n} else {\n{\n(lock = 0);\n(x = y);\n(y = (y + 1));\n}\n}\n}\n}\nassert((lock == 1));\n}",
+    "median_timing": 6.6,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.6,
+        5.96,
+        6.87
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.6,
+      "mean_time": 6.476666666666667
+    }
+  },
+  {
+    "file": "89.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint lock;\nint v1;\nint v2;\nint v3;\nint x;\nint y;\n(x = y);\n(lock = 1);\nwhile ((x != y)) {\n{\nif (__VERIFIER_nondet_int()) {\n{\n(lock = 1);\n(x = y);\n}\n} else {\n{\n(lock = 0);\n(x = y);\n(y = (y + 1));\n}\n}\n}\n}\nassert((lock == 1));\n}",
+    "median_timing": 6.16,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.16,
+        6.33,
+        5.7
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.16,
+      "mean_time": 6.0633333333333335
+    }
+  },
+  {
+    "file": "9.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint x;\nint y;\nassume((x >= 0));\nassume((x <= 2));\nassume((y <= 2));\nassume((y >= 0));\nwhile (__VERIFIER_nondet_int()) {\n{\n(x = (x + 2));\n(y = (y + 2));\n}\n}\nif ((x == 4)) {\nassert((y != 0));\n}\n}",
+    "median_timing": 7.27,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.79,
+        7.57,
+        7.27
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.27,
+      "mean_time": 7.21
+    }
+  },
+  {
+    "file": "90.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint lock;\nint v1;\nint v2;\nint v3;\nint x;\nint y;\n(y = (x + 1));\n(lock = 0);\nwhile ((x != y)) {\n{\nif (__VERIFIER_nondet_int()) {\n{\n(lock = 1);\n(x = y);\n}\n} else {\n{\n(lock = 0);\n(x = y);\n(y = (y + 1));\n}\n}\n}\n}\nassert((lock == 1));\n}",
+    "median_timing": 6.34,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.07,
+        6.58,
+        6.34
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.34,
+      "mean_time": 6.33
+    }
+  },
+  {
+    "file": "91.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint x = 0;\nint y = 0;\nwhile (y >= 0) {\ny = y + x;\n}\nassert(y >= 0);\n}",
+    "median_timing": 6.88,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.88,
+        6.88,
+        6.83
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.88,
+      "mean_time": 6.863333333333333
+    }
+  },
+  {
+    "file": "92.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint z1, z2, z3;\nint x = 0;\nint y = 0;\nwhile (y >= 0) {\ny = y + x;\n}\nassert(y >= 0);\n}",
+    "median_timing": 7.08,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.08,
+        7.44,
+        6.9
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.08,
+      "mean_time": 7.140000000000001
+    }
+  },
+  {
+    "file": "93.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint __VERIFIER_nondet_int();\nint main() {\nint i;\nint n;\nint x;\nint y;\nassume((n >= 0));\n(i = 0);\n(x = 0);\n(y = 0);\nwhile ((i < n)) {\n{\n(i = (i + 1));\nif (__VERIFIER_nondet_int()) {\n{\n(x = (x + 1));\n(y = (y + 2));\n}\n} else {\n{\n(x = (x + 2));\n(y = (y + 1));\n}\n}\n}\n}\nassert(((3 * n) == (x + y)));\n}",
+    "median_timing": 8.13,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        8.23,
+        8.13,
+        7.94
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 8.13,
+      "mean_time": 8.100000000000001
+    }
+  },
+  {
+    "file": "94.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint k;\nint n;\nassume((k >= 0));\nassume((n >= 0));\n(i = 0);\n(j = 0);\nwhile ((i <= n)) {\n{\n(i = (i + 1));\n(j = (j + i));\n}\n}\nassert(((i + (j + k)) > (2 * n)));\n}",
+    "median_timing": 8.73,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        9.01,
+        8.73,
+        8.56
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 8.73,
+      "mean_time": 8.766666666666667
+    }
+  },
+  {
+    "file": "95.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\n(j = 0);\n(i = 0);\n(y = 1);\nwhile ((i <= x)) {\n{\n(i = (i + 1));\n(j = (j + y));\n}\n}\nif ((y == 1)) {\nassert((i == j));\n}\n}",
+    "median_timing": 6.93,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.28,
+        6.93,
+        6.9
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.93,
+      "mean_time": 7.036666666666667
+    }
+  },
+  {
+    "file": "96.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\n(j = 0);\n(i = 0);\n(y = 1);\nwhile ((i <= x)) {\n{\n(i = (i + 1));\n(j = (j + y));\n}\n}\nif ((i != j)) {\nassert((y != 1));\n}\n}",
+    "median_timing": 6.89,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.96,
+        6.66,
+        6.89
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.89,
+      "mean_time": 6.836666666666667
+    }
+  },
+  {
+    "file": "97.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\n(j = 0);\n(i = 0);\n(y = 2);\nwhile ((i <= x)) {\n{\n(i = (i + 1));\n(j = (j + y));\n}\n}\nif ((y == 1)) {\nassert((i == j));\n}\n}",
+    "median_timing": 6.1,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.28,
+        5.93,
+        6.1
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.1,
+      "mean_time": 6.1033333333333335
+    }
+  },
+  {
+    "file": "98.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint i;\nint j;\nint x;\nint y;\n(j = 0);\n(i = 0);\n(y = 2);\nwhile ((i <= x)) {\n{\n(i = (i + 1));\n(j = (j + y));\n}\n}\nif ((i != j)) {\nassert((y != 1));\n}\n}",
+    "median_timing": 6.36,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        6.13,
+        6.76,
+        6.36
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 6.36,
+      "mean_time": 6.416666666666667
+    }
+  },
+  {
+    "file": "99.c",
+    "original_program": "void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\nvoid assume(int cond) { if (!cond) { abort(); } }\nint main() {\nint n;\nint x;\nint y;\nassume((n >= 0));\n(x = n);\n(y = 0);\nwhile ((x > 0)) {\n{\n(y = (y + 1));\n(x = (x - 1));\n}\n}\nassert((n == (x + y)));\n}",
+    "median_timing": 7.13,
+    "baseline_details": {
+      "uautomizer_version": "25",
+      "num_trials": 3,
+      "timeout": 600.0,
+      "all_times": [
+        7.75,
+        6.94,
+        7.13
+      ],
+      "all_decisions": [
+        "TRUE",
+        "TRUE",
+        "TRUE"
+      ],
+      "median_time": 7.13,
+      "mean_time": 7.273333333333333
+    }
+  }
+]

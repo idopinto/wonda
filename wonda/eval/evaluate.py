@@ -65,6 +65,8 @@ def run_single_eval(cfg: DictConfig) -> dict:
         dataset_name=cfg.dataset.name, limit=cfg.dataset.limit, prefix=cfg.dataset.prefix,
         split=cfg.dataset.split, re_split=cfg.dataset.re_split,
         difficulty_threshold=cfg.dataset.difficulty_threshold, eval_per_marker=cfg.eval_per_marker,
+        local_dir=cfg.dataset.get("local_dir"), default_median_timing=cfg.dataset.get("default_median_timing", 600.0),
+        baseline_json=cfg.dataset.get("baseline_json"),
     )
     system_prompt, user_prompt_template = setup_prompts(cfg.prompts, cfg.eval_per_marker)
     model = ModelFactory.create(cfg.models, system_prompt, user_prompt_template)
@@ -73,7 +75,7 @@ def run_single_eval(cfg: DictConfig) -> dict:
     logger.info(f"Weave display name: {display_name}")
 
     verifier = UAutomizerVerifier(
-        uautomizer_path=GC.UAUTOMIZER_PATHS[cfg.scorer.verifier.version],
+        uautomizer_path=GC.UAUTOMIZER_PATHS[str(cfg.scorer.verifier.version)],
         property_file_path=GC.PROPERTIES_DIR / cfg.scorer.verifier.property,
         arch=cfg.scorer.verifier.arch, timeout_seconds=cfg.scorer.verifier.timeout_seconds,
         version=cfg.scorer.verifier.version, memory_limit_mb=GC.MEMORY_LIMIT_MB,
