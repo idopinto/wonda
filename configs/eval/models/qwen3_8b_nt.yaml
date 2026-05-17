@@ -1,0 +1,11 @@
+defaults:
+  - _family/hf_qwen_nt@_here_
+  - _self_
+
+label: qwen3_8b_nt
+base_model:
+  id: "Qwen/Qwen3-8B"
+ft_model:
+  sft_version: "v0"
+  id: "idopinto/qwen3-8b-nt-gen-inv-sft-${.sft_version}-latest"
+  is_lora: true

@@ -1,0 +1,63 @@
+test_mode: false
+
+wandb:
+  use_wandb: true
+  entity: "ip-ai"
+  project: train-qwen-for-inv-gen-latest
+  name: null
+
+model:
+  enable_thinking: false
+  init_kwargs_train:
+    attn_implementation: "flash_attention_2"
+    use_cache: False
+    device_map: "auto"
+  inference:
+    sampling_params:
+      max_new_tokens: 32768
+      temperature: 0.7
+      top_p: 0.8
+      top_k: 20
+      min_p: 0
+
+dataset:
+  version: "v2"
+  min_grade: null
+  hf_repo: null
+  hf_organization: "idopinto"
+  json_path: null
+  limit: -1
+  split_ratio: 0.8
+
+sft:
+  output_dir: null
+  num_train_epochs: 2
+  per_device_train_batch_size: 16
+  gradient_accumulation_steps: 2
+  gradient_checkpointing: True
+  optimizer: "adamw_torch_fused"
+  logging_steps: 1
+  save_strategy: "epoch"
+  save_only_model: true
+  learning_rate: 1e-4
+  max_length: 1024
+  max_grad_norm: 0.3
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine_with_min_lr"
+  lr_scheduler_kwargs: {"min_lr_rate": 0.1}
+  dataset_text_field: "text"
+  eval_strategy: "steps"
+  eval_steps: 5
+  report_to: "wandb"
+  push_to_hub: True
+
+use_peft: false
+
+lora:
+  lora_alpha: 16
+  lora_dropout: 0.05
+  r: 16
+  bias: "none"
+  target_modules: "all-linear"
+  task_type: "CAUSAL_LM"
+  modules_to_save: ["lm_head", "embed_tokens"]

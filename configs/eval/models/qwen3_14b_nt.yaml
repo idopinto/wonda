@@ -1,0 +1,11 @@
+defaults:
+  - _family/hf_qwen_nt@_here_
+  - _self_
+
+label: qwen3_14b_nt
+base_model:
+  id: "Qwen/Qwen3-14B"
+ft_model:
+  sft_version: "v2.2"
+  id: "idopinto/qwen3-14b-nt-gen-inv-sft-${.sft_version}"
+  is_lora: true

@@ -1,0 +1,11 @@
+defaults:
+  - _family/hf_qwen_nt@_here_
+  - _self_
+
+label: qwen3_4b_nt
+base_model:
+  id: "Qwen/Qwen3-4B-Instruct-2507"
+ft_model:
+  sft_version: "v0"
+  id: "idopinto/qwen3-4b-instruct-2507-nt-gen-inv-sft-${.sft_version}-latest"
+  is_lora: false

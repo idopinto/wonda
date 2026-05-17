@@ -17,7 +17,7 @@ The metrics (validation, correctness, usefulness, VBS, VBS end-to-end, speedup, 
 - **Qwen3 (SLMs):** 0.6B, 4B, 8B — each as **base (no-think)** and **fine-tuned** on WONDA data (v2.2). Fine-tuned 8B and 14B use LoRA.
 - **Baselines:** GPT-5.2, GPT-OSS-120B (via open-router api)
 - **Ablation Study** 0.6B, 8B - on WONDA data (v0, v1, v2.2)
-Configs for these are under `configs/eval/models/` (e.g. `qwen3_0.6b_nt_config`, `qwen3_4b_nt_config`, `gpt_5.2_config`).
+Configs for these are under `configs/eval/models/` (e.g. `qwen3_0.6b_nt`, `qwen3_4b_nt`, `gpt_5.2`).
 See the paper for the results tables.
 
 ## Running evaluation
@@ -32,16 +32,16 @@ sbatch --job-name=<name> scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3
 
 ```bash
 # Base Qwen3-0.6B (no-think)
-sbatch --job-name=me_qwen06 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config
+sbatch --job-name=me_qwen06 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt
 
 # Fine-tuned Qwen3-0.6B v2.2
-sbatch --job-name=me_qwen06_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+sbatch --job-name=me_qwen06_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 
 # Fine-tuned Qwen3-8B v2.2 (LoRA: add is_lora=true)
-sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
+sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_8b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
 
 # Baseline GPT-5.2
-sbatch --job-name=me_gpt5 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=gpt_5.2_config
+sbatch --job-name=me_gpt5 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=gpt_5.2
 ```
 
 **Useful overrides:** `multi_run.num_runs=N`, `dataset.limit=N` (use `-1` for full benchmark), `models=<config_name>`, `models.eval_ft_model=true`, `models.ft_model.sft_version="v2.2"`, `models.ft_model.is_lora=true` (for 8B/14B fine-tuned). An exhaustive list of commands per model is in the comments of [scripts/eval/run_multi_eval.sbatch](../../scripts/eval/run_multi_eval.sbatch).

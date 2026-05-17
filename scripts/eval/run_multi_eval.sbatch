@@ -24,81 +24,81 @@
 #
 # --- Qwen3-0.6B ---
 # Base model (no-think)
-#   sbatch --job-name=me_qwen06 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt_config
+#   sbatch --job-name=me_qwen06 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt
 # Base model (think)
-#   sbatch --job-name=me_qwen06_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_t_config
+#   sbatch --job-name=me_qwen06_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_t
 # Fine-tuned v0
-#   sbatch --job-name=me_qwen06_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v0"
+#   sbatch --job-name=me_qwen06_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt models.eval_ft_model=true models.ft_model.sft_version="v0"
 # Fine-tuned v1
-#   sbatch --job-name=me_qwen06_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v1"
+#   sbatch --job-name=me_qwen06_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt models.eval_ft_model=true models.ft_model.sft_version="v1"
 # Fine-tuned v2.2
-#   sbatch --job-name=me_qwen06_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+#   sbatch --job-name=me_qwen06_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 # Fine-tuned v2.3
-#   sbatch --job-name=me_qwen06_v23 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.3"
+#   sbatch --job-name=me_qwen06_v23 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_0.6b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.3"
 #
 # --- Qwen3-1.7B ---
 # Base model
-#   sbatch --job-name=me_qwen17 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt_config
+#   sbatch --job-name=me_qwen17 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt
 # Fine-tuned v0
-#   sbatch --job-name=me_qwen17_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v0"
+#   sbatch --job-name=me_qwen17_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt models.eval_ft_model=true models.ft_model.sft_version="v0"
 # Fine-tuned v1
-#   sbatch --job-name=me_qwen17_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v1"
+#   sbatch --job-name=me_qwen17_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt models.eval_ft_model=true models.ft_model.sft_version="v1"
 # Fine-tuned v2.2
-#   sbatch --job-name=me_qwen17_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+#   sbatch --job-name=me_qwen17_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_1.7b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 #
 # --- Qwen3-4B ---
 # Base model
-#   sbatch --job-name=me_qwen4b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt_config
+#   sbatch --job-name=me_qwen4b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt
 # Fine-tuned v0
-#   sbatch --job-name=me_qwen4b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v0"
+#   sbatch --job-name=me_qwen4b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt models.eval_ft_model=true models.ft_model.sft_version="v0"
 # Fine-tuned v1
-#   sbatch --job-name=me_qwen4b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v1"
+#   sbatch --job-name=me_qwen4b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt models.eval_ft_model=true models.ft_model.sft_version="v1"
 # Fine-tuned v2.2
-#   sbatch --job-name=me_qwen4b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+#   sbatch --job-name=me_qwen4b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_4b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 #
 # --- Qwen3-8B ---
 # Base model (no-think)
-#   sbatch --job-name=me_qwen8b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config
+#   sbatch --job-name=me_qwen8b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt
 # Base model (think)
-#   sbatch --job-name=me_qwen8b_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_t_config
+#   sbatch --job-name=me_qwen8b_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_t
 # Fine-tuned v0 (LoRA)
-#   sbatch --job-name=me_qwen8b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v0" models.ft_model.is_lora=true
+#   sbatch --job-name=me_qwen8b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt models.eval_ft_model=true models.ft_model.sft_version="v0" models.ft_model.is_lora=true
 # Fine-tuned v1 (LoRA)
-#   sbatch --job-name=me_qwen8b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v1" models.ft_model.is_lora=true
+#   sbatch --job-name=me_qwen8b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt models.eval_ft_model=true models.ft_model.sft_version="v1" models.ft_model.is_lora=true
 # Fine-tuned v2.2 (LoRA)
-#   sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
+#   sbatch --job-name=me_qwen8b_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=true
 # Fine-tuned v2.3 (LoRA)
-#   sbatch --job-name=me_qwen8b_v23 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.3" models.ft_model.is_lora=true
+#   sbatch --job-name=me_qwen8b_v23 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_8b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.3" models.ft_model.is_lora=true
 # Fine-tuned v2.2 (full, no LoRA)
-#   sbatch --job-name=me_qwen8b_full_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_8b_full_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=false weave.project_name="eval-wonda-rebuttal"
+#   sbatch --job-name=me_qwen8b_full_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_8b_full_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=false weave.project_name="eval-wonda-rebuttal"
 #
 # --- Qwen3-14B ---
 # Base model (no-think)
-#   sbatch --job-name=me_qwen14b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config
+#   sbatch --job-name=me_qwen14b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt
 # Base model (think)
-#   sbatch --job-name=me_qwen14b_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_t_config
+#   sbatch --job-name=me_qwen14b_t scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_t
 # Fine-tuned v0 (LoRA)
-#   sbatch --job-name=me_qwen14b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v0" models.ft_model.is_lora=true
+#   sbatch --job-name=me_qwen14b_v0 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt models.eval_ft_model=true models.ft_model.sft_version="v0" models.ft_model.is_lora=true
 # Fine-tuned v1 (LoRA)
-#   sbatch --job-name=me_qwen14b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v1" models.ft_model.is_lora=true
+#   sbatch --job-name=me_qwen14b_v1 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_nt models.eval_ft_model=true models.ft_model.sft_version="v1" models.ft_model.is_lora=true
 # Fine-tuned v2.2 (full, no LoRA; Weave project eval-wonda-rebuttal; only v2.2 weights available)
-#   sbatch --job-name=me_qwen14b_full_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_full_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=false weave.project_name="eval-wonda-rebuttal"
+#   sbatch --job-name=me_qwen14b_full_v22 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=qwen3_14b_full_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2" models.ft_model.is_lora=false weave.project_name="eval-wonda-rebuttal"
 #
 # --- Meta Llama 3.1 ---
 # Base model (hard split)
-#   sbatch --job-name=me_llama38b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=llama3_8b_config dataset.split=hard weave.project_name=eval-wonda-baselines
+#   sbatch --job-name=me_llama38b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=3 dataset.limit=-1 models=llama3_8b dataset.split=hard weave.project_name=eval-wonda-baselines
 # Full fine-tuned v2 g2 (3 epochs; merged weights on Hub)
-#   sbatch --job-name=me_llama38b_full_v2g2 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=1 dataset.limit=-1 models=llama3_8b_full_config dataset.split=hard weave.project_name=eval-wonda-llama
+#   sbatch --job-name=me_llama38b_full_v2g2 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=1 dataset.limit=-1 models=llama3_8b_full dataset.split=hard weave.project_name=eval-wonda-llama
 #
 # --- OpenAI / external baselines ---
 # GPT-5.2
-#   sbatch --job-name=me_gpt5 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_5.2_config
+#   sbatch --job-name=me_gpt5 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_5.2
 # GPT OSS 20B
-#   sbatch --job-name=me_oss20 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_oss_20b_config
+#   sbatch --job-name=me_oss20 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_oss_20b
 # GPT OSS 120B
-#   sbatch --job-name=me_oss120 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_oss_120b_config
+#   sbatch --job-name=me_oss120 scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=gpt_oss_120b
 # Qwen3-80B
-#   sbatch --job-name=me_qwen80b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_80b_nt_config
+#   sbatch --job-name=me_qwen80b scripts/eval/run_multi_eval.sbatch multi_run.num_runs=5 dataset.limit=-1 models=qwen3_80b_nt
 
 
 echo "Starting multi-run evaluation..."

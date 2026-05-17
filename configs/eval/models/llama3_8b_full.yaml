@@ -1,0 +1,12 @@
+defaults:
+  - _family/hf_llama@_here_
+  - _self_
+
+label: llama3_8b_full
+eval_ft_model: true
+base_model:
+  id: "meta-llama/Llama-3.1-8B-Instruct"
+ft_model:
+  sft_version: "v2-g2-e3"
+  id: "idopinto/llama3-8b-full-gen-inv-sft-${.sft_version}"
+  is_lora: false

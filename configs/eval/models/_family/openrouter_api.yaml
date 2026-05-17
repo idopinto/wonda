@@ -1,0 +1,4 @@
+client: openrouter
+
+base_model:
+  sampling_params: {}

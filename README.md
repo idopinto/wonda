@@ -92,13 +92,13 @@ Run a quick multi-run evaluation on a small sample (e.g. 5 instances). For a fas
 
 ```bash
 # GPT-5.2 (OpenRouter API; set OPENROUTER_API_KEY in .env)
-uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=gpt_5.2_config
+uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=gpt_5.2
 
 # Qwen3-0.6B base (no fine-tuning)
-uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=qwen3_0.6b_nt_config
+uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=qwen3_0.6b_nt
 
 # Qwen3-0.6B fine-tuned v2.2 (WONDA SFT)
-uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=qwen3_0.6b_nt_config models.eval_ft_model=true models.ft_model.sft_version="v2.2"
+uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.skip_weave=true weave.test_mode=true models=qwen3_0.6b_nt models.eval_ft_model=true models.ft_model.sft_version="v2.2"
 ```
 
 Evaluation requires UAutomizer and runlim (see Installation). We recommend using [W&B Weave](https://docs.wandb.ai/weave) for observability (traces, prompts, and model outputs); for quick local tests, disable it with `weave.skip_weave=true` and keep outputs isolated with `weave.test_mode=true`. Evaluation runs model inference with Weave parallelism (`WEAVE_PARALLELISM`; single-run default 8, multi-run default 1); UAutomizer verification is throttled via a semaphore (`VERIFIER_MAX_CONCURRENT`, default 1) to avoid resource contention. More models and full benchmark runs are described in [wonda/eval/README.md](wonda/eval/README.md).

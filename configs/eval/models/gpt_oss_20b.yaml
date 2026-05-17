@@ -1,5 +1,8 @@
+defaults:
+  - _family/together_api@_here_
+  - _self_
+
 label: gpt_oss_20b
-client: together
 base_model:
   id: "openai/gpt-oss-20b"
   sampling_params:

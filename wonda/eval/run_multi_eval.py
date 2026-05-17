@@ -8,7 +8,7 @@ Usage:
     uv run -m wonda.eval.run_multi_eval [HYDRA_OVERRIDES]
 
 Example:
-    uv run -m wonda.eval.run_multi_eval multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt_config
+    uv run -m wonda.eval.run_multi_eval multi_run.num_runs=3 dataset.limit=-1 models=qwen3_0.6b_nt
 """
 
 import copy

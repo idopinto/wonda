@@ -1,0 +1,9 @@
+defaults:
+  - _family/together_api@_here_
+  - _self_
+
+label: qwen3_80b_nt
+base_model:
+  id: "Qwen/Qwen3-Next-80B-A3B-Instruct"
+  sampling_params:
+    temperature: 1.0
