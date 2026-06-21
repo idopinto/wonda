@@ -6,13 +6,13 @@ Usage (from repo root):
                                            [--min_grade N] [--model MODEL_ID]
 
 Examples:
-    # v2.2 from local JSON
+    # V2 from local SFT cache
     uv run scripts/count_dataset_tokens.py \
-        --json_path data/train/sft-ready/wonda-qwen-nt-sft-v2-g2/wonda-qwen-nt-sft-v2-g2.json \
+        --json_path data/train/sft-ready/Wonda-Training-Dataset-Qwen3-V2/text.json \
         --min_grade 2 \
         --model Qwen/Qwen3-8B
 
-    # v2.2 from HuggingFace
+    # Legacy v2-g2 from HuggingFace (pre-rename release)
     uv run scripts/count_dataset_tokens.py \
         --hf_repo idopinto/wonda-qwen-nt-sft-v2-g2 \
         --min_grade 2 \
@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "Qwen/Qwen3-8B"
-DEFAULT_JSON = "data/train/sft-ready/wonda-qwen-nt-sft-v2-g2/wonda-qwen-nt-sft-v2-g2.json"
+DEFAULT_JSON = "data/train/sft-ready/Wonda-Training-Dataset-Qwen3-V2/text.json"
 
 
 def count_tokens(args: argparse.Namespace) -> None:

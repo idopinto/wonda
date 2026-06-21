@@ -12,8 +12,8 @@ Examples:
     uv run -m wonda.train.train_qwen --config-name=qwen3_0.6b dataset.version=v2 dataset.min_grade=3
     uv run -m wonda.train.train_qwen --config-name=qwen3_8b dataset.version=v1 test_mode=true
 """
-import re
 import logging
+from pathlib import Path
 
 import hydra
 import torch
@@ -24,13 +24,25 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import SFTConfig, SFTTrainer
 
-from wonda.train.data_utils import load_sft_dataset, split_dataset
+from wonda.preprocess.build_sft_dataset import sft_dataset_basename
+from wonda.train.data_utils import (
+    SFT_CACHE_ROOT,
+    load_or_build_sft_dataset,
+    split_dataset,
+)
 from wonda.train.train_utils import (
+    derive_model_run_name,
     init_tokenizer,
     load_model,
     log_dataset_sample,
     print_trainable_parameters,
 )
+
+# Tokenizer used to build (and name) the on-disk SFT cache for the Qwen family.
+# Picking the smallest checkpoint keeps the build cheap; all Qwen3 sizes share
+# the same tokenizer/chat-template, so the cache is reusable across sizes.
+_SFT_CACHE_TOKENIZER = "Qwen/Qwen3-0.6B"
+_PREPROCESS_CFG_PATH = Path(__file__).resolve().parents[2] / "configs" / "preprocess" / "build_sft_dataset.yaml"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,47 +50,56 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def _model_name_to_size_slug(base_model_name: str) -> str:
-    """Extract size slug from base_model_name, e.g. 'Qwen/Qwen3-0.6B' -> '0.6b'."""
-    m = re.search(r"Qwen3-(\d+\.?\d*)[Bb]", base_model_name)
-    if not m:
-        raise ValueError(f"Cannot derive size slug from base_model_name: {base_model_name}")
-    return m.group(1).lower() + "b"
+def derive_run_names(cfg: DictConfig) -> tuple[str, str, str, str | None]:
+    """Derive run names from model + dataset.version + dataset.min_grade.
 
+    Used when the corresponding config fields are null (unified per-model-size configs).
 
-def derive_run_names(cfg: DictConfig) -> tuple[str, str | None, str]:
-    """
-    Derive wandb name, hf_repo, and output_dir from model + dataset.version + dataset.min_grade.
-    Used when config has null for these (unified per-model-size configs).
-    Returns (wandb_name, hf_repo, output_dir). hf_repo is derived only if dataset.hf_organization is set.
+    Returns:
+        (wandb_name, dataset_cache_basename, output_dir, hub_model_id)
+        - ``dataset_cache_basename``: directory name under ``data/train/sft-ready/``
+          where the SFT cache for this version/min_grade lives; always points to
+          the g2 base for v2 (stricter grades filtered at load time).
+        - ``hub_model_id``: ``{hf_org}/{model_run_name}`` for pushing the
+          trained model; ``None`` if ``dataset.hf_organization`` is unset.
     """
     base = cfg.model.base_model_name
-    version = cfg.dataset.get("version") or "v2"
+    version = (cfg.dataset.get("version") or "V2").upper()
     min_grade = cfg.dataset.get("min_grade")
     hf_org = cfg.dataset.get("hf_organization")
-    tune_mode = "lora" if cfg.use_peft else "full"
-    grade_suffix = ""
-    if version == "v2":
-        # Keep v2 naming explicit by always encoding the effective minimum quality grade.
-        effective_min_grade = min_grade if min_grade is not None else 2
-        grade_suffix = f"-g{effective_min_grade}"
-
     epochs = cfg.sft.get("num_train_epochs") or 2
-    epoch_suffix = f"-e{epochs}"
 
-    size_slug = _model_name_to_size_slug(base)
-    wandb_name = f"qwen3-{size_slug}-{tune_mode}-nt-gen-inv-sft-{version}{grade_suffix}{epoch_suffix}"
-    output_dir = f"trained_models/qwen3-{size_slug}-{tune_mode}-nt-gen-inv-sft-{version}{grade_suffix}{epoch_suffix}"
-    if hf_org:
-        if version == "v2":
-            # Always load the g2 base dataset; runtime min_grade filtering handles stricter thresholds.
-            hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}-g2"
-        else:
-            hf_repo = f"{hf_org}/wonda-qwen-nt-sft-{version}"
-    else:
-        hf_repo = None
+    model_run_name = derive_model_run_name(
+        base_model_name=base,
+        version=version,
+        min_grade=min_grade,
+        use_peft=cfg.use_peft,
+        num_train_epochs=epochs,
+    )
+    wandb_name = model_run_name
+    output_dir = f"trained_models/{model_run_name}"
 
-    return wandb_name, hf_repo, output_dir
+    dataset_cache_basename = sft_dataset_basename(_SFT_CACHE_TOKENIZER, version)
+    hub_model_id = f"{hf_org}/{model_run_name}" if hf_org else None
+    return wandb_name, dataset_cache_basename, output_dir, hub_model_id
+
+
+def _compose_build_cfg(cfg: DictConfig) -> DictConfig:
+    """Compose a ``build_sft_dataset`` config from the train config + YAML defaults.
+
+    Loads ``configs/preprocess/build_sft_dataset.yaml`` (for prompts + auto raw
+    source resolution) and overrides ``dataset.version`` and ``tokenizer.name``
+    so the auto-built cache matches what training requests. The build's V2
+    floor (``quality_grade >= MIN_GRADE_FLOOR``) is baked into the builder, not
+    overridden here — stricter ``min_grade`` filtering happens at load time.
+    The raw input repo (full-raw vs full-v2) is picked by the builder from
+    ``dataset.version``.
+    """
+    build_cfg = OmegaConf.load(_PREPROCESS_CFG_PATH)
+    version = (cfg.dataset.get("version") or "V2").upper()
+    OmegaConf.update(build_cfg, "dataset.version", version)
+    OmegaConf.update(build_cfg, "tokenizer.name", _SFT_CACHE_TOKENIZER)
+    return build_cfg
 
 
 def train(
@@ -100,36 +121,40 @@ def train(
 
 @hydra.main(version_base=None, config_path="../../configs/train", config_name="qwen3_0.6b")
 def main(cfg: DictConfig):
+    # logger.info("=" * 50)
+    # logger.info(OmegaConf.to_yaml(cfg))
+    # logger.info("=" * 50)
+
+    # Auto-derive wandb name, dataset cache, output_dir, hub_model_id when null
+    derived_wandb, derived_cache_basename, derived_output, derived_hub_id = derive_run_names(cfg)
+    if cfg.wandb.get("name") is None:
+        OmegaConf.update(cfg, "wandb.name", derived_wandb)
+    if cfg.sft.get("output_dir") is None:
+        OmegaConf.update(cfg, "sft.output_dir", derived_output)
+    if cfg.sft.get("hub_model_id") is None and derived_hub_id is not None:
+        OmegaConf.update(cfg, "sft.hub_model_id", derived_hub_id)
+
     logger.info("=" * 50)
     logger.info(OmegaConf.to_yaml(cfg))
     logger.info("=" * 50)
-
-    # Auto-derive wandb name, hf_repo, output_dir when null
-    if cfg.wandb.get("name") is None or cfg.sft.get("output_dir") is None or cfg.dataset.get("hf_repo") is None:
-        derived_wandb, derived_hf_repo, derived_output = derive_run_names(cfg)
-        if cfg.wandb.get("name") is None:
-            OmegaConf.update(cfg, "wandb.name", derived_wandb)
-        if cfg.dataset.get("hf_repo") is None and cfg.dataset.get("json_path") is None and derived_hf_repo is not None:
-            OmegaConf.update(cfg, "dataset.hf_repo", derived_hf_repo)
-        if cfg.sft.get("output_dir") is None:
-            OmegaConf.update(cfg, "sft.output_dir", derived_output)
-
     wandb_name = cfg.wandb.name
     output_dir = cfg.sft.output_dir
-    hf_repo = cfg.dataset.get("hf_repo")
+    hub_model_id = cfg.sft.get("hub_model_id")
 
     if cfg.test_mode:
         logger.info("Training in test mode...")
         wandb_name = wandb_name + "-test"
         output_dir = output_dir + "-test"
+        if hub_model_id is not None:
+            hub_model_id = hub_model_id + "-test"
         cfg.dataset.limit = 100
 
-    if cfg.sft.push_to_hub and not hf_repo:
+    if cfg.sft.push_to_hub and not hub_model_id:
         raise ValueError(
-            "push_to_hub is true but dataset.hf_repo is not set. "
-            "Set dataset.hf_repo or dataset.hf_organization in your config."
+            "push_to_hub is true but sft.hub_model_id is not set. "
+            "Set sft.hub_model_id, or dataset.hf_organization to auto-derive it."
         )
-    if cfg.wandb.use_wandb:
+    if cfg.wandb.use:
         if not cfg.wandb.get("entity"):
             raise ValueError("use_wandb is true but wandb.entity is not set. Set wandb.entity to your W&B entity.")
         wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, name=wandb_name)
@@ -137,15 +162,13 @@ def main(cfg: DictConfig):
         logger.info("Wandb is disabled. Skipping wandb initialization...")
 
     model_name = cfg.model.base_model_name
-    json_path = cfg.dataset.get("json_path")
-    if not hf_repo and not json_path:
-        raise ValueError("Provide dataset.hf_repo (pre-built SFT dataset) or dataset.json_path")
-    if hf_repo and json_path:
-        raise ValueError("Provide exactly one of dataset.hf_repo or dataset.json_path")
     tokenizer = init_tokenizer(model_name)
-    logger.info(f"model_name: {model_name} | dataset: {hf_repo or json_path} | output_dir: {output_dir}")
+    logger.info(
+        f"model_name: {model_name} | "
+        f"dataset_cache: {derived_cache_basename} | "
+        f"output_dir: {output_dir}"
+    )
 
-    # Build SFT training args from config
     training_args = SFTConfig(
         output_dir=output_dir,
         num_train_epochs=cfg.sft.num_train_epochs,
@@ -167,20 +190,23 @@ def main(cfg: DictConfig):
         eval_steps=cfg.sft.eval_steps,
         report_to=cfg.sft.report_to,
         push_to_hub=cfg.sft.push_to_hub,
+        hub_model_id=hub_model_id,
     )
 
     # Build model kwargs from config
     model_init_kwargs = dict(
         attn_implementation=cfg.model.init_kwargs_train.attn_implementation,
-        dtype=torch.bfloat16,
+        dtype=cfg.model.init_kwargs_train.get("dtype", torch.bfloat16),
         use_cache=cfg.model.init_kwargs_train.use_cache,
         device_map=cfg.model.init_kwargs_train.device_map,
     )
 
-    # Load pre-built SFT dataset and split (optional min_grade: keep only quality_grade >= min_grade)
-    full_dataset = load_sft_dataset(
-        hf_repo=hf_repo,
-        json_path=json_path,
+    # Load pre-built SFT dataset and split. The cache is always the single source
+    # of truth — built on first run from the raw HF source, then reused.
+    full_dataset = load_or_build_sft_dataset(
+        base_name=derived_cache_basename,
+        build_cfg=_compose_build_cfg(cfg),
+        cache_root=SFT_CACHE_ROOT,
         limit=cfg.dataset.get("limit", -1),
         min_grade=cfg.dataset.get("min_grade"),
     )
@@ -189,7 +215,7 @@ def main(cfg: DictConfig):
     log_dataset_sample(train_dataset, "Train")
     log_dataset_sample(validation_dataset, "Validation")
 
-    # Load model and optionally apply LoRA
+    # # Load model and optionally apply LoRA
     model = load_model(model_name, model_init_kwargs)
     if cfg.use_peft:
         target_modules = list(cfg.lora.target_modules) if cfg.lora.target_modules else None

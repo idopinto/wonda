@@ -5,11 +5,11 @@ All datasets are on HuggingFace (see the [Wonda collection](https://huggingface.
 | Role | Dataset | Description |
 |------|---------|-------------|
 | **Evaluation** | [`idopinto/wonda-eval-benchmark-full`](https://huggingface.co/datasets/idopinto/wonda-eval-benchmark-full) | 219 programs → 362 instances after expansion (see below). |
-| **Training (raw)** | [`idopinto/wonda-train-dataset-full-raw`](https://huggingface.co/datasets/idopinto/wonda-train-dataset-full-raw) | 3,516 programs; raw verifier-generated invariants before WONDA curation. |
-| **Training (curated, full)** | [`idopinto/wonda-train-dataset-full-v2`](https://huggingface.co/datasets/idopinto/wonda-train-dataset-full-v2) | Full curated dataset (7.76k rows). Not SFT-ready; can be processed for other formats. |
-| **Training (SFT-ready)** | See below | Curated datasets ready for Qwen3 (non-think) supervised fine-tuning. |
+| **Training (raw)** | [`idopinto/Wonda-Training-Dataset-Full-Raw`](https://huggingface.co/datasets/idopinto/Wonda-Training-Dataset-Full-Raw) | 3,516 programs; raw verifier-generated invariants before WONDA curation. |
+| **Training (curated, full)** | [`idopinto/Wonda-Training-Dataset-Full`](https://huggingface.co/datasets/idopinto/Wonda-Training-Dataset-Full) | Full curated dataset (7.76k rows). Not SFT-ready; can be processed for other formats. |
+| **Training (SFT-ready)** | Local cache only | Built on demand; see below. |
 
-**SFT-ready (Qwen3 non-think):** [v0](https://huggingface.co/datasets/idopinto/wonda-qwen-nt-sft-v0) (3.65k) · [v1](https://huggingface.co/datasets/idopinto/wonda-qwen-nt-sft-v1) (3.71k) · [v2-g1](https://huggingface.co/datasets/idopinto/wonda-qwen-nt-sft-v2-g1) (7.48k) · [v2-g2](https://huggingface.co/datasets/idopinto/wonda-qwen-nt-sft-v2-g2) (7.28k)
+**SFT-ready caches (local):** training builds chat-formatted datasets under `data/train/sft-ready/Wonda-Training-Dataset-{Family}-V{0|1|2}/` — e.g. `Wonda-Training-Dataset-Qwen3-V0`, `Wonda-Training-Dataset-Qwen3-V2`, `Wonda-Training-Dataset-Llama3.1-V2`. Legacy pre-built Hub datasets (`idopinto/wonda-qwen-nt-sft-v*`) remain available for backward compatibility.
 
 ### Evaluation dataset (source and expansion)
 
@@ -33,9 +33,8 @@ sbatch scripts/preprocess/build_raw_train_dataset.sbatch
 # Run WONDA pipeline (normalize, simplify, verify, and grade → curated full dataset)
 sbatch scripts/preprocess/wonda_pipeline.sbatch
 
-# Build SFT-ready datasets (Qwen3 non-think) from raw or curated output
-./scripts/preprocess/build_sft_dataset.sh dataset.version=v0 dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full # → v0
-./scripts/preprocess/build_sft_dataset.sh dataset.version=v1 dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full # → v1
-./scripts/preprocess/build_sft_dataset.sh dataset.version=v2 dataset.min_grade=1   # → v2-g1
-./scripts/preprocess/build_sft_dataset.sh dataset.version=v2 dataset.min_grade=2   # → v2-g2
+# Build SFT-ready datasets from raw or curated output (local cache; not pushed to HF)
+./scripts/preprocess/build_sft_dataset.sh dataset.version=V0   # → Wonda-Training-Dataset-Qwen3-V0
+./scripts/preprocess/build_sft_dataset.sh dataset.version=V1   # → Wonda-Training-Dataset-Qwen3-V1
+./scripts/preprocess/build_sft_dataset.sh dataset.version=V2   # → Wonda-Training-Dataset-Qwen3-V2
 ```

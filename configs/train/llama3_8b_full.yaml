@@ -1,3 +1,4 @@
+# Full fine-tune preset; same as llama3_8b.yaml. Name aligns with eval config models/llama3_8b_full.
 defaults:
   - _family/llama_full@_here_
   - _shared/prompts@prompts: wonda

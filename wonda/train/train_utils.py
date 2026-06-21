@@ -49,6 +49,55 @@ def log_dataset_sample(dataset: Dataset, name: str) -> None:
         logger.info(f"  {key}: {value}")
 
 
+def derive_model_run_name(
+    base_model_name: str,
+    version: str,
+    min_grade: int | None,
+    use_peft: bool,
+    num_train_epochs: int | None = None,
+) -> str:
+    """Build the canonical ``Wonda-<base>[-nt]-V<n>[-gt<N>][-LoRA][-e<N>]`` name.
+
+    Conventions:
+      - ``<base>``: HF repo name without the org prefix. ``Llama-3.X-`` is
+        collapsed to ``Llama3.X-`` to match the user-facing naming style.
+      - ``-nt``: appended only when the base is NOT an instruction-tuned model
+        (case-insensitive substring check for ``instruct``).
+      - ``-V<n>``: dataset version (V0/V1/V2), uppercased.
+      - ``-gt<N>``: only for V2; ``N = min_grade`` (default 2). Denotes
+        ``quality_grade >= N``.
+      - ``-LoRA``: when ``use_peft=True``. Full fine-tune adds no suffix.
+      - ``-e<N>``: training epochs.
+
+    Trainers append ``-test`` externally for ``test_mode`` runs; this helper
+    deliberately returns the production-style name.
+
+    Examples:
+        >>> derive_model_run_name("Qwen/Qwen3-0.6B", "v2", 2, False, 2)
+        'Wonda-Qwen3-0.6B-nt-V2-gt2-e2'
+        >>> derive_model_run_name("Qwen/Qwen3-8B", "v2", 2, True, 2)
+        'Wonda-Qwen3-8B-nt-V2-gt2-LoRA-e2'
+        >>> derive_model_run_name("meta-llama/Llama-3.1-8B-Instruct", "v2", 3, False, 3)
+        'Wonda-Llama3.1-8B-Instruct-V2-gt3-e3'
+    """
+    base = base_model_name.split("/", 1)[-1]
+    base = base.replace("Llama-3.1-", "Llama3.1-").replace("Llama-3.2-", "Llama3.2-")
+
+    parts: list[str] = ["Wonda", base]
+    if "instruct" not in base.lower():
+        parts.append("nt")
+    v = version.lower().lstrip("v")
+    parts.append(f"V{v}")
+    if version.lower() == "v2":
+        eff_min_grade = min_grade if min_grade is not None else 2
+        parts.append(f"gt{eff_min_grade}")
+    if use_peft:
+        parts.append("LoRA")
+    if num_train_epochs is not None:
+        parts.append(f"e{num_train_epochs}")
+    return "-".join(parts)
+
+
 def run_inference(
     sample: dict,
     tokenizer: AutoTokenizer,

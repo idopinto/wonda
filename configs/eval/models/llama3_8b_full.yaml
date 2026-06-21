@@ -7,6 +7,10 @@ eval_ft_model: true
 base_model:
   id: "meta-llama/Llama-3.1-8B-Instruct"
 ft_model:
-  sft_version: "v2-g2-e3"
-  id: "idopinto/llama3-8b-full-gen-inv-sft-${.sft_version}"
+  # Local checkpoint named with the canonical training convention:
+  #   Wonda-<base>[-nt]-V<n>[-gt<N>][-LoRA]-e<N>
+  sft_version: "V2-gt2-e3"
+  id: "trained_models/Wonda-Llama3.1-8B-Instruct-${.sft_version}"
   is_lora: false
+
+# https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct

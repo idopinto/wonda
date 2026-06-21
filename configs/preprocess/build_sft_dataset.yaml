@@ -1,18 +1,30 @@
-# Build SFT-ready training dataset from raw or v2 datasets.
+# Build SFT-ready training dataset.
 # Used by: wonda/preprocess/build_sft_dataset.py
 #
-# Input repo depends on version:
-#   - v2: idopinto/wonda-train-dataset-full-v2 (output of wonda_pipeline)
-#   - v0 / v1: idopinto/wonda-train-dataset-full-raw, split="full"
-# uv run -m wonda.preprocess.build_sft_dataset dataset.version=v0 dataset.input_repo=idopinto/wonda-train-dataset-full-raw dataset.split=full
-# uv run -m wonda.preprocess.build_sft_dataset dataset.version=v2 dataset.min_grade=2
+# Output (local cache only — never pushed to HF):
+#   <output.dir>/Wonda-Training-Dataset-{Family}-V{0|1|2}/text.json
+#   where {Family} is derived from tokenizer.name
+#   (e.g. Qwen/Qwen3-0.6B -> Qwen3, meta-llama/Llama-3.1-8B-Instruct -> Llama3.1).
+#
+# V2 cache always retains quality_grade >= 1; stricter min_grade thresholds are
+# applied at TRAIN time by load_or_build_sft_dataset(min_grade=...).
+#
+# Raw input source is derived automatically from `dataset.version`:
+#   - V0 / V1: idopinto/Wonda-Training-Dataset-Full-Raw (split="full")
+#   - V2:      idopinto/Wonda-Training-Dataset-Full     (split="train")
+# Resolution order:
+#   1. dataset.json_path if explicitly set.
+#   2. Local fallback: data/train/<repo-basename>/<repo-basename>.json (if present).
+#   3. HuggingFace Hub.
+#
+# Manual builds:
+#   uv run -m wonda.preprocess.build_sft_dataset dataset.version=V0
+#   uv run -m wonda.preprocess.build_sft_dataset dataset.version=V2
+# Training scripts auto-trigger this build on cache miss (no need to run manually first).
 dataset:
-  input_repo: "idopinto/wonda-train-dataset-full-v2"
-  json_path: null
-  split: "train"
+  version: "V2"  # V0 (raw) | V1 (normalized) | V2 (simplified + verified)
+  json_path: null  # Optional explicit override; otherwise local-then-HF auto-resolution.
   limit: -1
-  version: "v2"  # v0 (raw) | v1 (normalized) | v2 (simplified + verified)
-  min_grade: 2   # only for v2
   max_length: 1024
 
 tokenizer:
@@ -24,11 +36,6 @@ tokenizer:
 
 output:
   dir: "data/train/sft-ready/"
-  hf_organization: "idopinto"  # Change to your own HuggingFace org if you're not the author
-  # HF repo is built as: {hf_organization}/wonda-{model_family}-{nt|t}-sft-{suffix}
-  # model_family = first segment of tokenizer.name, lowercased (e.g. Qwen/Qwen3-0.6B -> qwen)
-  # nt = non-think, t = think (from tokenizer.chat_template_kwargs.enable_thinking if present)
-  # suffix = v0 | v1 | v2-g{min_grade} from dataset.version (min_grade only for v2)
 
 prompts:
   system_prompt: |

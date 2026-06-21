@@ -1,10 +1,78 @@
 import logging
+from pathlib import Path
 
 from datasets import Dataset, load_dataset
+from omegaconf import DictConfig, OmegaConf
 from transformers import AutoTokenizer
+
+SFT_CACHE_ROOT = Path("data/train/sft-ready")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+def sft_cache_path(base_name: str, root: str | Path = SFT_CACHE_ROOT) -> Path:
+    """Return the canonical cache path for an SFT dataset.
+
+    Layout: ``<root>/<base_name>/text.json``.
+    """
+    return Path(root) / base_name / "text.json"
+
+
+def load_or_build_sft_dataset(
+    base_name: str,
+    build_cfg: DictConfig | None = None,
+    cache_root: str | Path = SFT_CACHE_ROOT,
+    limit: int = -1,
+    min_grade: int | None = None,
+) -> Dataset:
+    """Load the SFT cache from disk, building it on cache miss.
+
+    Args:
+        base_name: Cache directory name, e.g. ``Wonda-Training-Dataset-Qwen3-V2``. The
+            convention is produced by
+            :func:`wonda.preprocess.build_sft_dataset.sft_dataset_basename`.
+        build_cfg: Hydra config compatible with ``build_sft_dataset.yaml`` —
+            used to populate the cache when the file is missing. If ``None``,
+            a cache miss raises ``FileNotFoundError``.
+        cache_root: Directory under which ``<base_name>/`` lives.
+        limit: ``>0`` truncates the dataset after load.
+        min_grade: For v2 caches, filter to ``quality_grade >= min_grade``.
+    """
+    path = sft_cache_path(base_name, cache_root)
+
+    if not path.exists():
+        if build_cfg is None:
+            raise FileNotFoundError(
+                f"SFT cache miss: {path}. Provide build_cfg to auto-build, or run:\n"
+                f"  uv run -m wonda.preprocess.build_sft_dataset "
+                f"output.dir={cache_root}"
+            )
+        logger.info(f"SFT cache miss at {path}; building via build_sft_dataset...")
+        # Lazy import to keep startup light and avoid a potential circular
+        # dependency between preprocess and train modules.
+        from wonda.preprocess.build_sft_dataset import build_and_save_sft_dataset
+
+        # Force the build to write into the same cache_root we'll load from.
+        build_cfg = OmegaConf.create(OmegaConf.to_container(build_cfg, resolve=True))
+        OmegaConf.update(build_cfg, "output.dir", str(cache_root))
+        build_and_save_sft_dataset(build_cfg)
+        if not path.exists():
+            raise RuntimeError(
+                f"Build completed but expected cache file is still missing: {path}"
+            )
+
+    logger.info(f"Loading SFT cache: {path}")
+    dataset = load_dataset("json", data_files=str(path), split="train")
+
+    if min_grade is not None and "quality_grade" in dataset.column_names:
+        n_before = len(dataset)
+        dataset = dataset.filter(lambda x: x["quality_grade"] >= min_grade)
+        logger.info(f"Filtered to quality_grade >= {min_grade}: {len(dataset)} / {n_before}")
+    if limit > 0:
+        dataset = dataset.select(range(min(limit, len(dataset))))
+    logger.info(f"Loaded {len(dataset)} SFT samples")
+    return dataset
 
 
 def load_sft_dataset(
@@ -17,7 +85,7 @@ def load_sft_dataset(
 
     Exactly one of hf_repo or json_path must be provided.
     If min_grade is set and the dataset has a quality_grade column, keep only samples with quality_grade >= min_grade
-    (e.g. load wonda-qwen-nt-sft-v2-g1 then filter to grade >= 2).
+    (e.g. load a V2 cache then filter to grade >= 2).
     """
     if hf_repo and json_path:
         raise ValueError("Provide exactly one of hf_repo or json_path")

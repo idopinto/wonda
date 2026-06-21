@@ -11,9 +11,9 @@ data/
 │   └── <benchmark-name>/    # Built evaluation datasets (JSON, splits). See [eval/README.md](eval/README.md).
 ├── train/                   # Training datasets and sources
 │   ├── orig_programs/       # C programs used for training (e.g. from InvBench)
-│   ├── wonda-train-dataset-full-raw/       # Raw verifier-generated invariants
-│   ├── wonda-train-dataset-full-v2/        # Curated dataset (WONDA pipeline output)
-│   └── sft-ready/           # SFT-ready datasets (e.g. wonda-qwen-nt-sft-v0, v1, v2-g1, v2-g2)
+│   ├── Wonda-Training-Dataset-Full-Raw/    # Raw verifier-generated invariants (optional local copy)
+│   ├── Wonda-Training-Dataset-Full/         # Curated dataset (WONDA pipeline output)
+│   └── sft-ready/           # SFT-ready caches (e.g. Wonda-Training-Dataset-Qwen3-V2)
 ├── properties/              # Verifier property files (e.g. unreach-call.prp)
 └── InvBench/                # Optional: clone of [InvBench](https://github.com/Anjiang-Wei/InvBench) (training & evaluation programs)
 ```

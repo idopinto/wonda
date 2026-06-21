@@ -1,16 +1,24 @@
 # Training
 
-We fine-tune Qwen3 (non-think) for loop invariant generation using LoRA and the WONDA SFT-ready datasets.
+We fine-tune Qwen3 (non-think) and Llama 3.1 for loop invariant generation using the WONDA SFT-ready datasets.
 
 ## Released trained models
 
-All released checkpoints are on HuggingFace in the [Wonda collection](https://huggingface.co/collections/idopinto/wonda). Models follow the naming pattern `idopinto/qwen3-{size}-nt-gen-inv-sft-{version}` (e.g. `idopinto/qwen3-0.6b-nt-gen-inv-sft-v2.2-latest`, `idopinto/qwen3-4b-instruct-2507-nt-gen-inv-sft-v2.2-latest`). Available sizes include 0.6B, 1.7B, 4B, 8B, and 14B; versions include v0, v1, and v2.x (e.g. v2.1, v2.2, v2.3). Use the collection page to browse and download.
+All released checkpoints are on HuggingFace in the [Wonda collection](https://huggingface.co/collections/idopinto/wonda). Published Hub repos may still use the legacy pattern `idopinto/qwen3-{size}-nt-gen-inv-sft-{version}` (e.g. `idopinto/qwen3-0.6b-nt-gen-inv-sft-v2.2-latest`). Available sizes include 0.6B, 1.7B, 4B, 8B, and 14B; versions include v0, v1, and v2.x.
+
+**Local run naming:** training scripts derive canonical names automatically:
+
+```
+Wonda-<base>[-nt]-V{n}[-gt<N>][-LoRA]-e<N>
+```
+
+Examples: `Wonda-Qwen3-8B-nt-V2-gt2-LoRA-e2`, `Wonda-Llama3.1-8B-Instruct-V2-gt2-e3`. Checkpoints land under `trained_models/<name>/` and Hub pushes use `idopinto/<name>` when `push_to_hub: true`.
 
 ## Training your own model
 
-Run from the repository root. The training script is unified: you pass a **config name** and optional Hydra overrides.
+Run from the repository root. Pass a **config name** and optional Hydra overrides.
 
-**Usage:**
+**Qwen3 (LoRA):**
 
 ```bash
 sbatch --job-name=<job_name> scripts/train/train_qwen.sbatch <config_name> [hydra overrides...]
@@ -18,7 +26,13 @@ sbatch --job-name=<job_name> scripts/train/train_qwen.sbatch <config_name> [hydr
 
 **Config names:** `qwen3_0.6b` | `qwen3_1.7b` | `qwen3_4b` | `qwen3_8b` | `qwen3_14b`
 
-The same list is also in the comments of [scripts/train/train_qwen.sbatch](../../scripts/train/train_qwen.sbatch).
+**Llama 3.1 (full fine-tune by default):**
+
+```bash
+sbatch --job-name=<job_name> scripts/train/train_llama.sbatch <config_name> [hydra overrides...]
+```
+
+**Config names:** `llama3_8b` | `llama3_8b_full`
 
 **Commands (model size × version; v2 uses min_grade=2):**
 
@@ -71,4 +85,6 @@ Configs live in `configs/train/`. Key training parameters (defaults in config):
 | `lora.lora_alpha` | 16 | LoRA alpha |
 | `lora.target_modules` | all-linear | Modules to adapt |
 
-Output is written under `trained_models/qwen3-{size}-nt-gen-inv-sft-{version}/` and can be pushed to the Hub when `push_to_hub: true` in the config.
+Output is written under `trained_models/Wonda-<base>[-nt]-V<n>[-gt<N>][-LoRA]-e<N>/` and can be pushed to the Hub when `push_to_hub: true` in the config.
+
+**SFT cache:** datasets are built on demand into `data/train/sft-ready/Wonda-Training-Dataset-{Family}-V{0|1|2}/text.json` (e.g. `Wonda-Training-Dataset-Qwen3-V2`, `Wonda-Training-Dataset-Llama3.1-V2`). V2 caches include all grade ≥ 1 rows; stricter `min_grade` filters apply at load time.

@@ -1,7 +1,7 @@
 test_mode: false
 
 wandb:
-  use_wandb: true
+  use: true
   entity: "ip-ai"
   project: train-qwen-for-inv-gen-latest
   name: null
@@ -21,16 +21,19 @@ model:
       min_p: 0
 
 dataset:
-  version: "v2"
+  # The SFT dataset is built on-demand from the raw HF source and cached locally
+  # under data/train/sft-ready/<base_name>/. Subsequent runs reuse the cache.
+  version: "V2"
   min_grade: null
-  hf_repo: null
-  hf_organization: "idopinto"
-  json_path: null
+  hf_organization: "idopinto"  # used only for hub_model_id derivation
   limit: -1
   split_ratio: 0.8
 
 sft:
   output_dir: null
+  # HF repo id to push the trained model to (e.g. "<org>/<name>"). When null,
+  # it is derived as "{dataset.hf_organization}/{derived_model_run_name}".
+  hub_model_id: null
   num_train_epochs: 2
   per_device_train_batch_size: 16
   gradient_accumulation_steps: 2

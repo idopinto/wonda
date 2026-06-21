@@ -1,7 +1,36 @@
 defaults:
-  - _family/qwen_lora@_here_
+  - _family/qwen_full@_here_
   - _shared/prompts@prompts: wonda
   - _self_
 
+wandb:
+  project: train-wonda-qwen3-8b-full
+
 model:
   base_model_name: "Qwen/Qwen3-8B"
+
+sft:
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 16
+  learning_rate: 2e-5
+  max_grad_norm: 1.0
+  weight_decay: 0.1
+  eval_steps: 20
+
+lora:
+  lora_alpha: 64
+  lora_dropout: 0.05
+  r: 128
+  bias: "none"
+  target_modules: [
+    "embed_tokens",
+    "q_proj",
+    "v_proj",
+    "o_proj",
+    "k_proj",
+    "up_proj",
+    "down_proj",
+    "gate_proj",
+  ]
+  task_type: "CAUSAL_LM"
+  modules_to_save: ["lm_head", "embed_tokens"]

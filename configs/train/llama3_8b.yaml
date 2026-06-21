@@ -1,5 +1,5 @@
 defaults:
-  - _family/llama_lora@_here_
+  - _family/llama_full@_here_
   - _shared/prompts@prompts: wonda
   - _self_
 

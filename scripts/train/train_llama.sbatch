@@ -11,7 +11,7 @@
 # Unified script to train Llama 3.1 models using SFT.
 # Usage: sbatch --job-name=<name> scripts/train/train_llama.sbatch <config_name> [hydra overrides...]
 #
-# Config name (first argument): llama3_8b | llama3_8b_full
+# Config name (first argument): llama3_8b | llama3_8b_full (equivalent; full FT)
 #
 # Hydra overrides (optional, pass after config name):
 #   dataset.version=v0|v1|v2           Dataset version (default: v2)
@@ -23,11 +23,15 @@
 #
 # Explicit commands:
 #   8B LoRA
+#   sbatch --job-name=train_llama_8b_v0 scripts/train/train_llama.sbatch llama3_8b dataset.version=v0
+#   sbatch --job-name=train_llama_8b_v1 scripts/train/train_llama.sbatch llama3_8b dataset.version=v1
 #   sbatch --job-name=train_llama_8b_v2_g2 scripts/train/train_llama.sbatch llama3_8b dataset.version=v2 dataset.min_grade=2
 #   sbatch --job-name=train_llama_8b_v2_g3 scripts/train/train_llama.sbatch llama3_8b dataset.version=v2 dataset.min_grade=3
 #   sbatch --job-name=train_llama_8b_v2_g2_test scripts/train/train_llama.sbatch llama3_8b dataset.version=v2 dataset.min_grade=2 test_mode=true
 #
 #   8B Full fine-tune
+#   sbatch --job-name=train_llama_8b_full_v0 --output=camera-ready-slurm/%x_%j.out --error=camera-ready-slurm/%x_%j.err scripts/train/train_llama.sbatch llama3_8b_full dataset.version=v0 wandb.project=train-camera-ready
+#   sbatch --job-name=train_llama_8b_full_v1 --output=camera-ready-slurm/%x_%j.out --error=camera-ready-slurm/%x_%j.err scripts/train/train_llama.sbatch llama3_8b_full dataset.version=v1 wandb.project=train-camera-ready
 #   sbatch --job-name=train_llama_8b_full_v2_g2 scripts/train/train_llama.sbatch llama3_8b_full dataset.version=v2 dataset.min_grade=2
 #   sbatch --job-name=train_llama_8b_full_v2_g3 scripts/train/train_llama.sbatch llama3_8b_full dataset.version=v2 dataset.min_grade=3
 #   sbatch --job-name=train_llama_8b_full_v2_g2_test scripts/train/train_llama.sbatch llama3_8b_full dataset.version=v2 dataset.min_grade=2 test_mode=true
