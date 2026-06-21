@@ -7,8 +7,9 @@ eval_ft_model: true
 base_model:
   id: "Qwen/Qwen3-14B"
 ft_model:
-  # Local checkpoint named with the canonical training convention:
-  #   Wonda-<base>[-nt]-V<n>[-gt<N>][-LoRA]-e<N>
+  # Paper checkpoint (V2, min_grade=2, 3 epochs, full FT):
+  #   Hub:   idopinto/Wonda-Qwen3-14B-nt-V2-gt2-e3
+  #   Local: trained_models/Wonda-Qwen3-14B-nt-V2-gt2-e3
   sft_version: "V2-gt2-e3"
-  id: "trained_models/Wonda-Qwen3-14B-nt-${.sft_version}"
+  id: "idopinto/Wonda-Qwen3-14B-nt-V2-gt2-e3"
   is_lora: false

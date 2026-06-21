@@ -7,10 +7,11 @@ eval_ft_model: true
 base_model:
   id: "meta-llama/Llama-3.1-8B-Instruct"
 ft_model:
-  # Local checkpoint named with the canonical training convention:
-  #   Wonda-<base>[-nt]-V<n>[-gt<N>][-LoRA]-e<N>
+  # Paper checkpoint (V2, min_grade=2, 3 epochs, full FT):
+  #   Hub:   idopinto/Wonda-Llama3.1-8B-Instruct-V2-gt2-e3
+  #   Local: trained_models/Wonda-Llama3.1-8B-Instruct-V2-gt2-e3
   sft_version: "V2-gt2-e3"
-  id: "trained_models/Wonda-Llama3.1-8B-Instruct-${.sft_version}"
+  id: "idopinto/Wonda-Llama3.1-8B-Instruct-V2-gt2-e3"
   is_lora: false
 
 # https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct

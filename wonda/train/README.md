@@ -14,6 +14,13 @@ Wonda-<base>[-nt]-V{n}[-gt<N>][-LoRA]-e<N>
 
 Examples: `Wonda-Qwen3-8B-nt-V2-gt2-LoRA-e2`, `Wonda-Llama3.1-8B-Instruct-V2-gt2-e3`. Checkpoints land under `trained_models/<name>/` and Hub pushes use `idopinto/<name>` when `push_to_hub: true`.
 
+**Paper full-FT checkpoints** (Hub + local):
+
+| Model | Hub | Local |
+|-------|-----|-------|
+| Llama-3.1-8B-Instruct | `idopinto/Wonda-Llama3.1-8B-Instruct-V2-gt2-e3` | `trained_models/Wonda-Llama3.1-8B-Instruct-V2-gt2-e3` |
+| Qwen3-14B | `idopinto/Wonda-Qwen3-14B-nt-V2-gt2-e3` | `trained_models/Wonda-Qwen3-14B-nt-V2-gt2-e3` |
+
 ## Training your own model
 
 Run from the repository root. Pass a **config name** and optional Hydra overrides.
