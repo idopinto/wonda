@@ -2,9 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![ICML 2026](https://img.shields.io/badge/ICML-2026-4C2F7A.svg)](https://idopinto.github.io/wonda-project-page/)
 [![arXiv](https://img.shields.io/badge/arXiv-2603.15510-b31b1b.svg)](https://arxiv.org/abs/2603.15510)
 
-Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** ([arXiv:2603.15510](https://arxiv.org/abs/2603.15510)).
+Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** ([project page](https://idopinto.github.io/wonda-project-page/), [arXiv:2603.15510](https://arxiv.org/abs/2603.15510)).
 
 ## Abstract
 
@@ -173,14 +174,12 @@ See **[tests/README.md](tests/README.md)** for how to run the test suite, what t
 ## Citation
 
 ```bibtex
-@misc{pinto2026wonda,
+@article{pinto2026wonda,
   title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
   author={Pinto, Ido and Elboher, Yizhak Yisrael and Wu, Haoze and Narodytska, Nina and Katz, Guy},
+  journal={arXiv preprint arXiv:2603.15510},
   year={2026},
-  eprint={2603.15510},
-  archivePrefix={arXiv},
-  primaryClass={cs.LG},
-  url={https://arxiv.org/abs/2603.15510}
+  note={Accepted to ICML 2026}
 }
 ```
 
