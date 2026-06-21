@@ -24,6 +24,9 @@ examples/
 trained_models/
 sv-benchmarks/
 Lemur-program-verification/
+cr-final-exps/
+camera-ready-exps/
+camera-ready-slurm/
 
 # Generated outputs
 outputs/
@@ -39,6 +42,9 @@ Ultimate.log
 unsloth_compiled_cache/
 llm_response_cache/
 llm_response_cache.tar.gz
+
+# Rebuttal-only generated verifier outputs (regenerate via preprocessing scripts)
+data/eval/*/baseline_uauto*/verifier_reports/
 
 # Test artifacts
 tests/timing_test_reports/
