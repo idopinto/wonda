@@ -176,12 +176,14 @@ See **[tests/README.md](tests/README.md)** for how to run the test suite, what t
 ## Citation
 
 ```bibtex
-@article{pinto2026wonda,
-  title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs},
-  author={Pinto, Ido and Elboher, Yizhak Yisrael and Wu, Haoze and Narodytska, Nina and Katz, Guy},
-  journal={arXiv preprint arXiv:2603.15510},
-  year={2026},
-  note={Accepted to ICML 2026}
+@misc{pinto2026invariantsequalcuratingtraining,
+      title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs}, 
+      author={Ido Pinto and Yizhak Yisrael Elboher and Haoze Wu and Nina Narodytska and Guy Katz},
+      year={2026},
+      eprint={2603.15510},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2603.15510}, 
 }
 ```
 
