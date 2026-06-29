@@ -174,16 +174,15 @@ wonda/
 See **[tests/README.md](tests/README.md)** for how to run the test suite, what to run, and a summary of test modules. Tests use no external tools (gcc, UAutomizer, runlim) or network and are suitable for CI.
 
 ## Citation
+If you use WONDA or find our work helpful in your research, please cite our paper:
 
 ```bibtex
-@misc{pinto2026invariantsequalcuratingtraining,
-      title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs}, 
-      author={Ido Pinto and Yizhak Yisrael Elboher and Haoze Wu and Nina Narodytska and Guy Katz},
-      year={2026},
-      eprint={2603.15510},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2603.15510}, 
+@inproceedings{pinto2026not,
+  title={Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with {SLMs}},
+  author={Pinto, Ido and Elboher, Yizhak Yisrael and Wu, Haoze and Narodytska, Nina and Katz, Guy},
+  booktitle={Forty-third International Conference on Machine Learning},
+  year={2026},
+  url={https://openreview.net/forum?id=fS28SOioQd}
 }
 ```
 
