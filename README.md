@@ -1,13 +1,13 @@
-# Not All Invariants Are Equal
+# Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![ICML 2026](https://img.shields.io/badge/ICML-2026-4C2F7A.svg)](https://idopinto.github.io/wonda-project-page/)
 [![arXiv](https://img.shields.io/badge/arXiv-2603.15510-b31b1b.svg)](https://arxiv.org/abs/2603.15510)
 
-Official implementation of **"Not All Invariants Are Equal: Curating Training Data to Accelerate Program Verification with SLMs"** ([project page](https://idopinto.github.io/wonda-project-page/), [arXiv:2603.15510](https://arxiv.org/abs/2603.15510)).
+This repository contains the official implementation of our ICML 2026 paper. 
 
-> 🎉 **Accepted to ICML 2026!** Camera-ready and proceedings link coming soon.
+Here, we introduce **WONDA**, a rigorous data curation pipeline that distills noisy, verbose symbolic verifier outputs into high-quality, provable training data for Small Language Models (SLMs).
 
 ## Abstract
 
@@ -75,19 +75,6 @@ https://fm-tools.sosy-lab.org/#tool-uautomizer
 
 Build or install [runlim](https://github.com/arminbiere/runlim) and place the `runlim` binary at `tools/runlim/runlim`. It is used to enforce time and memory limits when running the verifier (e.g. for evaluation and dataset building).
 
-## Minimum smoke test (no GPU or verifier)
-
-To verify the repo works without a GPU, UAutomizer, or runlim:
-
-```bash
-# Run the full test suite (no network, no external tools)
-uv run pytest tests/ -v
-
-# Run a quick demo (AST pipeline only, no verifier)
-uv run python -m wonda.demos.ast_program_demo
-```
-
-See [wonda/core/README.md](wonda/core/README.md#demos) for more demos (AST tree, normalization, and optional direct verification with UAutomizer).
 
 ## Quick Start
 
@@ -105,27 +92,6 @@ uv run -m wonda.eval.run_multi_eval multi_run.num_runs=1 dataset.limit=5 weave.s
 ```
 
 Evaluation requires UAutomizer and runlim (see Installation). We recommend using [W&B Weave](https://docs.wandb.ai/weave) for observability (traces, prompts, and model outputs); for quick local tests, disable it with `weave.skip_weave=true` and keep outputs isolated with `weave.test_mode=true`. Evaluation runs model inference with Weave parallelism (`WEAVE_PARALLELISM`; single-run default 8, multi-run default 1); UAutomizer verification is throttled via a semaphore (`VERIFIER_MAX_CONCURRENT`, default 1) to avoid resource contention. More models and full benchmark runs are described in [wonda/eval/README.md](wonda/eval/README.md).
-
-## Demos
-
-Runnable demos (no external tools for the first three) are in `wonda/demos/`:
-
-| Demo | Command | Notes |
-|------|---------|--------|
-| AST program pipeline | `uv run python -m wonda.demos.ast_program_demo` | In-memory C program through full pipeline |
-| AST tree visualization | `uv run python -m wonda.demos.ast_tree_demo` | Unicode tree diagrams |
-| Invariant normalization | `uv run python -m wonda.demos.normalization_demo` | AST-based normalization |
-| Direct verification | `uv run python -m wonda.demos.direct_verification_demo` | Requires UAutomizer + runlim |
-
-Details: [wonda/core/README.md](wonda/core/README.md#demos).
-
-## What requires external services or tools?
-
-- **Evaluation** (multi-run eval, scoring): UAutomizer, runlim, and optionally GPU/API keys. See [wonda/eval/README.md](wonda/eval/README.md).
-- **Training** (fine-tuning): GPU, optional W&B; datasets from HuggingFace. See [wonda/train/README.md](wonda/train/README.md).
-- **Preprocessing** (dataset building): Raw benchmarks, UAutomizer, runlim, optional cloud LLM. See [wonda/preprocess/README.md](wonda/preprocess/README.md).
-
-The test suite and the AST/normalization demos above need only Python and the installed dependencies.
 
 ## Reproducing Paper Results
 
@@ -171,7 +137,7 @@ wonda/
 
 ## Testing
 
-See **[tests/README.md](tests/README.md)** for how to run the test suite, what to run, and a summary of test modules. Tests use no external tools (gcc, UAutomizer, runlim) or network and are suitable for CI.
+See **[tests/README.md](tests/README.md)** for how to run the test suite, what to run, and a summary of test modules.
 
 ## Citation
 If you use WONDA or find our work helpful in your research, please cite our paper:
